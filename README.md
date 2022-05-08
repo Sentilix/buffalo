@@ -1,0 +1,2 @@
+# buffalo
+Buffing addon
