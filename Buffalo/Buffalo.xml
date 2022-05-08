@@ -1,0 +1,69 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
+..\FrameXML\UI.xsd">
+
+	<Script file="Buffalo.lua" />
+
+	<Button name="BuffButton" inherits="SecureActionButtonTemplate" parent="UIParent" toplevel="true" hidden="false" frameStrata="LOW" movable="true">
+		<Size>
+			<AbsDimension x="32" y="32" />
+		</Size>
+		<Anchors>
+			<Anchor point="CENTER">
+				<Offset>
+					<AbsDimension x="-40" y="100" />
+				</Offset>
+			</Anchor>
+		</Anchors>
+		<Scripts>
+			<OnLoad>
+				self:EnableMouse(true);
+				self:EnableKeyboard(false);
+				self:RegisterForDrag("LeftButton");
+				self:RegisterForClicks("LeftButtonUp", "RightButtonUp");
+
+				self:SetScript("PreClick", Buffalo_OnBuffClick);
+
+				self:SetAttribute("type", "spell");
+				self:SetAttribute("unit", nil);
+				self:SetAttribute("spell", nil);
+				self:SetAttribute("item", nil);
+				self:SetAttribute("target-slot", nil);
+			</OnLoad>
+			<OnDragStart>
+				if (button == "LeftButton" and IsShiftKeyDown()) then
+					self:StartMoving();
+				end
+			</OnDragStart>
+			<OnDragStop>
+				self:StopMovingOrSizing();
+				Buffalo_RepositionateButton(self);
+			</OnDragStop>
+		</Scripts>
+	</Button>
+
+
+	<!-- Dummy event frame -->
+	<Frame name="ThalizEventFrame">
+		<Scripts>
+			<OnLoad>
+				if (Thaliz_OnLoad) then
+				Thaliz_OnLoad();
+				end
+			</OnLoad>
+			<OnEvent>
+				if (Thaliz_OnEvent) then
+				Thaliz_OnEvent(self, event, ...);
+				end
+			</OnEvent>
+			<OnUpdate>
+				if (Thaliz_OnTimer) then
+				Thaliz_OnTimer(elapsed);
+				end
+			</OnUpdate>
+		</Scripts>
+	</Frame>
+
+</Ui>
+
+	
+	
