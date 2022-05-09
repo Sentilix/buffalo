@@ -1,6 +1,4 @@
-<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
-..\FrameXML\UI.xsd">
-
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/">
 	<Script file="Buffalo.lua" />
 
 	<Button name="BuffButton" inherits="SecureActionButtonTemplate" parent="UIParent" toplevel="true" hidden="false" frameStrata="LOW" movable="true">
@@ -10,7 +8,7 @@
 		<Anchors>
 			<Anchor point="CENTER">
 				<Offset>
-					<AbsDimension x="-40" y="100" />
+					<AbsDimension x="0" y="100" />
 				</Offset>
 			</Anchor>
 		</Anchors>
@@ -43,21 +41,21 @@
 
 
 	<!-- Dummy event frame -->
-	<Frame name="ThalizEventFrame">
+	<Frame name="BuffaloEventFrame">
 		<Scripts>
 			<OnLoad>
-				if (Thaliz_OnLoad) then
-				Thaliz_OnLoad();
+				if (Buffalo_OnLoad) then
+					Buffalo_OnLoad();
 				end
 			</OnLoad>
 			<OnEvent>
-				if (Thaliz_OnEvent) then
-				Thaliz_OnEvent(self, event, ...);
+				if (Buffalo_OnEvent) then
+					Buffalo_OnEvent(self, event, ...);
 				end
 			</OnEvent>
 			<OnUpdate>
-				if (Thaliz_OnTimer) then
-				Thaliz_OnTimer(elapsed);
+				if (Buffalo_OnTimer) then
+					Buffalo_OnTimer(elapsed);
 				end
 			</OnUpdate>
 		</Scripts>

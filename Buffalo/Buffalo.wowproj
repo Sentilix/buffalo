@@ -14,12 +14,18 @@
     <Content Include="Buffalo.toc">
       <SubType>TableOfContents</SubType>
     </Content>
-    <Content Include="Frame.xml">
+    <Content Include="Buffalo.xml">
       <SubType>Frame</SubType>
     </Content>
-    <Content Include="Frame.lua">
+    <Content Include="Buffalo.lua">
       <SubType>Code</SubType>
-      <DependentUpon>Frame.xml</DependentUpon>
+      <DependentUpon>Buffalo.xml</DependentUpon>
+    </Content>
+    <Content Include="Buffalo-Classic.toc">
+      <SubType>TableOfContents</SubType>
+    </Content>
+    <Content Include="Buffalo-TBC.toc">
+      <SubType>TableOfContents</SubType>
     </Content>
   </ItemGroup>
   <Import Project="$(DevEnvDir)\Extensions\Tools\MSBuild\AddonStudio\Wow\3.0\WowAddonStudio.targets" />
