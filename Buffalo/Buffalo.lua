@@ -75,7 +75,7 @@ local function partyEcho(msg)
 	end
 end
 
---	Echo a message for the local user only, including Thaliz "logo"
+--	Echo a message for the local user only, including Buffalo "logo"
 function Buffalo_Echo(msg)
 	echo("-["..BUFFALO_COLOUR_INTRO.."BUFFALO"..BUFFALO_COLOUR_CHAT.."]- "..msg);
 end
@@ -228,6 +228,42 @@ end;
 --]]
 local function Buffalo_ScanRaid()
 	Buffalo_Echo("Scanning raid ...");
+
+	local cnt = GetNumGroupMembers();
+	local unitid, name;
+	local grouptype = "party";
+	if IsInRaid() then grouptype = "raid"; end;
+
+
+	--	TODO: Any way we can make this work with spellIDs instead?
+	--	Possibly by translating during initalization:
+	--	local spellname, _ = GetSpellInfo(spellID);
+
+	local buffs = {
+			["Power Word: Fortitude"] = 1,	["Prayer of Fortitude"] = 1,
+			["Divine Spirit"] = 2,			["Prayer of Spirit"] = 2,
+			["Shadow Protection"] = 4,		["Prayer of Shadow Protection"] = 4,
+	}
+
+	for n=1, cnt, 1 do
+		unitid = grouptype .. n;
+
+--	UnitBuff API:
+--	local name, _, _, School, duration, expirationTime, unitCaster = UnitBuff(unitid, b, "RAID|CANCELABLE");
+	
+		local binValue = 0;
+		for b = 1, 16, 1 do
+			local name = UnitBuff(unitid, b, "RAID|CANCELABLE");
+			if not name then break; end;
+
+			if buffs[name] then
+				binValue = binValue + buffs[name];
+			end;
+		end
+
+		echo(string.format("%d -- %s, buffs=%d", n, UnitName(unitid), binValue));
+
+	end;
 end;
 
 
