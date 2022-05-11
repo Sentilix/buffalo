@@ -19,7 +19,8 @@
 				self:RegisterForDrag("LeftButton");
 				self:RegisterForClicks("LeftButtonUp", "RightButtonUp");
 
-				self:SetScript("PreClick", Buffalo_OnBuffClick);
+				--self:SetScript("PostClick", Buffalo_OnBeforeBuffClick);
+				--self:SetScript("PostClick", Buffalo_OnAfterBuffClick);
 
 				self:SetAttribute("type", "spell");
 				self:SetAttribute("unit", nil);
