@@ -3,6 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # WowAddOnStudio Solution File, Format Version 11.00
 Project("{E6E1D386-69D8-4755-9E61-0950293915FC}") = "Buffalo", "Buffalo.wowproj", "{D89DC759-A164-469F-A57D-4E8A0A14A962}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{FF195E8A-517A-4543-832B-4EE163A03DB0}"
+	ProjectSection(SolutionItems) = preProject
+		ReadMe.txt = ReadMe.txt
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Default|Any CPU = Default|Any CPU
