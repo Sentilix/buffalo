@@ -11,6 +11,9 @@
     <OutputPath>.</OutputPath>
   </PropertyGroup>
   <ItemGroup>
+    <Content Include="Buffalo-BuffProperties.lua">
+      <SubType>Code</SubType>
+    </Content>
     <Content Include="Buffalo.toc">
       <SubType>TableOfContents</SubType>
     </Content>
@@ -22,9 +25,6 @@
       <DependentUpon>Buffalo.xml</DependentUpon>
     </Content>
     <Content Include="Buffalo-Classic.toc">
-      <SubType>TableOfContents</SubType>
-    </Content>
-    <Content Include="Buffalo-TBC.toc">
       <SubType>TableOfContents</SubType>
     </Content>
   </ItemGroup>

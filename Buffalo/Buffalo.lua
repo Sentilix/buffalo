@@ -3,111 +3,12 @@
 -- Create Date : 5/8/2022 7:34:58 PM
 --]]
 
---	TODO:
---	* Rewrite buff structures for other classes than Priests
---	* Define the UI (muhahaa!)
---	* Handle single buffs (they are ignore for the time being)
-
-
 --	Misc. constants:
 local BUFFALO_BUFFBUTTON_SIZE							= 32;
 local BUFFALO_CURRENT_VERSION							= 0;
 local BUFFALO_NAME										= "Buffalo"
 local BUFFALO_MESSAGE_PREFIX							= "BuffaloV1"
-
---	Raid buffs:
---	Druid
-local BUFF_Druid_Wild									= 1;		--	0x0001
-local BUFF_Druid_Thorns									= 2;		--	0x0002
---	Hunter: (TODO: aspects?)
---	Mage:
-local BUFF_Mage_Intellect								= 1;		--	0x0001
-local BUFF_Mage_AmplifyMagic							= 2;		--	0x0002
-local BUFF_Mage_DampenMagic								= 4;		--	0x0004
-local BUFF_Mage_MageArmor								= 256;		--	0x0100
-local BUFF_Mage_IceArmor								= 512;		--	0x0200
---	Paladin:
-local BUFF_Paladin_BlessingOfLight						= 1;		--	0x0001;
-local BUFF_Paladin_BlessingOfWisdom						= 2;		--	0x0002;
-local BUFF_Paladin_BlessingOfSalvation					= 4;		--	0x0004;
-local BUFF_Paladin_BlessingOfMight						= 8;		--	0x0008;
---	todo: missing a few blessings!
---	todo: missing auras!
-local BUFF_Paladin_RighteousFury						= 256;		--	0x0100;
-
---	Priest:
-local BUFF_Priest_Fortitude								= 1;		--	0x0001
-local BUFF_Priest_Spirit								= 2;		--	0x0002
-local BUFF_Priest_Shadow								= 4;		--	0x0004
-local BUFF_Priest_InnerFire								= 256;		--	0x0100
---	Rogue: (no class buffs)
---	Shaman: (TODO: Totems, weapon imbuements?)
---	Warlock:
-local BUFF_Warlock_UnderwaterBreath						= 1;		--	0x0001
---	Warrior: (no class buffs)
-
---	List of groups I am watching (or if pala: list of classes)
-local BUFF_AssignedGroups = { 
-	[1] = 3,
-	[2] = 3,
-	[3] = 3,
-	[4] = 3,
-	[5] = 0,
-	[6] = 0,
-	[7] = 0,
-	[8] = 0,
-}
-
-BUFF_GroupBuffThreshold									= 2;		-- If at least N persons are missing same buff, group buffs will be used.
-
-
---	[classname][buffname]=<bitmask value>
-local BUFF_MATRIX = { };
-
-local BUFF_MATRIX_CLASSIC = {
-	["DRUID"] = {
-		["Mark of the Wild"]							= { ["MASK"] = BUFF_Druid_Wild, ["ICONID"] = 136078, ["PRIORITY"] = 50, ["GROUP"] = false, ["PARENT"] = "Gift of the Wild" },
-		["Gift of the Wild"]							= { ["MASK"] = BUFF_Druid_Wild, ["ICONID"] = 136038, ["PRIORITY"] = 100, ["GROUP"] = true },
-		["Thorns"]										= { ["MASK"] = BUFF_Druid_Thorns, ["ICONID"] = 136104, ["PRIORITY"] = 40, ["GROUP"] = false },
-	},
-	["MAGE"] = {
-		["Arcane Intellect"]							= { ["MASK"] = BUFF_Mage_Intellect, ["ICONID"] = 135932, ["PRIORITY"] = 50, ["GROUP"] = false, ["PARENT"] = "Arcane Brilliance" },
-		["Arcane Brilliance"]							= { ["MASK"] = BUFF_Mage_Intellect, ["ICONID"] = 135869, ["PRIORITY"] = 100, ["GROUP"] = true },
-		["Amplify Magic"]								= { ["MASK"] = BUFF_Mage_AmplifyMagic, ["ICONID"] = 135907, ["PRIORITY"] = 40, ["GROUP"] = false },
-		["Dampen Magic"]								= { ["MASK"] = BUFF_Mage_DampenMagic, ["ICONID"] = 136006, ["PRIORITY"] = 30, ["GROUP"] = false },
-		["Mage Armor"]									= { ["MASK"] = BUFF_Mage_MageArmor, ["ICONID"] = 135991, ["PRIORITY"] = 20, ["GROUP"] = false },
-		["Ice Armor"]									= { ["MASK"] = BUFF_Mage_IceArmor, ["ICONID"] = 135843, ["PRIORITY"] = 10, ["GROUP"] = false },
-	},
-	--["PALADIN"] = {
-	--	["Blessing of Light"]							= BUFF_Paladin_BlessingOfLight,
-	--	["Greater Blessing of Light"]					= BUFF_Paladin_BlessingOfLight,
-	--	["Blessing of Wisdom"]							= BUFF_Paladin_BlessingOfWisdom,
-	--	["Greater Blessing of Wisdom"]					= BUFF_Paladin_BlessingOfWisdom,
-	--	["Blessing of Salvation"]						= BUFF_Paladin_BlessingOfSalvation,	-- Todo: is there greater blessing of salvation?
-	--	["Blessing of Might"]							= BUFF_Paladin_BlessingOfMight,
-	--	["Greater Blessing of Might"]					= BUFF_Paladin_BlessingOfMight,
-	--	["Righteous Fury"]								= BUFF_Paladin_RighteousFury,
-	--},
-	["PRIEST"] =  {
-		["Power Word: Fortitude"]			= { ["MASK"] = BUFF_Priest_Fortitude, ["ICONID"] = 135987, ["PRIORITY"] = 40, ["GROUP"] = false, ["PARENT"] = "Prayer of Fortitude" },
-		["Prayer of Fortitude"]				= { ["MASK"] = BUFF_Priest_Fortitude, ["ICONID"] = 135941, ["PRIORITY"] = 100, ["GROUP"] = true },
-		["Divine Spirit"]					= { ["MASK"] = BUFF_Priest_Spirit, ["ICONID"] = 135898, ["PRIORITY"] = 30, ["GROUP"] = false, ["PARENT"] = "Prayer of Spirit" },
-		["Prayer of Spirit"]				= { ["MASK"] = BUFF_Priest_Spirit, ["ICONID"] = 135946, ["PRIORITY"] = 90, ["GROUP"] = true },
-		["Shadow Protection"]				= { ["MASK"] = BUFF_Priest_Shadow, ["ICONID"] = 136121, ["PRIORITY"] = 20, ["GROUP"] = false, ["PARENT"] = "Prayer of Shadow Protection" },
-		["Prayer of Shadow Protection"]		= { ["MASK"] = BUFF_Priest_Shadow, ["ICONID"] = 135945, ["PRIORITY"] = 80, ["GROUP"] = true },
-		["Inner Fire"]						= { ["MASK"] = BUFF_Priest_InnerFire, ["ICONID"] = 135926, ["PRIORITY"] = 10, ["GROUP"] = false },
-	},
-	["WARLOCK"] = {
-		["Underwater Breathing"]			= { ["MASK"] = BUFF_Warlock_UnderwaterBreath, ["ICONID"] = 136148, ["PRIORITY"] = 10, ["GROUP"] = false },
-	},
-};
-
-
---	UnitBuff API:
---		local name, iconID, count, school, duration, expirationTime, unitCaster = UnitBuff(unitid, b, "RAID|CANCELABLE");
---	Expiration time is time since last server restart. I am not sure how to get CurrentTime but should be doable.
-
-
+local BUFFALO_UPDATE_MESSAGE_SHOWN						= false;
 
 --	Design/UI constants
 local BUFFALO_CHAT_END									= "|r"
@@ -124,19 +25,39 @@ local BUFFALO_ICON_PRIEST_PASSIVE						= "Interface\\Icons\\INV_Staff_30";				--
 local BUFFALO_BuffBtn_Combat							= "Interface\\Icons\\Ability_dualwield";
 local BUFFALO_BuffBtn_Dead								= "Interface\\Icons\\Ability_rogue_feigndeath";
 local IsBuffer											= false;
-local BUFFALO_ScanFrequency								= 0.2;	-- Scan 5 timers/second? TODO: Make configurable!
+local BUFFALO_ScanFrequency								= 4.2;	-- Scan 5 timers/second? TODO: Make configurable!
+local Buffalo_PlayerNameAndRealm						= "";
+local Buffalo_InitializationComplete					= false;
+
+
+--	[classname][buffname]=<bitmask value>
+local BUFF_MATRIX = { };
+
 
 
 
 -- Configuration:
---	Cached configation options:
-local BUFFALO_OPTION_BuffButtonPosX						= "BuffButton.X";
-local BUFFALO_OPTION_BuffButtonPosY						= "BuffButton.Y";
-local BUFFALO_OPTION_BuffButtonVisible					= "BuffButton.Visible";
-
---	{realmname}{playername}{parameter}
+--	Loaded options:	{realmname}{playername}{parameter}
 Buffalo_Options = { }
 
+--	Configuration keys:
+local BUFFALO_CONFIG_KEY_BuffButtonPosX					= "BuffButton.X";
+local BUFFALO_CONFIG_KEY_BuffButtonPosY					= "BuffButton.Y";
+local BUFFALO_CONFIG_KEY_BuffButtonVisible				= "BuffButton.Visible";
+
+--	List of groups I am watching (or if pala: list of classes)
+local BUFF_AssignedGroups = { 
+	[1] = 3,
+	[2] = 3,
+	[3] = 3,
+	[4] = 7,
+	[5] = 0,
+	[6] = 0,
+	[7] = 0,
+	[8] = 0,
+}
+
+local BUFF_GroupBuffThreshold							= 4;		-- If at least N persons are missing same buff, group buffs will be used.
 
 
 
@@ -163,6 +84,163 @@ end
 --	Echo a message for the local user only, including Buffalo "logo"
 function Buffalo_Echo(msg)
 	echo("-["..BUFFALO_COLOUR_INTRO.."BUFFALO"..BUFFALO_COLOUR_CHAT.."]- "..msg);
+end
+
+
+
+--[[
+	Slash commands
+
+	Main entry for Buffalo "slash" commands.
+	This will send the request to one of the sub slash commands.
+	Syntax: /buffalo [option, defaulting to "cfg"]
+	Added in: 0.1.0
+]]
+SLASH_BUFFALO_BUFFALO1 = "/buffalo"
+SlashCmdList["BUFFALO_BUFFALO"] = function(msg)
+	local _, _, option = string.find(msg, "(%S*)")
+
+	if not option or option == "" then
+		option = "CFG";
+	end;
+
+	option = string.upper(option);
+		
+	if (option == "CFG" or option == "CONFIG") then
+		SlashCmdList["BUFFALO_CONFIG"]();
+	--elseif option == "DISABLE" then
+	--	SlashCmdList["THALIZ_DISABLE"]();
+	--elseif option == "ENABLE" then
+	--	SlashCmdList["THALIZ_ENABLE"]();
+	--elseif option == "HELP" then
+	--	SlashCmdList["THALIZ_HELP"]();
+	elseif option == "SHOW" then
+		SlashCmdList["BUFFALO_SHOW"]();
+	elseif option == "HIDE" then
+		SlashCmdList["BUFFALO_HIDE"]();
+	elseif option == "VERSION" then
+		SlashCmdList["BUFFALO_VERSION"]();
+	else
+		Buffalo_Echo(string.format("Unknown command: %s", option));
+	end
+end
+
+--[[
+	Show the buff button
+	Syntax: /buffaloshow
+	Alternative: /buffalo show
+	Added in: 0.1.0
+]]
+SLASH_BUFFALO_SHOW1 = "/buffaloshow"	
+SlashCmdList["BUFFALO_SHOW"] = function(msg)
+	BuffButton:Show();
+	Buffalo_SetOption(BUFFALO_CONFIG_KEY_BuffButtonVisible, "1");
+end
+
+--[[
+	Hide the resurrection button
+	Syntax: /buffalohide
+	Alternative: /buffalo hide
+	Added in: 0.1.0
+]]
+SLASH_BUFFALO_HIDE1 = "/buffalohide"	
+SlashCmdList["BUFFALO_HIDE"] = function(msg)
+	BuffButton:Hide();
+	Buffalo_SetOption(BUFFALO_CONFIG_KEY_BuffButtonVisible, "0");
+end
+
+--[[
+	Request client version information
+	Syntax: /buffaloversion
+	Alternative: /buffalo version
+	Added in: 0.1.0
+]]
+SLASH_BUFFALO_VERSION1 = "/buffaloversion"
+SlashCmdList["BUFFALO_VERSION"] = function(msg)
+	if IsInRaid() or Buffalo_IsInParty() then
+		Buffalo_SendAddonMessage("TX_VERSION##");
+	else
+		Buffalo_Echo(string.format("%s is using Buffalo version %s", GetUnitName("player", true), GetAddOnMetadata(BUFFALO_NAME, "Version")));
+	end
+end
+
+
+
+--[[
+--
+--	Internal Communication Functions
+--
+--]]
+function Buffalo_SendAddonMessage(message)
+	local memberCount = GetNumGroupMembers();
+	if memberCount > 0 then
+		local channel = nil;
+		if IsInRaid() then
+			channel = "RAID";
+		elseif Buffalo_IsInParty() then
+			channel = "PARTY";
+		end;
+		C_ChatInfo.SendAddonMessage(BUFFALO_MESSAGE_PREFIX, message, channel);
+	end;
+end
+
+
+--[[
+	Respond to a TX_VERSION command.
+	Input:
+		msg is the raw message
+		sender is the name of the message sender.
+	We should whisper this guy back with our current version number.
+	We therefore generate a response back (RX) in raid with the syntax:
+	Buffalo:<sender (which is actually the receiver!)>:<version number>
+]]
+function Buffalo_HandleTXVersion(message, sender)
+	local response = GetAddOnMetadata(BUFFALO_NAME, "Version");
+	Buffalo_SendAddonMessage("RX_VERSION#"..response.."#"..sender)
+end
+
+--[[
+	A version response (RX) was received.
+	The version information is displayed locally.
+]]
+function Buffalo_HandleRXVersion(message, sender)
+	Buffalo_Echo(string.format("[%s] is using Buffalo version %s", sender, message))
+end
+
+function Buffalo_HandleTXVerCheck(message, sender)
+	Buffalo_CheckIsNewVersion(message);
+end
+
+function Buffalo_OnChatMsgAddon(event, ...)
+	local prefix, msg, channel, sender = ...;
+
+	if prefix == BUFFALO_MESSAGE_PREFIX then
+		Buffalo_HandleAddonMessage(msg, sender);
+	end
+end
+
+function Buffalo_HandleAddonMessage(msg, sender)
+	local _, _, cmd, message, recipient = string.find(msg, "([^#]*)#([^#]*)#([^#]*)");	
+
+	--	Ignore message if it is not for me. 
+	--	Receipient can be blank, which means it is for everyone.
+	if recipient ~= "" then
+		-- Note: recipient comes with realmname. We need to compare
+		-- with realmname too, even GetUnitName() does not return one:
+		recipient = Buffalo_GetPlayerAndRealmFromName(recipient);
+
+		if recipient ~= Buffalo_PlayerNameAndRealm then
+			return
+		end
+	end
+
+	if cmd == "TX_VERSION" then
+		Buffalo_HandleTXVersion(message, sender)
+	elseif cmd == "RX_VERSION" then
+		Buffalo_HandleRXVersion(message, sender)
+	elseif cmd == "TX_VERCHECK" then
+		Buffalo_HandleTXVerCheck(message, sender)
+	end
 end
 
 
@@ -200,6 +278,20 @@ function Buffalo_CalculateVersion(versionString)
 	return version;
 end
 
+function Buffalo_CheckIsNewVersion(versionstring)
+	local incomingVersion = Buffalo_CalculateVersion( versionstring );
+
+	if (BUFFALO_CURRENT_VERSION > 0 and incomingVersion > 0) then
+		if incomingVersion > BUFFALO_CURRENT_VERSION then
+			if not BUFFALO_UPDATE_MESSAGE_SHOWN then
+				BUFFALO_UPDATE_MESSAGE_SHOWN = true;
+				Buffalo_Echo(string.format("NOTE: A newer version of ".. COLOUR_INTRO .."BUFFALO"..COLOUR_CHAT.."! is available (version %s)!", versionstring));
+				Buffalo_Echo("You can download latest version from https://www.curseforge.com/ or https://github.com/Sentilix/buffalo.");
+			end
+		end	
+	end
+end
+
 function Buffalo_IsInParty()
 	if not IsInRaid() then
 		return ( GetNumGroupMembers() > 0 );
@@ -207,6 +299,34 @@ function Buffalo_IsInParty()
 	return false
 end
 
+function Buffalo_GetMyRealm()
+	local realmname = GetRealmName();
+	
+	if string.find(realmname, " ") then
+		local _, _, name1, name2 = string.find(realmname, "([a-zA-Z]*) ([a-zA-Z]*)");
+		realmname = name1 .. name2; 
+	end;
+
+	return realmname;
+end;
+
+function Buffalo_GetPlayerAndRealm(unitid)
+	local playername = GetUnitName(unitid, true);
+
+	if not string.find(playername, "-") then
+		playername = playername .."-".. Buffalo_GetMyRealm();
+	end;
+
+	return playername;
+end;
+
+function Buffalo_GetPlayerAndRealmFromName(playername)
+	if not string.find(playername, "-") then
+		playername = playername .."-".. Buffalo_GetMyRealm();
+	end;
+
+	return playername;
+end;
 
 
 
@@ -258,14 +378,14 @@ function Buffalo_InitializeConfigSettings()
 --	Buffalo_SetOption(Thaliz_OPTION_ResurrectionWhisperMessage, Thaliz_GetOption(Thaliz_OPTION_ResurrectionWhisperMessage, Thaliz_Resurrection_Whisper_Message_Default))
 
 	local x,y = BuffButton:GetPoint();
-	Buffalo_SetOption(BUFFALO_OPTION_BuffButtonPosX, Buffalo_GetOption(BUFFALO_OPTION_BuffButtonPosX, x))
-	Buffalo_SetOption(BUFFALO_OPTION_BuffButtonPosY, Buffalo_GetOption(BUFFALO_OPTION_BuffButtonPosY, y))
+	Buffalo_SetOption(BUFFALO_CONFIG_KEY_BuffButtonPosX, Buffalo_GetOption(BUFFALO_CONFIG_KEY_BuffButtonPosX, x))
+	Buffalo_SetOption(BUFFALO_CONFIG_KEY_BuffButtonPosY, Buffalo_GetOption(BUFFALO_CONFIG_KEY_BuffButtonPosY, y))
 
 	local buttonVisibleDefault = "0";
 	if IsBuffer then buttonVisibleDefault = "1"; end;
-	Buffalo_GetOption(BUFFALO_OPTION_BuffButtonVisible, buttonVisibleDefault);
+	Buffalo_GetOption(BUFFALO_CONFIG_KEY_BuffButtonVisible, buttonVisibleDefault);
 
-	if Buffalo_GetOption(BUFFALO_OPTION_BuffButtonVisible, buttonVisibleDefault) == "1" then
+	if Buffalo_GetOption(BUFFALO_CONFIG_KEY_BuffButtonVisible, buttonVisibleDefault) == "1" then
 		BuffButton:Show();
 	else
 		BuffButton:Hide()
@@ -291,15 +411,23 @@ function Buffalo_InitClassSpecificStuff()
 		IsBuffer = true;
 	end;
 
+
 	--	Expansion-specific settings.
 	--	TODO: We currently only support Classic!
+	Buffalo_InitializeBuffClasses();
+	Buffalo_InitializeBuffMatrix();
+
 	local expansionLevel = 1 * GetAddOnMetadata(BUFFALO_NAME, "X-Expansion-Level");
 	if expansionLevel == 1 then
-		BUFF_MATRIX = BUFF_MATRIX_CLASSIC;
+		BUFF_MATRIX = BUFFALO_BUFF_MATRIX_CLASSIC;
+	elseif expansionLevel == 2 then
+		BUFF_MATRIX = BUFFALO_BUFF_MATRIX_TBC;
 	else
-		BUFF_MATRIX = { }
+		BUFF_MATRIX = { };
 		IsBuffer = false;	-- Effectively disables the addon!
 	end;
+
+	Buffalo_InitializationComplete = true;
 end;
 
 
@@ -308,9 +436,13 @@ end;
 	Raid scanner
 --]]
 local function Buffalo_ScanRaid()
-	--Buffalo_Echo("Scanning raid ...");
+--	Buffalo_Echo("Scanning raid ...");
 
-	--	If we're incombat, set Combat icon and skip scan.
+	if not IsBuffer or not Buffalo_InitializationComplete then
+		return;
+	end;
+
+	--	If we're in combat, set Combat icon and skip scan.
 	if UnitAffectingCombat("player") then
 		Buffalo_SetButtonTexture(BUFFALO_BuffBtn_Combat);
 		return;
@@ -318,11 +450,23 @@ local function Buffalo_ScanRaid()
 
 	--	We currently don't support Party or Solo buffing :-(
 	if not IsInRaid() then
+		Buffalo_SetButtonTexture(ICON_PASSIVE);
+		return;
+	end;
+
+	if 2 == 1 then
+		local buffMatrix = Buffalo_GetBuffMatrixForClass();
+		local buff = buffMatrix["Power Word: Fortitude"];
+
+		if buff then
+			echo("Buff set: ".. buff["ICONID"]);
+		else
+			echo("Buff unset");
+		end;
+
 		return;
 	end;
 	
-
-
 	local startNum = 1;
 	local endNum = GetNumGroupMembers();
 	local grouptype = "party";
@@ -380,7 +524,7 @@ local function Buffalo_ScanRaid()
 
 				local buffInfo = buffMatrix[buffName];
 				if buffInfo then
-					buffMask = buffMask + buffInfo["MASK"];
+					buffMask = buffMask + buffInfo["BITMASK"];
 					--echo(string.format("Adding: %s on unit=%s", buffName, UnitName(unitid)));
 				end;
 			end
@@ -408,23 +552,27 @@ local function Buffalo_ScanRaid()
 			--	Search through the buffs, and count each buff per group and unit combo:
 			for buffName, buffInfo in next, buffMatrix do
 				--	Skip buffs which we have'nt committed to do:
-				if(bit.band(buffInfo["MASK"], groupMask) > 0) then
+				if(bit.band(buffInfo["BITMASK"], groupMask) > 0) then
 					local buffMissingCounter = 0;		-- No buffs detected so far.
 					local MissingBuffsInGroup = { };	-- No units missing buffs in group (yet).
 
 					for raidIndex = 1, 40, 1 do
 						unitid = "raid"..raidIndex;
+
 						local rosterInfo = roster[unitid];
 						if rosterInfo and rosterInfo["Group"] == groupIndex and rosterInfo["IsOnline"] and not rosterInfo["IsDead"] then
-							--	There's a living person in this group. Check if he needs the specific buff.
-							--	Note: If buffMask >= 256 then it is a local buff only for me ("player"),
-							--	which we ignore for the time being.
-							local buffMask = rosterInfo["BuffMask"];
-							if (bit.band(buffMask, buffInfo["MASK"]) == 0) then
-								if not buffInfo["GROUP"] and buffInfo["MASK"] < 256 then		-- Skip self buffs for now!
-									buffMissingCounter = buffMissingCounter + 1;
-									MissingBuffsInGroup[buffMissingCounter] = { unitid, buffName, buffInfo["ICONID"], buffInfo["PRIORITY"] };
-									--echo(string.format("Adding: unit=%s, group=%d, buff=%s", UnitName(unitid), groupIndex, buffName));
+							--	Note: this both checks the range of the spell, but also if the caster knows the spell!
+							if IsSpellInRange(buffName, unitid) then
+								--	There's a living person in this group. Check if he needs the specific buff.
+								--	Note: If buffMask >= 256 then it is a local buff only for me ("player"),
+								--	which we ignore for the time being.
+								local buffMask = rosterInfo["BuffMask"];
+								if (bit.band(buffMask, buffInfo["BITMASK"]) == 0) then
+									if not buffInfo["GROUP"] and buffInfo["BITMASK"] < 256 then		-- Skip self buffs for now!
+										buffMissingCounter = buffMissingCounter + 1;
+										MissingBuffsInGroup[buffMissingCounter] = { unitid, buffName, buffInfo["ICONID"], buffInfo["PRIORITY"] };
+										--echo(string.format("Adding: unit=%s, group=%d, buff=%s", UnitName(unitid), groupIndex, buffName));
+									end;
 								end;
 							end;
 						end;
@@ -443,7 +591,7 @@ local function Buffalo_ScanRaid()
 						end;
 					end;
 				else
-					echo(string.format("Ignoring: group=%d, buff=%s", groupIndex, buffName));
+					--echo(string.format("Ignoring: group=%d, buff=%s", groupIndex, buffName));
 				end;
 			end;
 		end;
@@ -463,7 +611,8 @@ local function Buffalo_ScanRaid()
 
 		--	Now pick first buff from list and set icon:
 		local missingBuff = MissingBuffs[1];
-		Buffalo_UpdateBuffButton(missingBuff[1], missingBuff[2], missingBuff[3]);
+		unitid = missingBuff[1];
+		Buffalo_UpdateBuffButton(unitid, missingBuff[2], missingBuff[3]);
 	else
 		Buffalo_UpdateBuffButton();
 	end;
@@ -514,8 +663,8 @@ end;
 function Buffalo_RepositionateButton(self)
 	local x, y = self:GetLeft(), self:GetTop() - UIParent:GetHeight();
 
-	Buffalo_SetOption(BUFFALO_OPTION_BuffButtonPosX, x);
-	Buffalo_SetOption(BUFFALO_OPTION_BuffButtonPosY, y);
+	Buffalo_SetOption(BUFFALO_CONFIG_KEY_BuffButtonPosX, x);
+	Buffalo_SetOption(BUFFALO_CONFIG_KEY_BuffButtonPosY, y);
 	BuffButton:SetSize(BUFFALO_BUFFBUTTON_SIZE, BUFFALO_BUFFBUTTON_SIZE);
 
 	if IsBuffer then
@@ -586,7 +735,7 @@ function Buffalo_OnEvent(self, event, ...)
 		end
 
 	elseif (event == "CHAT_MSG_ADDON") then
-		--Buffalo_OnChatMsgAddon(event, ...)
+		Buffalo_OnChatMsgAddon(event, ...)
 
 	else
 		if(debug) then 
@@ -610,12 +759,14 @@ function Buffalo_OnEvent(self, event, ...)
 end
 
 function Buffalo_OnLoad()
+	Buffalo_PlayerNameAndRealm = Buffalo_GetPlayerAndRealm("player");
 	BUFFALO_CURRENT_VERSION = Buffalo_CalculateVersion(GetAddOnMetadata(BUFFALO_NAME, "Version") );
 
 	Buffalo_Echo(string.format("Version %s by %s", GetAddOnMetadata(BUFFALO_NAME, "Version"), GetAddOnMetadata(BUFFALO_NAME, "Author")));
 	Buffalo_Echo(string.format("Type %s/buffalo%s to configure the addon.", BUFFALO_COLOUR_INTRO, BUFFALO_COLOUR_CHAT));
 
     BuffaloEventFrame:RegisterEvent("ADDON_LOADED");
+    BuffaloEventFrame:RegisterEvent("CHAT_MSG_ADDON");
 
 	C_ChatInfo.RegisterAddonMessagePrefix(BUFFALO_MESSAGE_PREFIX);
 
