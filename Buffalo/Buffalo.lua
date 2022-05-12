@@ -25,13 +25,15 @@ local BUFFALO_ICON_PRIEST_PASSIVE						= "Interface\\Icons\\INV_Staff_30";				--
 local BUFFALO_BuffBtn_Combat							= "Interface\\Icons\\Ability_dualwield";
 local BUFFALO_BuffBtn_Dead								= "Interface\\Icons\\Ability_rogue_feigndeath";
 local IsBuffer											= false;
-local BUFFALO_ScanFrequency								= 4.2;	-- Scan 5 timers/second? TODO: Make configurable!
+local BUFFALO_ScanFrequency								= 0.2;	-- Scan 5 timers/second? TODO: Make configurable!
 local Buffalo_PlayerNameAndRealm						= "";
 local Buffalo_InitializationComplete					= false;
 
 
---	[classname][buffname]=<bitmask value>
+--	[buffname]=<bitmask value>
 local BUFF_MATRIX = { };
+--	[classname<english>]=<bitmasl value>
+local CLASS_MATRIX = { };
 
 
 
@@ -400,31 +402,21 @@ end
 function Buffalo_InitClassSpecificStuff()
 	local _, classname = UnitClass("player");
 
-	if classname == "DRUID" then
-		IsDruid = true;
-		IsBuffer = true;
-	elseif classname == "MAGE" then
-		IsMage = true;
-		IsBuffer = true;
-	elseif classname == "PRIEST" then
-		IsPriest = true;
-		IsBuffer = true;
-	end;
-
-
 	--	Expansion-specific settings.
 	--	TODO: We currently only support Classic!
-	Buffalo_InitializeBuffClasses();
-	Buffalo_InitializeBuffMatrix();
+	BUFF_MATRIX = Buffalo_InitializeBuffMatrix();
+	CLASS_MATRIX = Buffalo_InitializeClassMatrix();
+		
+	local matrixCount = 0;
+	for _ in pairs(BUFF_MATRIX) do 
+		matrixCount = matrixCount + 1; 
+	end;
 
-	local expansionLevel = 1 * GetAddOnMetadata(BUFFALO_NAME, "X-Expansion-Level");
-	if expansionLevel == 1 then
-		BUFF_MATRIX = BUFFALO_BUFF_MATRIX_CLASSIC;
-	elseif expansionLevel == 2 then
-		BUFF_MATRIX = BUFFALO_BUFF_MATRIX_TBC;
-	else
-		BUFF_MATRIX = { };
-		IsBuffer = false;	-- Effectively disables the addon!
+	if matrixCount > 0 then
+		local expansionLevel = 1 * GetAddOnMetadata(BUFFALO_NAME, "X-Expansion-Level");
+		if expansionLevel == 1  then
+			IsBuffer = true;	-- Effectively disables addon for anything but classic!
+		end;
 	end;
 
 	Buffalo_InitializationComplete = true;
@@ -436,7 +428,7 @@ end;
 	Raid scanner
 --]]
 local function Buffalo_ScanRaid()
---	Buffalo_Echo("Scanning raid ...");
+	--Buffalo_Echo("Scanning raid ...");
 
 	if not IsBuffer or not Buffalo_InitializationComplete then
 		return;
@@ -448,58 +440,70 @@ local function Buffalo_ScanRaid()
 		return;
 	end;
 
-	--	We currently don't support Party or Solo buffing :-(
-	if not IsInRaid() then
-		Buffalo_SetButtonTexture(ICON_PASSIVE);
+	if UnitIsDeadOrGhost("player") then
 		return;
 	end;
 
-	if 2 == 1 then
-		local buffMatrix = Buffalo_GetBuffMatrixForClass();
-		local buff = buffMatrix["Power Word: Fortitude"];
-
-		if buff then
-			echo("Buff set: ".. buff["ICONID"]);
-		else
-			echo("Buff unset");
-		end;
-
-		return;
-	end;
 	
-	local startNum = 1;
-	local endNum = GetNumGroupMembers();
-	local grouptype = "party";
-	if IsInRaid() then
-		grouptype = "raid";
-	else
-		startNum = 0;
-		endNum = endNum - 1;
-	end;
-
-
-	--	Generate a raid roster with meta info per character:
+	--	Generate a party/raid roster with meta info per character:
 	local roster = { };
-	for raidIndex = 1, 40, 1 do
-		local name, rank, subgroup, level, class, filename, zone, online, dead, role, isML = GetRaidRosterInfo(raidIndex);
-		if not name then break; end;
+	local startNum, endNum, groupType, unitid, groupCount;
 
-		local isOnline = 0 and online and 1;
-		local isDead   = 0 and dead   and 1;
-		local unitid = "raid"..raidIndex;	-- TODO: ehm .. and in a party?
+	if Buffalo_IsInParty() then
+		grouptype = "party";
+		groupCount = 1;
+		startNum = 0;
+		endNum = GetNumGroupMembers() - 1;
+	elseif IsInRaid() then
+		grouptype = "raid";
+		groupCount = 8;
+		startNum = 1;
+		endNum = GetNumGroupMembers();
+	else
+		grouptype = "player";
+		groupCount = 1;
+		startNum = 0;
+		endNum = 0
+	end;
 
-		roster[unitid] = { ["Group"]=subgroup, ["IsOnline"]=isOnline, ["IsDead"]=isDead, ["BuffMask"]=0 };
+	--	Part 1:
+	--	This generate a roster{} array based on unitid to find group, buffmask etc:
+	if grouptype == "player" then
+		roster["player"] = { ["Group"]=1, ["IsOnline"]=true, ["IsDead"]=nil, ["BuffMask"]=0, ["ClassMask"]=0x0fff };
+	else
+		for raidIndex = 1, 40, 1 do
+			local name, rank, subgroup, level, _, filename, zone, online, dead, role, isML = GetRaidRosterInfo(raidIndex);
+			if not name then break; end;
+
+			local isOnline = 0 and online and 1;
+			local isDead   = 0 and dead   and 1;
+
+			if groupType == "raid" then
+				unitid = grouptype..raidIndex;
+			else
+				unitid = "player"
+				if raidIndex > 1 then
+					unitid = grouptype..(raidIndex - 1);
+				end;
+			end;
+
+			--	This is the english localization of the class. GetRaidRosterInfo delivers the localized name.
+			local _, classname = UnitClass(unitid);
+
+			--echo(string.format("Roster.add(unitid=%s, Group=%d)", unitid, subgroup));
+			roster[unitid] = { ["Group"]=subgroup, ["IsOnline"]=isOnline, ["IsDead"]=isDead, ["BuffMask"]=0, ["ClassMask"]=CLASS_MATRIX[classname] };
+		end;
 	end;
 
 
-
-	local unitid, binValue;	
-	local buffMatrix = Buffalo_GetBuffMatrixForClass();
-
-	for n = startNum, endNum, 1 do
+	--	Part 2:
+	--	This iterate over all players in party/raid and set the bitmapped buff mask on each
+	--	applicable (i.e. not dead, not disconnected) player.
+	local binValue;	
+	for groupIndex = startNum, endNum, 1 do
 		buffMask = 0;
 		unitid = "player"
-		if n > 0 then unitid = grouptype .. n; end;
+		if groupIndex > 0 then unitid = grouptype..groupIndex; end;
 
 		--	This skips scanning for dead, offliners and people not in my group:
 		local scanPlayerBuffs = true;
@@ -522,65 +526,78 @@ local function Buffalo_ScanRaid()
 
 				if not buffName then break; end;
 
-				local buffInfo = buffMatrix[buffName];
+				local buffInfo = BUFF_MATRIX[buffName];
 				if buffInfo then
 					buffMask = buffMask + buffInfo["BITMASK"];
-					--echo(string.format("Adding: %s on unit=%s", buffName, UnitName(unitid)));
+					--echo(string.format("Adding: %s on unit=%s, mask=%d", buffName, unitid, buffInfo["BITMASK"]));
 				end;
 			end
 
+			--echo(string.format("Unitid=%s, mask=%s", unitid, buffMask));
+			--	Each unitid is now set with a buffMask: a bitmask containing the buffs they currently have.
 			roster[unitid]["BuffMask"] = buffMask;
 		end;
 	end;
 
-	--	So for each player we now have the following key information in roster:
-	--		UnitID, Group (1-8) and BuffMask (casted buffs based on MY current class)
-	--
-	--	Next step is to figure out which buffs has NOT been casted, and then prioritize.
+
+	--	Next step is to figure out which buffs are missing, and then prioritize.
 	--
 	--	Run over Groups -> Buffs -> UnitIDs
 	--	Result: { unitid, buffname, iconid, priority }
 
-	local MissingBuffs = { };		-- Final list of all missing buffs with a Priority set.
-	local missingBuffIndex = 0;		-- Buff counter
-	for groupIndex = 1, 8, 1 do		-- Iterate over all 8 groups
+	local MissingBuffs = { };				-- Final list of all missing buffs with a Priority set.
+	local missingBuffIndex = 0;				-- Buff counter
+	for groupIndex = 1, groupCount, 1 do	-- Iterate over all available groups
 		local groupMask = BUFF_AssignedGroups[groupIndex];
 		--echo(string.format("Grp=%d, mask=%s", groupIndex, groupMask));
 
 		if groupMask > 0 then
 			--	We have found an assigned group now. 
 			--	Search through the buffs, and count each buff per group and unit combo:
-			for buffName, buffInfo in next, buffMatrix do
-				--	Skip buffs which we have'nt committed to do:
-				if(bit.band(buffInfo["BITMASK"], groupMask) > 0) then
+			for buffName, buffInfo in next, BUFF_MATRIX do
+				local bitMask = buffInfo["BITMASK"];
+				--	Skip buffs which we haven't committed to do:
+				if(bit.band(bitMask, groupMask) > 0) then
+					--echo(string.format("Buff=%s, mask=%d", buffName, bitMask));
 					local buffMissingCounter = 0;		-- No buffs detected so far.
 					local MissingBuffsInGroup = { };	-- No units missing buffs in group (yet).
 
-					for raidIndex = 1, 40, 1 do
-						unitid = "raid"..raidIndex;
+					for raidIndex = startNum, endNum, 1 do
+						unitid = "player";
+						if raidIndex > 0 then unitid = grouptype .. raidIndex; end;
 
 						local rosterInfo = roster[unitid];
 						if rosterInfo and rosterInfo["Group"] == groupIndex and rosterInfo["IsOnline"] and not rosterInfo["IsDead"] then
-							--	Note: this both checks the range of the spell, but also if the caster knows the spell!
-							if IsSpellInRange(buffName, unitid) then
-								--	There's a living person in this group. Check if he needs the specific buff.
-								--	Note: If buffMask >= 256 then it is a local buff only for me ("player"),
-								--	which we ignore for the time being.
-								local buffMask = rosterInfo["BuffMask"];
-								if (bit.band(buffMask, buffInfo["BITMASK"]) == 0) then
-									if not buffInfo["GROUP"] and buffInfo["BITMASK"] < 256 then		-- Skip self buffs for now!
-										buffMissingCounter = buffMissingCounter + 1;
-										MissingBuffsInGroup[buffMissingCounter] = { unitid, buffName, buffInfo["ICONID"], buffInfo["PRIORITY"] };
-										--echo(string.format("Adding: unit=%s, group=%d, buff=%s", UnitName(unitid), groupIndex, buffName));
+							-- This one checks the class is eligible for the buff:
+							if (bit.band(buffInfo["CLASSES"], rosterInfo["ClassMask"]) > 0)	then
+								--echo(string.format("Class is eligible for buff, Unitid=%s, BuffClass=%d, ClassMask=%d", unitid, buffInfo["CLASSES"], rosterInfo["ClassMask"]));
+
+								--	Note: this both checks the range of the spell, but also if the caster knows the spell!
+								if IsSpellInRange(buffName, unitid) then
+									--	There's a living person in this group. Check if he needs the specific buff.
+									--	Note: If buffMask >= 256 then it is a local buff only for me ("player"),
+									--	which we ignore for the time being.
+									local buffMask = rosterInfo["BuffMask"];
+									if (bit.band(buffMask, buffInfo["BITMASK"]) == 0) then
+										if not buffInfo["GROUP"] and buffInfo["BITMASK"] < 256 then		-- Skip self buffs for now!
+											buffMissingCounter = buffMissingCounter + 1;
+											MissingBuffsInGroup[buffMissingCounter] = { unitid, buffName, buffInfo["ICONID"], buffInfo["PRIORITY"] };
+											--echo(string.format("Adding: unit=%s, group=%d, buff=%s", UnitName(unitid), groupIndex, buffName));
+										end;
 									end;
 								end;
+							--else
+								--echo(string.format("Class is not eligible for buff, Unitid=%s, Buff=%s, ClassMask=%d", unitid, buffName, rosterInfo["ClassMask"]));
 							end;
+						--else
+							--echo(string.format("No Roster for Unitid=%s, Group=%d, (%s)", unitid, groupIndex, UnitName(unitid)));
 						end;
 					end;
 
 					--	If this is a group buff, and enough people are missing it, use the big one instead!
 					if buffInfo["PARENT"] and buffMissingCounter >= BUFF_GroupBuffThreshold then
-						local parentBuffInfo = buffMatrix[buffInfo["PARENT"]];
+						--echo(string.format("GROUP: missing=%d, threshold=%d", buffMissingCounter, BUFF_GroupBuffThreshold));
+						local parentBuffInfo = BUFF_MATRIX[buffInfo["PARENT"]];
 						missingBuffIndex = missingBuffIndex + 1;
 						MissingBuffs[missingBuffIndex] = { unitid, buffInfo["PARENT"], parentBuffInfo["ICONID"], parentBuffInfo["PRIORITY"] };
 					else
@@ -590,7 +607,7 @@ local function Buffalo_ScanRaid()
 							MissingBuffs[missingBuffIndex] = MissingBuffsInGroup[missingIndex];
 						end;
 					end;
-				else
+				--else
 					--echo(string.format("Ignoring: group=%d, buff=%s", groupIndex, buffName));
 				end;
 			end;
@@ -646,14 +663,6 @@ end
 function Buffalo_UnitClass(unitid)
 	local _, classname = UnitClass(unitid);
 	return classname;
-end;
-
-function Buffalo_GetBuffMatrixForClass(classname)
-	if not classname then
-		classname = Buffalo_UnitClass("player");
-	end;
-	
-	return BUFF_MATRIX[classname];
 end;
 
 

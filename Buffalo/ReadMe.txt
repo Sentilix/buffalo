@@ -19,15 +19,15 @@ version 0.1.0-alpha2:
 * Distance check is missing - fixed
 * Independent of Spell ranks
 * Independent of spell names (localizations)
+* Independent of class names (localizations)
+
 
 
 
 TODO:
-* Rewrite buff structures for other classes than Priests
 * Define the UI (muhahaa!)
 * Handle single buffs (they are ignore for the time being)
 * First (simple?) UI up.
-* Independent of class names (localizations)
 * Ranking of buffs; i.e. 5-player (full group) before 4-player for example
 
 
