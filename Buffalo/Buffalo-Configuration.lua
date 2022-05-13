@@ -186,7 +186,8 @@ function Buffalo_InitializeBuffMatrix()
 			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Mage_AmplifyMagic_Name);
 			["CLASSES"]		= 0x00ff,
 			["PRIORITY"]	= 40,
-			["GROUP"]		= false
+			["GROUP"]		= false,
+			["FAMILY"]		= "AmplifyDampen"
 		};
 
 		BUFFALO_BUFF_Mage_DampenMagic_Name = Buffalo_GetSpellName(10174);
@@ -196,7 +197,8 @@ function Buffalo_InitializeBuffMatrix()
 			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Mage_DampenMagic_Name);
 			["CLASSES"]		= 0x0fff,
 			["PRIORITY"]	= 30,
-			["GROUP"]		= false
+			["GROUP"]		= false,
+			["FAMILY"]		= "AmplifyDampen"
 		};
 
 		BUFFALO_BUFF_Mage_MageArmor_Name = Buffalo_GetSpellName(22783);
@@ -206,7 +208,8 @@ function Buffalo_InitializeBuffMatrix()
 			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Mage_MageArmor_Name);
 			["CLASSES"]		= 0x0000,
 			["PRIORITY"]	= 20,
-			["GROUP"]		= false
+			["GROUP"]		= false,
+			["FAMILY"]		= "Armor"
 		};
 
 		BUFFALO_BUFF_Mage_IceArmor_Name = Buffalo_GetSpellName(10220);
@@ -216,7 +219,8 @@ function Buffalo_InitializeBuffMatrix()
 			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Mage_IceArmor_Name);
 			["CLASSES"]		= 0x0000,
 			["PRIORITY"]	= 10,
-			["GROUP"]		= false
+			["GROUP"]		= false,
+			["FAMILY"]		= "Armor"
 		};
 
 		matrix = {

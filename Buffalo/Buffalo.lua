@@ -515,7 +515,7 @@ local function Buffalo_ScanRaid()
 			local isOnline = 0 and online and 1;
 			local isDead   = 0 and dead   and 1;
 
-			if groupType == "raid" then
+			if grouptype == "raid" then
 				unitid = grouptype..raidIndex;
 			else
 				unitid = "player"
@@ -854,14 +854,31 @@ function Buffalo_OnGroupBuffClick(self, ...)
 
 	--	Fetch mask for selected buff:
 	local buffMask = Buffalo_GroupBuffProperties[row][3];
+	local maskOut = 0x0fff - buffMask ;		-- preserve all buffs except for the selected one:
 
-	--	Reset (de-select) the clicked buff:
-	if bit.band(groupMask, buffMask) > 0 then
-		groupMask = groupMask - buffMask;
-	end;
-	--	And if LEFT is clicked, select it!
 	if buttonType == "LeftButton" then
-		groupMask = groupMask + buffMask;
+		--	ADD the buff:
+		--	First disable all other buffs in same family (if any)
+		local buffInfo = BUFF_MATRIX[Buffalo_GroupBuffProperties[row][1]];
+		local family = buffInfo["FAMILY"];
+		if family then
+			local familyMask = 0x0000;
+
+			--	TODO: iterate through raid to find all buffs in same family
+			for buffName, buffInfo in next, BUFF_MATRIX do
+				if buffInfo["FAMILY"] == family then
+					--	Found a buff; reset it!
+					familyMask = bit.bor(familyMask, buffInfo["BITMASK"]);
+				end;
+			end;
+
+			groupMask = bit.band(groupMask, 0x0fff - familyMask);
+		end;
+
+		groupMask = bit.bor(groupMask, buffMask);
+	else
+		--	REMOVE the buff:
+		groupMask = bit.band(groupMask, maskOut);
 	end;
 
 	CONFIG_AssignedBuffGroups[col] = groupMask;

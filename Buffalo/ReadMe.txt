@@ -21,10 +21,16 @@ version 0.1.0-alpha2:
 * Independent of spell names (localizations)
 * Independent of class names (localizations)
 
+
 version 0.2.0-alpha1:
 * UI added. Only supports Raid buffs.
 * Added /buffalo help, show, hide
 * Added/fixed persisted settings.
+
+
+version 0.2.0-alpha2:
+* Mutual exclusive buffs are now handled.
+* Fixed bug when converting to raid, causing LUA errors en massé!
 
 
 TODO:
