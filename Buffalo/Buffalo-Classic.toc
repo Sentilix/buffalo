@@ -5,9 +5,7 @@
 ## Interface: 11403
 ## SavedVariables: Buffalo_Options
 ## X-Expansion-Level: 1
-## X-Curse-Project-ID: N/A
-## X-WoWI-ID: N/A
-## X-Wago-ID: N/A
+## X-Curse-Project-ID: 623031
 Buffalo-Configuration.xml
 Buffalo.xml
 
