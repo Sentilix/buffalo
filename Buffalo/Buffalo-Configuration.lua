@@ -1,3 +1,10 @@
+--[[
+--	Buffalo buff addon
+--	------------------
+--	Author: Mimma
+--	File:   buffalo-configuration.lua
+--	Desc:	Configuration of the buffs
+--]]
 
 
 --	Class bits:
@@ -13,6 +20,10 @@ BUFFALO_CLASS_MAGE			= 0x0020;
 BUFFALO_CLASS_WARLOCK		= 0x0040;
 BUFFALO_CLASS_ROGUE			= 0x0100;
 BUFFALO_CLASS_WARRIOR		= 0x0200;
+
+
+IG_MAINMENU_OPEN = 850;
+IG_MAINMENU_CLOSE = 851;
 
 
 --	Druid buffs placeholders:
@@ -65,6 +76,15 @@ BUFFALO_BUFF_Priest_PrayerOfShadowProtection = { };
 
 BUFFALO_BUFF_Priest_InnerFire_Name = "";
 BUFFALO_BUFF_Priest_InnerFire = { };
+
+
+--	Druid default: 0x0001 = Wild on all groups
+local CONFIG_DEFAULT_Druid_GroupMask = 1;
+--	Mage default: 0x0001 = Intellect on all groups
+local CONFIG_DEFAULT_Mage_GroupMask = 1;
+--	Priests default: 0x0003 = Fort + Spirit on all groups
+local CONFIG_DEFAULT_Priest_GroupMask = 3;
+
 
 
 local function echo(msg)
@@ -314,4 +334,41 @@ function Buffalo_InitializeClassMatrix()
 
 	return classMatrix;
 end;
+
+
+function Buffalo_InitializeAssignedGroupDefaults()
+	local localClassname, englishClassname = UnitClass("player");
+	local assignedGroupBuffs = { };
+
+	local groupMask = 0;
+
+	if englishClassname == "DRUID" then
+		groupMask = CONFIG_DEFAULT_Druid_GroupMask;
+	elseif englishClassname == "MAGE" then
+		groupMask = CONFIG_DEFAULT_Mage_GroupMask;
+	elseif englishClassname == "PRIEST" then
+		groupMask = CONFIG_DEFAULT_Priest_GroupMask;
+	end
+
+	for groupNum = 1, 8, 1 do
+		assignedGroupBuffs[groupNum] = groupMask;
+	end;
+
+	return assignedGroupBuffs;
+end;
+
+
+
+--[[
+	Configuration UI functionality
+--]]
+function Buffalo_OpenConfigurationDialogue()
+	BuffaloConfigFrame:Show();
+end;
+
+function Buffalo_CloseConfigurationDialogue()
+	BuffaloConfigFrame:Hide();
+end;
+
+
 

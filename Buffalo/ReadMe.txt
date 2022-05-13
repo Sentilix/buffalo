@@ -15,20 +15,22 @@ version 0.1.0-alpha1:
 
 version 0.1.0-alpha2:
 * Slash-handler added
-* Supports Version
+	* Supports Version
 * Distance check is missing - fixed
 * Independent of Spell ranks
 * Independent of spell names (localizations)
 * Independent of class names (localizations)
 
-
+version 0.2.0-alpha1:
+* UI added. Only supports Raid buffs.
+* Added /buffalo help, show, hide
+* Added/fixed persisted settings.
 
 
 TODO:
-* Define the UI (muhahaa!)
 * Handle single buffs (they are ignore for the time being)
-* First (simple?) UI up.
 * Ranking of buffs; i.e. 5-player (full group) before 4-player for example
+
 
 
 

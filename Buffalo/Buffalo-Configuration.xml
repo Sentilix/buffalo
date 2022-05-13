@@ -1,0 +1,189 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<Script file="Buffalo-Configuration.lua" />
+
+	<!-- Frame template for one buff column -->
+	<Button name="BuffaloGroupButtonTemplate" inherits="ActionButtonTemplate" frameStrata="HIGH" hidden="false" virtual="true">
+		<Size>
+			<AbsDimension x="32" y="32" />
+		</Size>
+		<NormalTexture file="Interface\PaperDoll\UI-Backpack-EmptySlot" />
+		<Scripts>
+			<OnLoad>
+				self:RegisterForClicks("LeftButtonDown", "RightButtonDown");
+			</OnLoad>
+			<OnClick>
+				Buffalo_OnGroupBuffClick(self);
+			</OnClick>
+		</Scripts>
+	</Button>
+
+	<!-- Configration frame: main entry -->
+	<Frame name="BuffaloConfigFrame" parent="UIParent" toplevel="true" inherits="BackdropTemplate" hidden="true">
+		<KeyValues>
+			<KeyValue key="backdropInfo" value="BACKDROP_DIALOG_32_32" type="global"/>
+			<KeyValue key="backdropColor" value="BLACK" type="global"/>
+			<KeyValue key="backdropBorderColor" value="WHITE" type="global"/>
+		</KeyValues>
+		<Size x="440" y="280" />
+		<Anchors>
+			<Anchor point="CENTER"/>
+		</Anchors>
+
+		<Frames>
+			<!-- Buff rows are inserted here -->
+			<Frame name="$parentGroups" hidden="false">
+				<Size x="320" y="200" />
+				<Anchors>
+					<Anchor point="TOPLEFT" x="30" y="-92" />
+				</Anchors>
+			</Frame>
+
+			<!-- Close button -->
+			<Button name="CloseButton" inherits="UIPanelButtonTemplate" movable="true" text="Close">
+				<Size>
+					<AbsDimension x="100" y="23" />
+				</Size>
+				<Anchors>
+					<Anchor point="BOTTOM">
+						<Offset x="0" y="35" />
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>Buffalo_OnCloseButtonClick();</OnClick>
+				</Scripts>
+			</Button>
+		</Frames>
+		
+		<Layers>
+			<Layer level="ARTWORK">
+				<Texture name="$parentHeaderTexture" file="Interface\DialogFrame\UI-DialogBox-Header">
+					<Size>
+						<AbsDimension x="256" y="64"/>
+					</Size>
+					<Anchors>
+						<Anchor point="TOP">
+							<Offset>
+								<AbsDimension x="0" y="12"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</Texture>
+				<FontString inherits="GameFontNormal" text="Buffalo Options">
+					<Anchors>
+						<Anchor point="TOP" relativeTo="$parentHeaderTexture">
+							<Offset>
+								<AbsDimension x="0" y="-14"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</FontString>
+
+				<FontString inherits="GameFontNormal" text="Assign buffs for specific groups by left/right clicking the icons.">
+					<Anchors>
+						<Anchor point="TOP">
+							<Offset x="0" y="-40"/>
+						</Anchor>
+					</Anchors>
+				</FontString>
+				
+				<FontString inherits="GameFontNormal" text="Grp 1">
+					<Anchors>
+						<Anchor point="TOPLEFT">
+							<Offset x="30" y="-70"/>
+						</Anchor>
+					</Anchors>
+					<Color r="1" g="1" b="1" a="1.0"/>
+				</FontString>
+				<FontString inherits="GameFontNormal" text="Grp 2">
+					<Anchors>
+						<Anchor point="TOPLEFT">
+							<Offset x="80" y="-70"/>
+						</Anchor>
+					</Anchors>
+					<Color r="1" g="1" b="1" a="1.0"/>
+				</FontString>
+				<FontString inherits="GameFontNormal" text="Grp 3">
+					<Anchors>
+						<Anchor point="TOPLEFT">
+							<Offset x="130" y="-70"/>
+						</Anchor>
+					</Anchors>
+					<Color r="1" g="1" b="1" a="1.0"/>
+				</FontString>
+				<FontString inherits="GameFontNormal" text="Grp 4">
+					<Anchors>
+						<Anchor point="TOPLEFT">
+							<Offset x="180" y="-70"/>
+						</Anchor>
+					</Anchors>
+					<Color r="1" g="1" b="1" a="1.0"/>
+				</FontString>
+				<FontString inherits="GameFontNormal" text="Grp 5">
+					<Anchors>
+						<Anchor point="TOPLEFT">
+							<Offset x="230" y="-70"/>
+						</Anchor>
+					</Anchors>
+					<Color r="1" g="1" b="1" a="1.0"/>
+				</FontString>
+				<FontString inherits="GameFontNormal" text="Grp 6">
+					<Anchors>
+						<Anchor point="TOPLEFT">
+							<Offset x="280" y="-70"/>
+						</Anchor>
+					</Anchors>
+					<Color r="1" g="1" b="1" a="1.0"/>
+				</FontString>
+				<FontString inherits="GameFontNormal" text="Grp 7">
+					<Anchors>
+						<Anchor point="TOPLEFT">
+							<Offset x="330" y="-70"/>
+						</Anchor>
+					</Anchors>
+					<Color r="1" g="1" b="1" a="1.0"/>
+				</FontString>
+				<FontString inherits="GameFontNormal" text="Grp 8">
+					<Anchors>
+						<Anchor point="TOPLEFT">
+							<Offset x="380" y="-70"/>
+						</Anchor>
+					</Anchors>
+					<Color r="1" g="1" b="1" a="1.0"/>
+				</FontString>
+
+				<FontString name="BuffaloVersionString" inherits="GameFontNormal" text="Buffalo x - by y">
+					<Anchors>
+						<Anchor point="BOTTOM">
+							<Offset>
+								<AbsDimension x="0" y="15"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+					<Color r="0.3" g="0.3" b="0.3" a="1.0"/>
+				</FontString>
+
+			</Layer>
+		</Layers>
+		
+		<Scripts>
+			<OnLoad inherit="prepend">
+				self:SetMovable(true)
+				self:SetUserPlaced(true)
+				self:RegisterForDrag("LeftButton")
+				tinsert(UISpecialFrames, self:GetName());
+			</OnLoad>
+			<OnShow>
+				PlaySound(IG_MAINMENU_OPEN);
+			</OnShow>
+			<OnHide>
+				PlaySound(IG_MAINMENU_CLOSE);
+			</OnHide>
+			<OnDragStart>
+				self:StartMoving()
+			</OnDragStart>
+			<OnDragStop>
+				self:StopMovingOrSizing()
+			</OnDragStop>
+		</Scripts>
+	</Frame>
+</Ui>

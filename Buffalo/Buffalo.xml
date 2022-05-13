@@ -1,5 +1,4 @@
-<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/">
-	<Script file="Buffalo-BuffProperties.lua" />
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	<Script file="Buffalo.lua" />
 
 	<Button name="BuffButton" inherits="SecureActionButtonTemplate" parent="UIParent" toplevel="true" hidden="false" frameStrata="LOW" movable="true">
@@ -20,10 +19,9 @@
 				self:RegisterForDrag("LeftButton");
 				self:RegisterForClicks("LeftButtonUp", "RightButtonUp");
 
-				--self:SetScript("PostClick", Buffalo_OnBeforeBuffClick);
-				--self:SetScript("PostClick", Buffalo_OnAfterBuffClick);
+				self:SetScript("PostClick", Buffalo_OnAfterBuffClick);
 
-				self:SetAttribute("type", "spell");
+				self:SetAttribute("*type1", "spell");
 				self:SetAttribute("unit", nil);
 				self:SetAttribute("spell", nil);
 				self:SetAttribute("item", nil);
@@ -62,8 +60,4 @@
 			</OnUpdate>
 		</Scripts>
 	</Frame>
-
 </Ui>
-
-	
-	

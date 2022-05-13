@@ -1,41 +1,39 @@
 --[[
--- Author      : Mimma
--- Create Date : 5/8/2022 7:34:58 PM
+--	Buffalo buff addon
+--	------------------
+--	Author: Mimma
+--	File:   buffalo.lua
+--	Desc:	Core functionality: addon framework, event handling etc.
 --]]
 
 --	Misc. constants:
-local BUFFALO_BUFFBUTTON_SIZE							= 32;
-local BUFFALO_CURRENT_VERSION							= 0;
-local BUFFALO_NAME										= "Buffalo"
-local BUFFALO_MESSAGE_PREFIX							= "BuffaloV1"
-local BUFFALO_UPDATE_MESSAGE_SHOWN						= false;
+local BUFFALO_CURRENT_VERSION					= 0;
+local BUFFALO_NAME								= "Buffalo"
+local BUFFALO_MESSAGE_PREFIX					= "BuffaloV1"
 
 --	Design/UI constants
-local BUFFALO_CHAT_END									= "|r"
-local BUFFALO_COLOUR_BEGINMARK							= "|c80"
-local BUFFALO_COLOUR_CHAT								= BUFFALO_COLOUR_BEGINMARK.."C02020"
-local BUFFALO_COLOUR_INTRO								= BUFFALO_COLOUR_BEGINMARK.."F82050"
-local ICON_PASSIVE										= 136112;
-local BUFFALO_ICON_OTHER_PASSIVE						= "Interface\\Icons\\INV_Misc_Gear_01";
-local BUFFALO_ICON_DRUID_PASSIVE						= "Interface\\Icons\\INV_Misc_Monsterclaw_04";
-local BUFFALO_ICON_MAGE_PASSIVE							= "Interface\\Icons\\INV_Jewelry_Talisman_04";	-- TODO: Find Mage icon!
-local BUFFALO_ICON_PRIEST_PASSIVE						= "Interface\\Icons\\INV_Staff_30";				-- TODO: Can we maybe find a blank icon instead?
+local BUFFALO_CHAT_END							= "|r"
+local BUFFALO_COLOUR_BEGINMARK					= "|c80"
+local BUFFALO_COLOUR_CHAT						= BUFFALO_COLOUR_BEGINMARK.."E0C020"
+local BUFFALO_COLOUR_INTRO						= BUFFALO_COLOUR_BEGINMARK.."F8F8F8"
+local BUFFALO_ICON_PASSIVE						= 136112;
+local BUFFALO_ICON_COMBAT						= "Interface\\Icons\\Ability_dualwield";
+local BUFFALO_ICON_PLAYERDEAD					= "Interface\\Icons\\Ability_rogue_feigndeath";
 
 --	Internal variables
-local BUFFALO_BuffBtn_Combat							= "Interface\\Icons\\Ability_dualwield";
-local BUFFALO_BuffBtn_Dead								= "Interface\\Icons\\Ability_rogue_feigndeath";
-local IsBuffer											= false;
-local BUFFALO_ScanFrequency								= 0.2;	-- Scan 5 timers/second? TODO: Make configurable!
-local Buffalo_PlayerNameAndRealm						= "";
-local Buffalo_InitializationComplete					= false;
+local IsBuffer									= false;
+local Buffalo_PlayerNameAndRealm				= "";
+local Buffalo_InitializationComplete			= false;
+local Buffalo_UpdateMessageShown				= false;
 
+--	Array of buff properties for the griuo UI: { buffname, iconid, bitmask, priority }
+local Buffalo_GroupBuffProperties				= { }
 
 --	[buffname]=<bitmask value>
 local BUFF_MATRIX = { };
+
 --	[classname<english>]=<bitmasl value>
 local CLASS_MATRIX = { };
-
-
 
 
 -- Configuration:
@@ -43,23 +41,16 @@ local CLASS_MATRIX = { };
 Buffalo_Options = { }
 
 --	Configuration keys:
-local BUFFALO_CONFIG_KEY_BuffButtonPosX					= "BuffButton.X";
-local BUFFALO_CONFIG_KEY_BuffButtonPosY					= "BuffButton.Y";
-local BUFFALO_CONFIG_KEY_BuffButtonVisible				= "BuffButton.Visible";
+local CONFIG_KEY_BuffButtonPosX					= "BuffButton.X";
+local CONFIG_KEY_BuffButtonPosY					= "BuffButton.Y";
+local CONFIG_KEY_BuffButtonVisible				= "BuffButton.Visible";
+local CONFIG_KEY_AssignedBuffGroups				= "AssignedBuffGroups";
 
---	List of groups I am watching (or if pala: list of classes)
-local BUFF_AssignedGroups = { 
-	[1] = 3,
-	[2] = 3,
-	[3] = 3,
-	[4] = 7,
-	[5] = 0,
-	[6] = 0,
-	[7] = 0,
-	[8] = 0,
-}
-
-local BUFF_GroupBuffThreshold							= 4;		-- If at least N persons are missing same buff, group buffs will be used.
+--	Configured values (TODO: a few selected are still not configurable)
+local CONFIG_AssignedBuffGroups					= { };		-- List of groups and their assigned buffs via bitmask
+local CONFIG_GroupBuffThreshold					= 4;		-- If at least N persons are missing same buff, group buffs will be used.
+local CONFIG_ScanFrequency						= 0.2;		-- Scan 5 timers/second? TODO: Make configurable!
+local CONFIG_BuffButtonSize						= 32;		-- Size of buff button
 
 
 
@@ -110,12 +101,8 @@ SlashCmdList["BUFFALO_BUFFALO"] = function(msg)
 		
 	if (option == "CFG" or option == "CONFIG") then
 		SlashCmdList["BUFFALO_CONFIG"]();
-	--elseif option == "DISABLE" then
-	--	SlashCmdList["THALIZ_DISABLE"]();
-	--elseif option == "ENABLE" then
-	--	SlashCmdList["THALIZ_ENABLE"]();
-	--elseif option == "HELP" then
-	--	SlashCmdList["THALIZ_HELP"]();
+	elseif option == "HELP" then
+		SlashCmdList["BUFFALO_HELP"]();
 	elseif option == "SHOW" then
 		SlashCmdList["BUFFALO_SHOW"]();
 	elseif option == "HIDE" then
@@ -128,6 +115,17 @@ SlashCmdList["BUFFALO_BUFFALO"] = function(msg)
 end
 
 --[[
+	Show the configuration dialogue
+	Syntax: /buffaloconfig, /buffalocfg
+	Alternative: /buffalo config, /buffalo cfg
+	Added in: 0.1.0
+]]
+SLASH_BUFFALO_CONFIG1 = "/buffaloconfig"
+SLASH_BUFFALO_CONFIG2 = "/buffalocfg"
+SlashCmdList["BUFFALO_CONFIG"] = function(msg)
+	Buffalo_OpenConfigurationDialogue();
+end
+--[[
 	Show the buff button
 	Syntax: /buffaloshow
 	Alternative: /buffalo show
@@ -136,7 +134,7 @@ end
 SLASH_BUFFALO_SHOW1 = "/buffaloshow"	
 SlashCmdList["BUFFALO_SHOW"] = function(msg)
 	BuffButton:Show();
-	Buffalo_SetOption(BUFFALO_CONFIG_KEY_BuffButtonVisible, "1");
+	Buffalo_SetOption(CONFIG_KEY_BuffButtonVisible, "1");
 end
 
 --[[
@@ -148,7 +146,7 @@ end
 SLASH_BUFFALO_HIDE1 = "/buffalohide"	
 SlashCmdList["BUFFALO_HIDE"] = function(msg)
 	BuffButton:Hide();
-	Buffalo_SetOption(BUFFALO_CONFIG_KEY_BuffButtonVisible, "0");
+	Buffalo_SetOption(CONFIG_KEY_BuffButtonVisible, "0");
 end
 
 --[[
@@ -165,6 +163,27 @@ SlashCmdList["BUFFALO_VERSION"] = function(msg)
 		Buffalo_Echo(string.format("%s is using Buffalo version %s", GetUnitName("player", true), GetAddOnMetadata(BUFFALO_NAME, "Version")));
 	end
 end
+
+--[[
+	Show HELP options
+	Syntax: /buffalohelp
+	Alternative: /buffalo help
+	Added in: 0.2.0
+]]
+SLASH_BUFFALO_HELP1 = "/buffalohelp"
+SlashCmdList["BUFFALO_HELP"] = function(msg)
+	Buffalo_Echo(string.format("buffalo version %s options:", GetAddOnMetadata(BUFFALO_NAME, "Version")));
+	Buffalo_Echo("Syntax:");
+	Buffalo_Echo("    /buffalo [command]");
+	Buffalo_Echo("Where commands can be:");
+	Buffalo_Echo("    Config       (default) Open the configuration dialogue. Same as right-clicking buff button.");
+	Buffalo_Echo("    Show         Shows the buff button.");
+	Buffalo_Echo("    Hide         Hides the buff button.");
+	Buffalo_Echo("    Version      Request version info from all clients.");
+	Buffalo_Echo("    Help         This help.");
+end
+
+
 
 
 
@@ -285,8 +304,8 @@ function Buffalo_CheckIsNewVersion(versionstring)
 
 	if (BUFFALO_CURRENT_VERSION > 0 and incomingVersion > 0) then
 		if incomingVersion > BUFFALO_CURRENT_VERSION then
-			if not BUFFALO_UPDATE_MESSAGE_SHOWN then
-				BUFFALO_UPDATE_MESSAGE_SHOWN = true;
+			if not Buffalo_UpdateMessageShown then
+				Buffalo_UpdateMessageShown = true;
 				Buffalo_Echo(string.format("NOTE: A newer version of ".. COLOUR_INTRO .."BUFFALO"..COLOUR_CHAT.."! is available (version %s)!", versionstring));
 				Buffalo_Echo("You can download latest version from https://www.curseforge.com/ or https://github.com/Sentilix/buffalo.");
 			end
@@ -375,23 +394,37 @@ function Buffalo_InitializeConfigSettings()
 		Buffalo_options = { };
 	end
 
---	Buffalo_SetOption(Thaliz_OPTION_ResurrectionMessageTargetChannel, Thaliz_GetOption(Thaliz_OPTION_ResurrectionMessageTargetChannel, Thaliz_Target_Channel_Default))
---	Buffalo_SetOption(Thaliz_OPTION_ResurrectionMessageTargetWhisper, Thaliz_GetOption(Thaliz_OPTION_ResurrectionMessageTargetWhisper, Thaliz_Target_Whisper_Default))
---	Buffalo_SetOption(Thaliz_OPTION_ResurrectionWhisperMessage, Thaliz_GetOption(Thaliz_OPTION_ResurrectionWhisperMessage, Thaliz_Resurrection_Whisper_Message_Default))
-
 	local x,y = BuffButton:GetPoint();
-	Buffalo_SetOption(BUFFALO_CONFIG_KEY_BuffButtonPosX, Buffalo_GetOption(BUFFALO_CONFIG_KEY_BuffButtonPosX, x))
-	Buffalo_SetOption(BUFFALO_CONFIG_KEY_BuffButtonPosY, Buffalo_GetOption(BUFFALO_CONFIG_KEY_BuffButtonPosY, y))
+	Buffalo_SetOption(CONFIG_KEY_BuffButtonPosX, Buffalo_GetOption(CONFIG_KEY_BuffButtonPosX, x))
+	Buffalo_SetOption(CONFIG_KEY_BuffButtonPosY, Buffalo_GetOption(CONFIG_KEY_BuffButtonPosY, y))
 
 	local buttonVisibleDefault = "0";
 	if IsBuffer then buttonVisibleDefault = "1"; end;
-	Buffalo_GetOption(BUFFALO_CONFIG_KEY_BuffButtonVisible, buttonVisibleDefault);
+	Buffalo_GetOption(CONFIG_KEY_BuffButtonVisible, buttonVisibleDefault);
 
-	if Buffalo_GetOption(BUFFALO_CONFIG_KEY_BuffButtonVisible, buttonVisibleDefault) == "1" then
+	if Buffalo_GetOption(CONFIG_KEY_BuffButtonVisible, buttonVisibleDefault) == "1" then
 		BuffButton:Show();
 	else
 		BuffButton:Hide()
 	end
+
+	--	Init the "assigned buff groups". This is a table, so we need to validate the integrity:
+	local assignedBuffGroups = Buffalo_GetOption(CONFIG_KEY_AssignedBuffGroups, x);
+	if type(assignedBuffGroups) == "table" and table.getn(assignedBuffGroups) == 8 then
+		CONFIG_DEFAULT_AssignedBuffGroups = { }
+		for groupNum = 1, 8, 1 do
+			local groupMask = 0;
+			if assignedBuffGroups[groupNum] then
+				groupMask = assignedBuffGroups[groupNum];
+			end;
+
+			CONFIG_AssignedBuffGroups[groupNum] = 1 * groupMask;
+		end;
+	else
+		--	Use the default assignments for my class: most important buffs in ALL groups:
+		CONFIG_AssignedBuffGroups = Buffalo_InitializeAssignedGroupDefaults();
+	end;
+	Buffalo_SetOption(CONFIG_KEY_AssignedBuffGroups, CONFIG_AssignedBuffGroups);
 end
 
 
@@ -402,9 +435,9 @@ end
 function Buffalo_InitClassSpecificStuff()
 	local _, classname = UnitClass("player");
 
-	--	Expansion-specific settings.
-	--	TODO: We currently only support Classic!
+	--	This sets the buffs up for MY class:
 	BUFF_MATRIX = Buffalo_InitializeBuffMatrix();
+	--	This sets up a class matrix with a bit for each class:
 	CLASS_MATRIX = Buffalo_InitializeClassMatrix();
 		
 	local matrixCount = 0;
@@ -412,6 +445,8 @@ function Buffalo_InitClassSpecificStuff()
 		matrixCount = matrixCount + 1; 
 	end;
 
+	--	Expansion-specific settings.
+	--	TODO: We currently only support Classic!
 	if matrixCount > 0 then
 		local expansionLevel = 1 * GetAddOnMetadata(BUFFALO_NAME, "X-Expansion-Level");
 		if expansionLevel == 1  then
@@ -436,16 +471,18 @@ local function Buffalo_ScanRaid()
 
 	--	If we're in combat, set Combat icon and skip scan.
 	if UnitAffectingCombat("player") then
-		Buffalo_SetButtonTexture(BUFFALO_BuffBtn_Combat);
+		Buffalo_SetButtonTexture(BUFFALO_ICON_COMBAT);
 		return;
 	end;
 
+	--	Likewise if player is dead (sigh)
 	if UnitIsDeadOrGhost("player") then
+		Buffalo_SetButtonTexture(BUFFALO_ICON_PLAYERDEAD);
 		return;
 	end;
 
 	
-	--	Generate a party/raid roster with meta info per character:
+	--	Generate a party/raid/solo roster with meta info per character:
 	local roster = { };
 	local startNum, endNum, groupType, unitid, groupCount;
 
@@ -460,7 +497,7 @@ local function Buffalo_ScanRaid()
 		startNum = 1;
 		endNum = GetNumGroupMembers();
 	else
-		grouptype = "player";
+		grouptype = "solo";
 		groupCount = 1;
 		startNum = 0;
 		endNum = 0
@@ -468,7 +505,7 @@ local function Buffalo_ScanRaid()
 
 	--	Part 1:
 	--	This generate a roster{} array based on unitid to find group, buffmask etc:
-	if grouptype == "player" then
+	if grouptype == "solo" then
 		roster["player"] = { ["Group"]=1, ["IsOnline"]=true, ["IsDead"]=nil, ["BuffMask"]=0, ["ClassMask"]=0x0fff };
 	else
 		for raidIndex = 1, 40, 1 do
@@ -487,10 +524,10 @@ local function Buffalo_ScanRaid()
 				end;
 			end;
 
-			--	This is the english localization of the class. GetRaidRosterInfo delivers the localized name.
+			-- GetRaidRosterInfo delivers the localized class name.
+			-- We need the english class name:
 			local _, classname = UnitClass(unitid);
 
-			--echo(string.format("Roster.add(unitid=%s, Group=%d)", unitid, subgroup));
 			roster[unitid] = { ["Group"]=subgroup, ["IsOnline"]=isOnline, ["IsDead"]=isDead, ["BuffMask"]=0, ["ClassMask"]=CLASS_MATRIX[classname] };
 		end;
 	end;
@@ -509,7 +546,7 @@ local function Buffalo_ScanRaid()
 		local scanPlayerBuffs = true;
 		local rosterInfo = roster[unitid];
 		if rosterInfo then
-			local groupMask = BUFF_AssignedGroups[rosterInfo["Group"]];
+			local groupMask = CONFIG_AssignedBuffGroups[rosterInfo["Group"]];
 
 			if groupMask == 0 then					-- No buffs assigned: skip this group!
 				scanPlayerBuffs = false;
@@ -523,17 +560,14 @@ local function Buffalo_ScanRaid()
 		if scanPlayerBuffs then
 			for buffIndex = 1, 40, 1 do
 				local buffName, iconID = UnitBuff(unitid, buffIndex, "CANCELABLE");
-
 				if not buffName then break; end;
 
 				local buffInfo = BUFF_MATRIX[buffName];
 				if buffInfo then
 					buffMask = buffMask + buffInfo["BITMASK"];
-					--echo(string.format("Adding: %s on unit=%s, mask=%d", buffName, unitid, buffInfo["BITMASK"]));
 				end;
 			end
 
-			--echo(string.format("Unitid=%s, mask=%s", unitid, buffMask));
 			--	Each unitid is now set with a buffMask: a bitmask containing the buffs they currently have.
 			roster[unitid]["BuffMask"] = buffMask;
 		end;
@@ -548,7 +582,7 @@ local function Buffalo_ScanRaid()
 	local MissingBuffs = { };				-- Final list of all missing buffs with a Priority set.
 	local missingBuffIndex = 0;				-- Buff counter
 	for groupIndex = 1, groupCount, 1 do	-- Iterate over all available groups
-		local groupMask = BUFF_AssignedGroups[groupIndex];
+		local groupMask = CONFIG_AssignedBuffGroups[groupIndex];
 		--echo(string.format("Grp=%d, mask=%s", groupIndex, groupMask));
 
 		if groupMask > 0 then
@@ -595,8 +629,8 @@ local function Buffalo_ScanRaid()
 					end;
 
 					--	If this is a group buff, and enough people are missing it, use the big one instead!
-					if buffInfo["PARENT"] and buffMissingCounter >= BUFF_GroupBuffThreshold then
-						--echo(string.format("GROUP: missing=%d, threshold=%d", buffMissingCounter, BUFF_GroupBuffThreshold));
+					if buffInfo["PARENT"] and buffMissingCounter >= CONFIG_GroupBuffThreshold then
+						--echo(string.format("GROUP: missing=%d, threshold=%d", buffMissingCounter, CONFIG_GroupBuffThreshold));
 						local parentBuffInfo = BUFF_MATRIX[buffInfo["PARENT"]];
 						missingBuffIndex = missingBuffIndex + 1;
 						MissingBuffs[missingBuffIndex] = { unitid, buffInfo["PARENT"], parentBuffInfo["ICONID"], parentBuffInfo["PRIORITY"] };
@@ -672,9 +706,9 @@ end;
 function Buffalo_RepositionateButton(self)
 	local x, y = self:GetLeft(), self:GetTop() - UIParent:GetHeight();
 
-	Buffalo_SetOption(BUFFALO_CONFIG_KEY_BuffButtonPosX, x);
-	Buffalo_SetOption(BUFFALO_CONFIG_KEY_BuffButtonPosY, y);
-	BuffButton:SetSize(BUFFALO_BUFFBUTTON_SIZE, BUFFALO_BUFFBUTTON_SIZE);
+	Buffalo_SetOption(CONFIG_KEY_BuffButtonPosX, x);
+	Buffalo_SetOption(CONFIG_KEY_BuffButtonPosY, y);
+	BuffButton:SetSize(CONFIG_BuffButtonSize, CONFIG_BuffButtonSize);
 
 	if IsBuffer then
 		BuffButton:Show();
@@ -684,7 +718,7 @@ function Buffalo_RepositionateButton(self)
 end
 
 local function Buffalo_HideBuffButton()
-	Buffalo_SetButtonTexture(ICON_PASSIVE);
+	Buffalo_SetButtonTexture(BUFFALO_ICON_PASSIVE);
 	BuffButton:SetAttribute("type", nil);
 	BuffButton:SetAttribute("unit", nil);
 end;
@@ -706,15 +740,137 @@ end;
 function Buffalo_UpdateBuffButton(unitid, spellname, textureId)
 	if unitid then
 		Buffalo_SetButtonTexture(textureId, true);
-		BuffButton:SetAttribute("type", "spell");
+		BuffButton:SetAttribute("*type1", "spell");
 		BuffButton:SetAttribute("spell", spellname);
 		BuffButton:SetAttribute("unit", unitid);
 	else
-		Buffalo_SetButtonTexture(ICON_PASSIVE);
-		BuffButton:SetAttribute("type", "spell");
+		Buffalo_SetButtonTexture(BUFFALO_ICON_PASSIVE);
+		BuffButton:SetAttribute("*type1", "spell");
 		BuffButton:SetAttribute("spell", nil);
 		BuffButton:SetAttribute("unit", nil);
 	end;
+end;
+
+function Buffalo_OnAfterBuffClick(self, ...)
+	local buttonName = ...;
+
+	if buttonName == "RightButton" then
+		Buffalo_OpenConfigurationDialogue();
+	end;
+end;
+
+function Buffalo_InitializeGroupBuffProperties()
+	--	This generate a table of all RAID buffs, ordered in priority:
+	Buffalo_GroupBuffProperties = { };
+	local buffCount = 0;
+
+	for buffName, props in pairs(BUFF_MATRIX) do
+		if not props["GROUP"] and props["BITMASK"] < 0x0100 then
+			buffCount = buffCount + 1; 
+			Buffalo_GroupBuffProperties[buffCount] = { buffName, props["ICONID"], props["BITMASK"], props["PRIORITY"] };
+		end;
+	end;
+
+	table.sort(Buffalo_GroupBuffProperties, Buffalo_ComparePriority);
+
+--	for n = 1, table.getn(Buffalo_GroupBuffProperties), 1 do
+--		echo(string.format("[%d] Found %s", n, Buffalo_GroupBuffProperties[n][1]));
+--	end;
+end;
+
+function Buffalo_InitializeGroupBuffUI()
+	Buffalo_InitializeGroupBuffProperties();
+
+	local buffCount = table.getn(Buffalo_GroupBuffProperties);
+
+	--	UI settings:
+	local offsetX = 0;
+	local offsetY = 0;
+	local width = 50;
+	local height= 40;
+	local buttonX, buttonY;
+
+	--	Iterate over all groups and render icons.
+	--	Note: all icons are dimmed out as if they were disabled.
+	--	We will refresh the alpha value after rendering.
+	local buttonName;
+	local buttonId = 1;
+	for groupNumber = 1, 8, 1 do
+		buttonX = offsetX + width * (groupNumber - 1);
+		for rowNumber = 1, buffCount, 1 do
+			buttonY = offsetY - height * (rowNumber - 1);
+			buttonName = string.format("$parentBuffRow%dCol%d", rowNumber, groupNumber);
+			local entry = CreateFrame("Button", buttonName, BuffaloConfigFrameGroups, "BuffaloGroupButtonTemplate");
+			entry:SetID(buttonId);
+			entry:SetAlpha(0.4);
+			entry:SetPoint("TOPLEFT", buttonX, buttonY);
+			entry:SetNormalTexture(Buffalo_GroupBuffProperties[rowNumber][2]);
+			entry:SetPushedTexture(Buffalo_GroupBuffProperties[rowNumber][2]);
+
+			buttonId = buttonId + 1;
+		end;
+	end;
+
+	--	So now, lets apply the alpha values for enabled/disabled buffs:
+	Buffalo_RefreshGroupBuffUI();
+end;
+
+
+--[[
+	Set the alpha value on each icon, depending on the current buff's status
+--]]
+function Buffalo_RefreshGroupBuffUI()
+	local buffCount = table.getn(Buffalo_GroupBuffProperties);
+
+	--	Iterate over all groups and render icons.
+	local buttonName;
+	for groupNumber = 1, 8, 1 do
+		local buffMask = CONFIG_AssignedBuffGroups[groupNumber];
+
+		for rowNumber = 1, buffCount, 1 do
+			buttonName = string.format("BuffaloConfigFrameGroupsBuffRow%dCol%d", rowNumber, groupNumber);
+			local entry = _G[buttonName];
+
+			if (bit.band(buffMask, Buffalo_GroupBuffProperties[rowNumber][3]) > 0) then
+				entry:SetAlpha(1.0);
+			else
+				entry:SetAlpha(0.4);
+			end;
+		end;
+	end;
+end;
+
+function Buffalo_OnGroupBuffClick(self, ...)
+	local buttonName = self:GetName();
+	local buttonType = GetMouseButtonClicked();
+
+	local _, _, row, col = string.find(buttonName, "[a-zA-Z]*(%d)[a-zA-Z]*(%d)");
+
+	row = 1 * row;
+	col = 1 * col;
+
+	--	Fetch mask for selected group (the current configured value):
+	local groupMask = CONFIG_AssignedBuffGroups[col];
+
+	--	Fetch mask for selected buff:
+	local buffMask = Buffalo_GroupBuffProperties[row][3];
+
+	--	Reset (de-select) the clicked buff:
+	if bit.band(groupMask, buffMask) > 0 then
+		groupMask = groupMask - buffMask;
+	end;
+	--	And if LEFT is clicked, select it!
+	if buttonType == "LeftButton" then
+		groupMask = groupMask + buffMask;
+	end;
+
+	CONFIG_AssignedBuffGroups[col] = groupMask;
+
+	Buffalo_RefreshGroupBuffUI();
+end;
+
+function Buffalo_OnCloseButtonClick()
+	Buffalo_CloseConfigurationDialogue();
 end;
 
 
@@ -741,6 +897,7 @@ function Buffalo_OnEvent(self, event, ...)
 		local addonname = ...;
 		if addonname == BUFFALO_NAME then
 		    Buffalo_InitializeConfigSettings();
+			Buffalo_InitializeGroupBuffUI();
 		end
 
 	elseif (event == "CHAT_MSG_ADDON") then
@@ -774,12 +931,15 @@ function Buffalo_OnLoad()
 	Buffalo_Echo(string.format("Version %s by %s", GetAddOnMetadata(BUFFALO_NAME, "Version"), GetAddOnMetadata(BUFFALO_NAME, "Author")));
 	Buffalo_Echo(string.format("Type %s/buffalo%s to configure the addon.", BUFFALO_COLOUR_INTRO, BUFFALO_COLOUR_CHAT));
 
+	_G["BuffaloVersionString"]:SetText(string.format("Buffalo version %s by %s", GetAddOnMetadata(BUFFALO_NAME, "Version"), GetAddOnMetadata(BUFFALO_NAME, "Author")));
+
     BuffaloEventFrame:RegisterEvent("ADDON_LOADED");
     BuffaloEventFrame:RegisterEvent("CHAT_MSG_ADDON");
 
 	C_ChatInfo.RegisterAddonMessagePrefix(BUFFALO_MESSAGE_PREFIX);
 
 	Buffalo_InitClassSpecificStuff();
+
 	Buffalo_RepositionateButton(BuffButton);
 	Buffalo_HideBuffButton();
 end
@@ -787,7 +947,7 @@ end
 function Buffalo_OnTimer(elapsed)
 	TimerTick = TimerTick + elapsed
 
-	if TimerTick > (NextScanTime + BUFFALO_ScanFrequency) then
+	if TimerTick > (NextScanTime + CONFIG_ScanFrequency) then
 		Buffalo_ScanRaid();
 		NextScanTime = TimerTick;
 	end;
