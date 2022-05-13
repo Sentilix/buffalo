@@ -31,7 +31,7 @@ This is an early Alpha version, and there may be bugs. Should you find one, feel
 * TBC / WotLK
 
 
-# Hey, that addon reminds me of SmartBuff
+## Hey, that addon reminds me of SmartBuff
 It sure does! I have been using SmartBuff for many years, and loved it. But now it seems there isn't a working SmartBuff addon out there.
 
 This addon is not a SmartBuff clone!
