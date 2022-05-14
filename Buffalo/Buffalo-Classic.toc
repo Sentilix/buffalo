@@ -1,11 +1,12 @@
 ## Title: Buffalo - One-button buffing
 ## Notes: Smart addon to buff party / raid members
-## Version: 0.2.0-alpha2
+## Version: 0.3.0-alpha1
 ## Author: Mimma @ <EU-Nethergarde Keep>
 ## Interface: 11403
 ## SavedVariables: Buffalo_Options
 ## X-Expansion-Level: 1
 ## X-Curse-Project-ID: 623031
+## X-WoWI-ID: 26305
 Buffalo-Configuration.xml
 Buffalo.xml
 

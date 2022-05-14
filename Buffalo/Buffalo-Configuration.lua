@@ -206,7 +206,7 @@ function Buffalo_InitializeBuffMatrix()
 			["BITMASK"]		= 0x0100,
 			["ICONID"]		= 135991,
 			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Mage_MageArmor_Name);
-			["CLASSES"]		= 0x0000,
+			["CLASSES"]		= BUFFALO_CLASS_MAGE,
 			["PRIORITY"]	= 20,
 			["GROUP"]		= false,
 			["FAMILY"]		= "Armor"
@@ -217,7 +217,7 @@ function Buffalo_InitializeBuffMatrix()
 			["BITMASK"]		= 0x0200,
 			["ICONID"]		= 135843,
 			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Mage_IceArmor_Name);
-			["CLASSES"]		= 0x0000,
+			["CLASSES"]		= BUFFALO_CLASS_MAGE,
 			["PRIORITY"]	= 10,
 			["GROUP"]		= false,
 			["FAMILY"]		= "Armor"
@@ -301,7 +301,7 @@ function Buffalo_InitializeBuffMatrix()
 			["BITMASK"]		= 0x0100, 
 			["ICONID"]		= 135926, 
 			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Priest_InnerFire_Name);
-			["CLASSES"]		= 0x0000,
+			["CLASSES"]		= BUFFALO_CLASS_PRIEST,
 			["PRIORITY"]	= 10, 
 			["GROUP"]		= false 
 		};

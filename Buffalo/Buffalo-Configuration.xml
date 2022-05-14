@@ -24,17 +24,24 @@
 			<KeyValue key="backdropColor" value="BLACK" type="global"/>
 			<KeyValue key="backdropBorderColor" value="WHITE" type="global"/>
 		</KeyValues>
-		<Size x="440" y="280" />
+		<Size x="440" y="340" />
 		<Anchors>
 			<Anchor point="CENTER"/>
 		</Anchors>
 
 		<Frames>
-			<!-- Buff rows are inserted here -->
+			<!-- Raid buff rows are inserted here -->
 			<Frame name="$parentGroups" hidden="false">
 				<Size x="320" y="200" />
 				<Anchors>
 					<Anchor point="TOPLEFT" x="30" y="-92" />
+				</Anchors>
+			</Frame>
+
+			<Frame name="$parentSelf" hidden="false">
+				<Size x="320" y="200" />
+				<Anchors>
+					<Anchor point="TOPLEFT" x="30" y="-250" />
 				</Anchors>
 			</Frame>
 
@@ -146,6 +153,15 @@
 					<Anchors>
 						<Anchor point="TOPLEFT">
 							<Offset x="380" y="-70"/>
+						</Anchor>
+					</Anchors>
+					<Color r="1" g="1" b="1" a="1.0"/>
+				</FontString>
+
+				<FontString inherits="GameFontNormal" text="Self buffs:">
+					<Anchors>
+						<Anchor point="TOPLEFT">
+							<Offset x="30" y="-220"/>
 						</Anchor>
 					</Anchors>
 					<Color r="1" g="1" b="1" a="1.0"/>
