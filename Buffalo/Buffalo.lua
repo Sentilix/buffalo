@@ -474,7 +474,6 @@ end;
 --]]
 local function Buffalo_ScanRaid()
 	--Buffalo_Echo("Scanning raid ...");
-
 	if not IsBuffer or not Buffalo_InitializationComplete then
 		return;
 	end;
@@ -517,7 +516,7 @@ local function Buffalo_ScanRaid()
 	--	This generate a roster{} array based on unitid to find group, buffmask etc:
 	if grouptype == "solo" then
 		unitid = "player"
-		roster[unitid] = { ["Group"]=1, ["IsOnline"]=true, ["IsDead"]=nil, ["BuffMask"]=0, ["ClassMask"]=0x0fff };
+		roster[unitid] = { ["Group"]=1, ["IsOnline"]=true, ["IsDead"]=nil, ["BuffMask"]=0, ["ClassMask"]=0x0ffff };
 	else
 		for raidIndex = 1, 40, 1 do
 			local name, rank, subgroup, level, _, filename, zone, online, dead, role, isML = GetRaidRosterInfo(raidIndex);
@@ -575,13 +574,21 @@ local function Buffalo_ScanRaid()
 
 				local buffInfo = BUFF_MATRIX[buffName];
 				if buffInfo then
-					buffMask = buffMask + buffInfo["BITMASK"];
+					buffMask = bit.bor(buffMask, buffInfo["BITMASK"]);
 				end;
 			end
 
+			--	Add tracking icons ("Find Herbs", "Find Minerals" ...)
+			local trackingIcon = GetTrackingTexture();
+			for buffName, buffInfo in next, BUFF_MATRIX do
+				if buffInfo["ICONID"] == trackingIcon then
+					buffMask = bit.bor(buffMask, buffInfo["BITMASK"]);
+				end;
+			end;
+			
 			--	Each unitid is now set with a buffMask: a bitmask containing the buffs they currently have.
 			roster[unitid]["BuffMask"] = buffMask;
-		end;
+		end;		
 	end;
 
 
@@ -607,40 +614,44 @@ local function Buffalo_ScanRaid()
 
 				--	Skip buffs which we haven't committed to do. That includes GREATER/PRAYER buffs:
 				if(bit.band(buffInfo["BITMASK"], groupMask) > 0) and not buffInfo["GROUP"] then
-					--echo(string.format("Buff=%s, mask=%d, group=%d", buffName, bitMask, groupMask));				
+					--echo(string.format("Buff=%s, mask=%d, group=%d", buffName, bitMask, groupMask));		
 
-					--	Iterate over Party / Raid
-					for raidIndex = startNum, endNum, 1 do
-						unitid = "player";
-						if raidIndex > 0 then unitid = grouptype .. raidIndex; end;
-						local unitIsCurrentPlayer = (UnitName(unitid) == playerName);
-						local rosterInfo = roster[unitid];
+					local start, duration, enabled = GetSpellCooldown(buffName);
+					if start < 3 then
+						--	No cooldown (checking on GCD here as well)
+						--	Iterate over Party / Raid
+						for raidIndex = startNum, endNum, 1 do
+							unitid = "player";
+							if raidIndex > 0 then unitid = grouptype .. raidIndex; end;
+							local unitIsCurrentPlayer = (UnitName(unitid) == playerName);
+							local rosterInfo = roster[unitid];
 
-						--	Check 1: Target must be online and alive:
-						if rosterInfo and rosterInfo["IsOnline"] and not rosterInfo["IsDead"] then
+							--	Check 1: Target must be online and alive:
+							if rosterInfo and rosterInfo["IsOnline"] and not rosterInfo["IsDead"] then
 
-							--	Check 2: Target must be in the current group:
-							if rosterInfo["Group"] == groupIndex then
+								--	Check 2: Target must be in the current group:
+								if rosterInfo["Group"] == groupIndex then
 
-								-- Check 3: Target class must be eligible for buff:
-								if (bit.band(buffInfo["CLASSES"], rosterInfo["ClassMask"]) > 0)	then
-									--echo(string.format("Class is eligible for buff, Buff=%s, Unitid=%s, BuffClass=%d, ClassMask=%d", buffName, unitid, buffInfo["CLASSES"], rosterInfo["ClassMask"]));
+									-- Check 3: Target class must be eligible for buff:
+									if (bit.band(buffInfo["CLASSES"], rosterInfo["ClassMask"]) > 0)	then
+										--echo(string.format("Class is eligible for buff, Buff=%s, Unitid=%s, BuffClass=%d, ClassMask=%d", buffName, unitid, buffInfo["CLASSES"], rosterInfo["ClassMask"]));
 
-									--	Check 4: Target must be in range:
-									if Buffalo_IsSpellInRange(buffName, unitid, unitIsCurrentPlayer) then 
-										--echo(string.format("Spell in range, Buff=%s, Unitid=%s, BuffClass=%d, ClassMask=%d", buffName, unitid, buffInfo["CLASSES"], rosterInfo["ClassMask"]));
+										--	Check 4: Target must be in range:
+										if Buffalo_IsSpellInRange(buffName, unitid, unitIsCurrentPlayer) then 
+											--echo(string.format("Spell in range, Buff=%s, Unitid=%s, BuffClass=%d, ClassMask=%d", buffName, unitid, buffInfo["CLASSES"], rosterInfo["ClassMask"]));
 
-										--	Check 5: There's a person alive in this group. Do he needs this specific buff?
-										if (bit.band(rosterInfo["BuffMask"], buffInfo["BITMASK"]) == 0) then
-											--echo(string.format("Found missing buff, unit=%s, group=%d, buff=%s", UnitName(unitid), groupIndex, buffName));
+											--	Check 5: There's a person alive in this group. Do he needs this specific buff?
+											if (bit.band(rosterInfo["BuffMask"], buffInfo["BITMASK"]) == 0) then
+												--echo(string.format("Found missing buff, unit=%s, group=%d, buff=%s", UnitName(unitid), groupIndex, buffName));
 
-											--	Check 6: Missing buff detected! "Selfie" buffs are only available by current player, e.g. "Inner Fire":
-											if buffInfo["BITMASK"] < 256 or unitIsCurrentPlayer then
-												--echo(string.format("Adding: unit=%s, group=%d, buff=%s", UnitName(unitid), groupIndex, buffName));
-												buffMissingCounter = buffMissingCounter + 1;
-												MissingBuffsInGroup[buffMissingCounter] = { unitid, buffName, buffInfo["ICONID"], buffInfo["PRIORITY"] };
-											end;
-										end;											
+												--	Check 6: Missing buff detected! "Selfie" buffs are only available by current player, e.g. "Inner Fire":
+												if buffInfo["BITMASK"] < 256 or unitIsCurrentPlayer then
+													--echo(string.format("Adding: unit=%s, group=%d, buff=%s", UnitName(unitid), groupIndex, buffName));
+													buffMissingCounter = buffMissingCounter + 1;
+													MissingBuffsInGroup[buffMissingCounter] = { unitid, buffName, buffInfo["ICONID"], buffInfo["PRIORITY"] };
+												end;
+											end;											
+										end;
 									end;
 								end;
 							end;
@@ -794,16 +805,26 @@ function Buffalo_GetGroupBuffProperties(includeSelfBuffs)
 	--	This generate a table of all RAID buffs, ordered in priority:
 	local buffProperties = { };
 	local buffCount = 0;
+	local priority;
 
 	local includeMask = 0x00ff;
+	local selfiePrio = 0;
+	local selfiePrioMask = 0x0f00;
 	if includeSelfBuffs then
-		includeMask = 0x0f00;
+		includeMask = 0x0ffff;
+		selfiePrio = 100;
 	end;
 	for buffName, props in pairs(BUFF_MATRIX) do
 		if not props["GROUP"] and (bit.band(props["BITMASK"], includeMask) > 0) then
 			--echo(string.format("Adding buff via mask: %s, %d", buffName, includeMask));
 			buffCount = buffCount + 1; 
-			buffProperties[buffCount] = { buffName, props["ICONID"], props["BITMASK"], props["PRIORITY"] };
+			priority = props["PRIORITY"];
+
+			if bit.band(props["BITMASK"], selfiePrioMask) > 0 then
+				priority = priority + selfiePrio;
+			end;
+
+			buffProperties[buffCount] = { buffName, props["ICONID"], props["BITMASK"], priority };
 		end;
 	end;
 
@@ -943,7 +964,7 @@ function Buffalo_OnGroupBuffClick(self, ...)
 
 	--	BuffMask is the clicked buff's bitvalue.
 	local buffMask = properties[row][3];
-	local maskOut = 0x0fff - buffMask;		-- preserve all buffs except for the selected one:
+	local maskOut = 0x0ffff - buffMask;		-- preserve all buffs except for the selected one:
 
 	if buttonType == "LeftButton" then
 		--	Left button: ADD the buff
@@ -962,7 +983,7 @@ function Buffalo_OnGroupBuffClick(self, ...)
 				end;
 			end;
 
-			groupMask = bit.band(groupMask, 0x0fff - familyMask);
+			groupMask = bit.band(groupMask, 0x0ffff - familyMask);
 		end;
 
 		groupMask = bit.bor(groupMask, buffMask);

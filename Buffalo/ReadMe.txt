@@ -40,15 +40,27 @@ version 0.3.0-alpha1
 * Bugfix: Range check was not always working.
 
 
+version 0.3.0-alpha2
+* Added: Raid (non-group) buffs are now visislbe in selfie UI
+* Added: Find Herbs, Find Minerals to selfie UI
+* Added: Ice Barrier (frost Mage shield)
+* Bugfix: TOC file for TBC was missing configuration file, made Buffalo fail.
+* Bugfix: Unlearned spells still pops up for buffing.
+* Bugfix: Taking spells on CD into account
 
+
+
+version 0.3.0-beta1
+* Bugfixing?
 
 Backlog:
 * 0.4.0:	Ranking of buffs; i.e. 5-player (full group) before 4-player for example
 	Need to think this one throug: that are the exact rules?
+* x.x.x:	Configure class-level buffs via UI
 * x.x.x:	Add window with next 5 expiring buffs?
 * x.x.x:	Make a 10% buff warning window?
 * x.x.x:	Paladins!
-
+* Ice Barrier for mages
 
 
 
@@ -61,3 +73,8 @@ Expiration time is time since last server restart. I am not sure how to get Curr
 
 This can be used to display buff expire times.
 
+
+133939 = Find Herbs
+136025 = Find Minerals
+FindHerbs:		spellId 2383
+FindMinerals:	spellId 2580

@@ -22,9 +22,16 @@ BUFFALO_CLASS_ROGUE			= 0x0100;
 BUFFALO_CLASS_WARRIOR		= 0x0200;
 
 
-IG_MAINMENU_OPEN = 850;
-IG_MAINMENU_CLOSE = 851;
+IG_MAINMENU_OPEN			= 850;
+IG_MAINMENU_CLOSE			= 851;
 
+
+--	General buffs placeholders:
+BUFFALO_BUFF_Generel_FindHerbs_Name = "";
+BUFFALO_BUFF_Generel_FindHerbs = { };
+
+BUFFALO_BUFF_Generel_FindMinerals_Name = ""; 
+BUFFALO_BUFF_Generel_FindMinerals = { }
 
 --	Druid buffs placeholders:
 BUFFALO_BUFF_Druid_MarkOfTheWild_Name = "";
@@ -54,6 +61,9 @@ BUFFALO_BUFF_Mage_MageArmor = { };
 
 BUFFALO_BUFF_Mage_IceArmor_Name = "";
 BUFFALO_BUFF_Mage_IceArmor = { };
+
+BUFFALO_BUFF_Mage_IceBarrier_Name = "";
+BUFFALO_BUFF_Mage_IceBarrier = { };
 
 --	Priest buff placeholders:
 BUFFALO_BUFF_Priest_PowerWordFortitude_Name = "";
@@ -119,6 +129,31 @@ function Buffalo_InitializeBuffMatrix()
 	local localClassname, englishClassname = UnitClass("player");
 	local matrix = { };
 
+	--	General spells:
+	BUFFALO_BUFF_Generel_FindHerbs_Name = Buffalo_GetSpellName(2383); 
+	BUFFALO_BUFF_Generel_FindHerbs = {
+		["BITMASK"]		= 0x01000,
+		["ICONID"]		= 133939,
+		["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Generel_FindHerbs_Name);
+		["CLASSES"]		= 0x0fff,
+		["PRIORITY"]	= 10,
+		["GROUP"]		= false
+	};
+
+	BUFFALO_BUFF_Generel_FindMinerals_Name = Buffalo_GetSpellName(2580); 
+	BUFFALO_BUFF_Generel_FindMinerals = {
+		["BITMASK"]		= 0x02000,
+		["ICONID"]		= 136025,
+		["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Generel_FindMinerals_Name);
+		["CLASSES"]		= 0x0fff,
+		["PRIORITY"]	= 10,
+		["GROUP"]		= false
+	};
+
+	matrix[BUFFALO_BUFF_Generel_FindMinerals_Name]	= BUFFALO_BUFF_Generel_FindMinerals;
+	matrix[BUFFALO_BUFF_Generel_FindHerbs_Name]	= BUFFALO_BUFF_Generel_FindHerbs;
+
+
 	if englishClassname == "DRUID" then
 		BUFFALO_BUFF_Druid_MarkOfTheWild_Name = Buffalo_GetSpellName(9885); 
 		BUFFALO_BUFF_Druid_MarkOfTheWild = {
@@ -151,11 +186,9 @@ function Buffalo_InitializeBuffMatrix()
 			["GROUP"]		= false
 		};
 
-		matrix = {
-			[BUFFALO_BUFF_Druid_MarkOfTheWild_Name]				= BUFFALO_BUFF_Druid_MarkOfTheWild,
-			[BUFFALO_BUFF_Druid_GiftOfTheWild_Name]				= BUFFALO_BUFF_Druid_GiftOfTheWild,
-			[BUFFALO_BUFF_Druid_Thorns_Name]					= BUFFALO_BUFF_Druid_Thorns,
-		};
+		matrix[BUFFALO_BUFF_Druid_MarkOfTheWild_Name]	= BUFFALO_BUFF_Druid_MarkOfTheWild;
+		matrix[BUFFALO_BUFF_Druid_GiftOfTheWild_Name]	= BUFFALO_BUFF_Druid_GiftOfTheWild;
+		matrix[BUFFALO_BUFF_Druid_Thorns_Name]			= BUFFALO_BUFF_Druid_Thorns;
 
 	elseif englishClassname == "MAGE" then	
 		BUFFALO_BUFF_Mage_ArcaneIntellect_Name = Buffalo_GetSpellName(10157);  
@@ -164,7 +197,7 @@ function Buffalo_InitializeBuffMatrix()
 			["ICONID"]		= 135932,
 			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Mage_ArcaneIntellect_Name);
 			["CLASSES"]		= 0x00ff,
-			["PRIORITY"]	= 50,
+			["PRIORITY"]	= 60,
 			["GROUP"]		= false,
 			["PARENT"]		= "Arcane Brilliance"
 		};
@@ -185,7 +218,7 @@ function Buffalo_InitializeBuffMatrix()
 			["ICONID"]		= 135907,
 			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Mage_AmplifyMagic_Name);
 			["CLASSES"]		= 0x00ff,
-			["PRIORITY"]	= 40,
+			["PRIORITY"]	= 50,
 			["GROUP"]		= false,
 			["FAMILY"]		= "AmplifyDampen"
 		};
@@ -196,7 +229,7 @@ function Buffalo_InitializeBuffMatrix()
 			["ICONID"]		= 136006,
 			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Mage_DampenMagic_Name);
 			["CLASSES"]		= 0x0fff,
-			["PRIORITY"]	= 30,
+			["PRIORITY"]	= 40,
 			["GROUP"]		= false,
 			["FAMILY"]		= "AmplifyDampen"
 		};
@@ -207,7 +240,7 @@ function Buffalo_InitializeBuffMatrix()
 			["ICONID"]		= 135991,
 			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Mage_MageArmor_Name);
 			["CLASSES"]		= BUFFALO_CLASS_MAGE,
-			["PRIORITY"]	= 20,
+			["PRIORITY"]	= 30,
 			["GROUP"]		= false,
 			["FAMILY"]		= "Armor"
 		};
@@ -218,19 +251,28 @@ function Buffalo_InitializeBuffMatrix()
 			["ICONID"]		= 135843,
 			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Mage_IceArmor_Name);
 			["CLASSES"]		= BUFFALO_CLASS_MAGE,
-			["PRIORITY"]	= 10,
+			["PRIORITY"]	= 20,
 			["GROUP"]		= false,
 			["FAMILY"]		= "Armor"
 		};
 
-		matrix = {
-			[BUFFALO_BUFF_Mage_ArcaneIntellect_Name]			= BUFFALO_BUFF_Mage_ArcaneIntellect,
-			[BUFFALO_BUFF_Mage_ArcaneBrilliance_Name]			= BUFFALO_BUFF_Mage_ArcaneBrilliance,
-			[BUFFALO_BUFF_Mage_AmplifyMagic_Name]				= BUFFALO_BUFF_Mage_AmplifyMagic,
-			[BUFFALO_BUFF_Mage_DampenMagic_Name]				= BUFFALO_BUFF_Mage_DampenMagic,
-			[BUFFALO_BUFF_Mage_MageArmor_Name]					= BUFFALO_BUFF_Mage_MageArmor,
-			[BUFFALO_BUFF_Mage_IceArmor_Name]					= BUFFALO_BUFF_Mage_IceArmor,
+		BUFFALO_BUFF_Mage_IceBarrier_Name = Buffalo_GetSpellName(13033);
+		BUFFALO_BUFF_Mage_IceBarrier = {
+			["BITMASK"]		= 0x0400,
+			["ICONID"]		= 135988,
+			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Mage_IceBarrier_Name);
+			["CLASSES"]		= BUFFALO_CLASS_MAGE,
+			["PRIORITY"]	= 10,
+			["GROUP"]		= false
 		};
+
+		matrix[BUFFALO_BUFF_Mage_ArcaneBrilliance_Name]	= BUFFALO_BUFF_Mage_ArcaneBrilliance;
+		matrix[BUFFALO_BUFF_Mage_ArcaneIntellect_Name]	= BUFFALO_BUFF_Mage_ArcaneIntellect;
+		matrix[BUFFALO_BUFF_Mage_AmplifyMagic_Name]		= BUFFALO_BUFF_Mage_AmplifyMagic;
+		matrix[BUFFALO_BUFF_Mage_DampenMagic_Name]		= BUFFALO_BUFF_Mage_DampenMagic;
+		matrix[BUFFALO_BUFF_Mage_MageArmor_Name]		= BUFFALO_BUFF_Mage_MageArmor;
+		matrix[BUFFALO_BUFF_Mage_IceArmor_Name]			= BUFFALO_BUFF_Mage_IceArmor;
+		matrix[BUFFALO_BUFF_Mage_IceBarrier_Name]		= BUFFALO_BUFF_Mage_IceBarrier;
 
 	elseif englishClassname == "PRIEST" then
 		BUFFALO_BUFF_Priest_PowerWordFortitude_Name = Buffalo_GetSpellName(10938);
@@ -306,16 +348,20 @@ function Buffalo_InitializeBuffMatrix()
 			["GROUP"]		= false 
 		};
 
-		matrix = {
-			[BUFFALO_BUFF_Priest_PowerWordFortitude_Name]		= BUFFALO_BUFF_Priest_PowerWordFortitude,		
-			[BUFFALO_BUFF_Priest_PrayerOfFortitude_Name]		= BUFFALO_BUFF_Priest_PrayerOfFortitude,
-			[BUFFALO_BUFF_Priest_DivineSpirit_Name]				= BUFFALO_BUFF_Priest_DivineSpirit,
-			[BUFFALO_BUFF_Priest_PrayerOfSpirit_Name]			= BUFFALO_BUFF_Priest_PrayerOfSpirit,
-			[BUFFALO_BUFF_Priest_ShadowProtection_Name]			= BUFFALO_BUFF_Priest_ShadowProtection,
-			[BUFFALO_BUFF_Priest_PrayerOfShadowProtection_Name]	= BUFFALO_BUFF_Priest_PrayerOfShadowProtection,
-			[BUFFALO_BUFF_Priest_InnerFire_Name]				= BUFFALO_BUFF_Priest_InnerFire,
-		};
+		matrix[BUFFALO_BUFF_Priest_PowerWordFortitude_Name]		= BUFFALO_BUFF_Priest_PowerWordFortitude;
+		matrix[BUFFALO_BUFF_Priest_PrayerOfFortitude_Name]		= BUFFALO_BUFF_Priest_PrayerOfFortitude;
+		matrix[BUFFALO_BUFF_Priest_DivineSpirit_Name]			= BUFFALO_BUFF_Priest_DivineSpirit;
+		matrix[BUFFALO_BUFF_Priest_PrayerOfSpirit_Name]			= BUFFALO_BUFF_Priest_PrayerOfSpirit;
+		matrix[BUFFALO_BUFF_Priest_ShadowProtection_Name]		= BUFFALO_BUFF_Priest_ShadowProtection;
+		matrix[BUFFALO_BUFF_Priest_PrayerOfShadowProtection_Name]= BUFFALO_BUFF_Priest_PrayerOfShadowProtection;
+		matrix[BUFFALO_BUFF_Priest_InnerFire_Name]				= BUFFALO_BUFF_Priest_InnerFire;
+	end;
 
+	--	Filter out spells we havent learned (SpellID is nil)
+	for buffName, buffInfo in next, matrix do
+		if not buffInfo["SPELLID"] then
+			matrix[buffName] = nil;
+		end;
 	end;
 
 	return matrix;
