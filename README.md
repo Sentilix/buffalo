@@ -1,8 +1,9 @@
 # Buffalo - Raid buff addon
-Buffalo adds a new button for your UI, which will lit up with an icon when someone in your group or raid needs a new buff from you. You can move the button by pressing Shift while dragging the icon to a desired position.
+Buffalo adds a new button for your UI, which will lit up with an icon when someone in your group or raid needs a new buff from you. The assigned groups can be configured, so you can set up which groups you will monitor and what buffs you will do.
 
-The assigned groups can be configured, so you can set up which groups you will monitor and what buffs you will do.
-Buffalo works only for WoW Classic for the moment.
+You can move the button by pressing Shift while dragging the icon to a desired position.
+
+Buffalo works for WoW Classic and TBC.
 
 <img src="https://github.com/Sentilix/buffalo/blob/main/Images/buffalo-config.jpg?raw=true" />
 
