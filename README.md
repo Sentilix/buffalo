@@ -5,7 +5,11 @@ You can move the button by pressing Shift while dragging the icon to a desired p
 
 Buffalo works for WoW Classic and TBC.
 
+Buff configuration as seen as a holy priest:
 <img src="https://github.com/Sentilix/buffalo/blob/main/Images/buffalo-config.jpg?raw=true" />
+
+Buff configuration as seen as a frost mage with herbalism:
+<img src="https://github.com/Sentilix/buffalo/blob/main/Images/buffalo-config2.jpg?raw=true" />
 
 
 ## Slash Commands
