@@ -134,7 +134,7 @@ function Buffalo_InitializeBuffMatrix()
 	BUFFALO_BUFF_Generel_FindHerbs = {
 		["BITMASK"]		= 0x01000,
 		["ICONID"]		= 133939,
-		["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Generel_FindHerbs_Name);
+		["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Generel_FindHerbs_Name),
 		["CLASSES"]		= 0x0fff,
 		["PRIORITY"]	= 10,
 		["GROUP"]		= false
@@ -144,7 +144,7 @@ function Buffalo_InitializeBuffMatrix()
 	BUFFALO_BUFF_Generel_FindMinerals = {
 		["BITMASK"]		= 0x02000,
 		["ICONID"]		= 136025,
-		["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Generel_FindMinerals_Name);
+		["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Generel_FindMinerals_Name),
 		["CLASSES"]		= 0x0fff,
 		["PRIORITY"]	= 10,
 		["GROUP"]		= false
@@ -159,7 +159,7 @@ function Buffalo_InitializeBuffMatrix()
 		BUFFALO_BUFF_Druid_MarkOfTheWild = {
 			["BITMASK"]		= 0x0001,
 			["ICONID"]		= 136078,
-			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Druid_MarkOfTheWild_Name);
+			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Druid_MarkOfTheWild_Name),
 			["CLASSES"]		= 0x0fff,
 			["PRIORITY"]	= 50,
 			["GROUP"]		= false,
@@ -170,7 +170,7 @@ function Buffalo_InitializeBuffMatrix()
 		BUFFALO_BUFF_Druid_GiftOfTheWild = {
 			["BITMASK"]		= 0x0001,
 			["ICONID"]		= 136038,
-			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Druid_GiftOfTheWild_Name);
+			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Druid_GiftOfTheWild_Name),
 			["CLASSES"]		= 0x0fff,
 			["PRIORITY"]	= 100,
 			["GROUP"]		= true
@@ -180,7 +180,7 @@ function Buffalo_InitializeBuffMatrix()
 		BUFFALO_BUFF_Druid_Thorns = {
 			["BITMASK"]		= 0x0002,
 			["ICONID"]		= 136104,
-			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Druid_Thorns_Name);
+			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Druid_Thorns_Name),
 			["CLASSES"]		= BUFFALO_CLASS_WARRIOR + BUFFALO_CLASS_DRUID,
 			["PRIORITY"]	= 40,
 			["GROUP"]		= false
@@ -195,7 +195,7 @@ function Buffalo_InitializeBuffMatrix()
 		BUFFALO_BUFF_Mage_ArcaneIntellect = {
 			["BITMASK"]		= 0x0001,
 			["ICONID"]		= 135932,
-			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Mage_ArcaneIntellect_Name);
+			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Mage_ArcaneIntellect_Name),
 			["CLASSES"]		= 0x00ff,
 			["PRIORITY"]	= 60,
 			["GROUP"]		= false,
@@ -206,7 +206,7 @@ function Buffalo_InitializeBuffMatrix()
 		BUFFALO_BUFF_Mage_ArcaneBrilliance = {
 			["BITMASK"]		= 0x0001,
 			["ICONID"]		= 135869,
-			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Mage_ArcaneBrilliance_Name);
+			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Mage_ArcaneBrilliance_Name),
 			["CLASSES"]		= 0x00ff,
 			["PRIORITY"]	= 100,
 			["GROUP"]		= true
@@ -216,7 +216,7 @@ function Buffalo_InitializeBuffMatrix()
 		BUFFALO_BUFF_Mage_AmplifyMagic = {
 			["BITMASK"]		= 0x0002,
 			["ICONID"]		= 135907,
-			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Mage_AmplifyMagic_Name);
+			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Mage_AmplifyMagic_Name),
 			["CLASSES"]		= 0x00ff,
 			["PRIORITY"]	= 50,
 			["GROUP"]		= false,
@@ -227,7 +227,7 @@ function Buffalo_InitializeBuffMatrix()
 		BUFFALO_BUFF_Mage_DampenMagic = {
 			["BITMASK"]		= 0x0004,
 			["ICONID"]		= 136006,
-			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Mage_DampenMagic_Name);
+			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Mage_DampenMagic_Name),
 			["CLASSES"]		= 0x0fff,
 			["PRIORITY"]	= 40,
 			["GROUP"]		= false,
@@ -238,7 +238,7 @@ function Buffalo_InitializeBuffMatrix()
 		BUFFALO_BUFF_Mage_MageArmor = {
 			["BITMASK"]		= 0x0100,
 			["ICONID"]		= 135991,
-			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Mage_MageArmor_Name);
+			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Mage_MageArmor_Name),
 			["CLASSES"]		= BUFFALO_CLASS_MAGE,
 			["PRIORITY"]	= 30,
 			["GROUP"]		= false,
@@ -249,7 +249,7 @@ function Buffalo_InitializeBuffMatrix()
 		BUFFALO_BUFF_Mage_IceArmor = {
 			["BITMASK"]		= 0x0200,
 			["ICONID"]		= 135843,
-			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Mage_IceArmor_Name);
+			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Mage_IceArmor_Name),
 			["CLASSES"]		= BUFFALO_CLASS_MAGE,
 			["PRIORITY"]	= 20,
 			["GROUP"]		= false,
@@ -260,7 +260,8 @@ function Buffalo_InitializeBuffMatrix()
 		BUFFALO_BUFF_Mage_IceBarrier = {
 			["BITMASK"]		= 0x0400,
 			["ICONID"]		= 135988,
-			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Mage_IceBarrier_Name);
+			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Mage_IceBarrier_Name),
+			["COOLDOWN"]	= 30,
 			["CLASSES"]		= BUFFALO_CLASS_MAGE,
 			["PRIORITY"]	= 10,
 			["GROUP"]		= false
@@ -279,7 +280,7 @@ function Buffalo_InitializeBuffMatrix()
 		BUFFALO_BUFF_Priest_PowerWordFortitude = { 
 			["BITMASK"]		= 0x0001, 
 			["ICONID"]		= 135987, 
-			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Priest_PowerWordFortitude_Name);
+			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Priest_PowerWordFortitude_Name),
 			["CLASSES"]		= 0x0fff,
 			["PRIORITY"]	= 40, 
 			["GROUP"]		= false, 
@@ -290,7 +291,7 @@ function Buffalo_InitializeBuffMatrix()
 		BUFFALO_BUFF_Priest_PrayerOfFortitude = {
 			["BITMASK"]		= 0x0001, 
 			["ICONID"]		= 135941, 
-			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Priest_PrayerOfFortitude_Name);
+			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Priest_PrayerOfFortitude_Name),
 			["CLASSES"]		= 0x0fff,
 			["PRIORITY"]	= 100, 
 			["GROUP"]		= true 
@@ -300,7 +301,7 @@ function Buffalo_InitializeBuffMatrix()
 		BUFFALO_BUFF_Priest_DivineSpirit = {
 			["BITMASK"]		= 0x0002, 
 			["ICONID"]		= 135898, 
-			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Priest_DivineSpirit_Name);
+			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Priest_DivineSpirit_Name),
 			["CLASSES"]		= 0x00ff,
 			["PRIORITY"]	= 30, 
 			["GROUP"]		= false, 
@@ -311,7 +312,7 @@ function Buffalo_InitializeBuffMatrix()
 		BUFFALO_BUFF_Priest_PrayerOfSpirit = {
 			["BITMASK"]		= 0x0002, 
 			["ICONID"]		= 135946,
-			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Priest_PrayerOfSpirit_Name);
+			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Priest_PrayerOfSpirit_Name),
 			["CLASSES"]		= 0x00ff,
 			["PRIORITY"]	= 90,
 			["GROUP"]		= true 
@@ -321,7 +322,7 @@ function Buffalo_InitializeBuffMatrix()
 		BUFFALO_BUFF_Priest_ShadowProtection = {
 			["BITMASK"]		= 0x0004,
 			["ICONID"]		= 136121,
-			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Priest_ShadowProtection_Name);
+			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Priest_ShadowProtection_Name),
 			["CLASSES"]		= 0x0fff,
 			["PRIORITY"]	= 20,
 			["GROUP"]		= false,
@@ -332,7 +333,7 @@ function Buffalo_InitializeBuffMatrix()
 		BUFFALO_BUFF_Priest_PrayerOfShadowProtection = {
 			["BITMASK"]		= 0x0004, 
 			["ICONID"]		= 135945, 
-			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Priest_PrayerOfShadowProtection_Name);
+			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Priest_PrayerOfShadowProtection_Name),
 			["CLASSES"]		= 0x0fff,
 			["PRIORITY"]	= 80, 
 			["GROUP"]		= true 
@@ -342,7 +343,7 @@ function Buffalo_InitializeBuffMatrix()
 		BUFFALO_BUFF_Priest_InnerFire = {
 			["BITMASK"]		= 0x0100, 
 			["ICONID"]		= 135926, 
-			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Priest_InnerFire_Name);
+			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Priest_InnerFire_Name),
 			["CLASSES"]		= BUFFALO_CLASS_PRIEST,
 			["PRIORITY"]	= 10, 
 			["GROUP"]		= false 
@@ -409,16 +410,6 @@ end;
 
 
 
---[[
-	Configuration UI functionality
---]]
-function Buffalo_OpenConfigurationDialogue()
-	BuffaloConfigFrame:Show();
-end;
-
-function Buffalo_CloseConfigurationDialogue()
-	BuffaloConfigFrame:Hide();
-end;
 
 
 

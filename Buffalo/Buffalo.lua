@@ -24,7 +24,10 @@ local BUFFALO_ICON_PLAYERDEAD					= "Interface\\Icons\\Ability_rogue_feigndeath"
 local IsBuffer									= false;
 local Buffalo_PlayerNameAndRealm				= "";
 local Buffalo_InitializationComplete			= false;
+local Buffalo_InitializationRetryTimer			= 0;
 local Buffalo_UpdateMessageShown				= false;
+local TimerTick = 0
+local NextScanTime = 0;
 
 --	Array of buff properties for the griuo UI: { buffname, iconid, bitmask, priority }
 local Buffalo_GroupBuffProperties				= { }
@@ -54,9 +57,9 @@ local CONFIG_DEFAULT_AssignedBuffSelf			= 0x0000;
 local CONFIG_AssignedBuffGroups					= { };		-- List of groups and their assigned buffs via bitmask
 local CONFIG_AssignedBuffSelf					= 0x0000;	-- List of assigned self buffs
 local CONFIG_GroupBuffThreshold					= 4;		-- (TODO: Make configurable!) If at least N persons are missing same buff, group buffs will be used.
-local CONFIG_ScanFrequency						= 0.3;		-- (TODO: Make configurable!) Scan every N second.
+local CONFIG_ScanFrequency						= 0.2;		-- (TODO: Make configurable!) Scan every N second.
 local CONFIG_BuffButtonSize						= 32;		-- (TODO: Make configurable!) Size of buff button
-
+local CONFIG_PlayerBuffPriority					= 90;		-- (TODO: Make configurable!) Priority to Self
 
 
 --[[
@@ -436,35 +439,46 @@ function Buffalo_InitializeConfigSettings()
 end
 
 
-
 --[[
 	Initialization
 --]]
-function Buffalo_InitClassSpecificStuff()
-	local _, classname = UnitClass("player");
+function Buffalo_MainInitialization()
+	Buffalo_InitializeConfigSettings();
 
 	--	This sets the buffs up for MY class:
 	BUFF_MATRIX = Buffalo_InitializeBuffMatrix();
-	--	This sets up a class matrix with a bit for each class:
-	CLASS_MATRIX = Buffalo_InitializeClassMatrix();
-		
+
 	local matrixCount = 0;
 	for _ in pairs(BUFF_MATRIX) do 
 		matrixCount = matrixCount + 1; 
 	end;
 
+	if matrixCount == 0 and not Buffalo_InitializationComplete then
+		--	This can fail if wow havent loaded all objects yet.
+		--	We just wait a couple of seconds and try again:
+		Buffalo_InitializationRetryTimer = TimerTick + 3;
+		return;
+	end;
+
+	--	This sets up a class matrix with a bit for each class:
+	CLASS_MATRIX = Buffalo_InitializeClassMatrix();
+
+	Buffalo_InitializeGroupBuffUI();
+
 	--	Expansion-specific settings.
-	--	TODO: We currently only support Classic and TBC!
-	if matrixCount > 0 then
-		local expansionLevel = 1 * GetAddOnMetadata(BUFFALO_NAME, "X-Expansion-Level");
-		if expansionLevel == 1  then
-			IsBuffer = true;
-		elseif expansionLevel == 2  then
-			IsBuffer = true;
-		end;
+	local expansionLevel = 1 * GetAddOnMetadata(BUFFALO_NAME, "X-Expansion-Level");
+	if expansionLevel == 1  then
+		IsBuffer = true;
+	elseif expansionLevel == 2  then
+		IsBuffer = true;
+	end;
+
+	if IsBuffer then
+		BuffButton:Show();
 	end;
 
 	Buffalo_InitializationComplete = true;
+	Buffalo_Echo("Buff data loaded, Buffalo is ready.");
 end;
 
 
@@ -472,8 +486,11 @@ end;
 --[[
 	Raid scanner
 --]]
+local lastBuffTarget = "";
 local function Buffalo_ScanRaid()
 	--Buffalo_Echo("Scanning raid ...");
+	local debug = 0;
+
 	if not IsBuffer or not Buffalo_InitializationComplete then
 		return;
 	end;
@@ -557,6 +574,7 @@ local function Buffalo_ScanRaid()
 		local rosterInfo = roster[unitid];
 		if rosterInfo then
 			local groupMask = CONFIG_AssignedBuffGroups[rosterInfo["Group"]];
+			groupMask = bit.bor(groupMask, CONFIG_AssignedBuffSelf);
 
 			if groupMask == 0 then					-- No buffs assigned: skip this group!
 				scanPlayerBuffs = false;
@@ -599,7 +617,7 @@ local function Buffalo_ScanRaid()
 
 	local MissingBuffs = { };				-- Final list of all missing buffs with a Priority set.
 	local missingBuffIndex = 0;				-- Buff counter
-	local playerName = UnitName("player");
+	local castingPlayerAndRealm = Buffalo_GetPlayerAndRealm("player");
 	for groupIndex = 1, groupCount, 1 do	-- Iterate over all available groups
 		local groupMask = CONFIG_AssignedBuffGroups[groupIndex];
 		groupMask = bit.bor(groupMask, CONFIG_AssignedBuffSelf);
@@ -616,14 +634,18 @@ local function Buffalo_ScanRaid()
 				if(bit.band(buffInfo["BITMASK"], groupMask) > 0) and not buffInfo["GROUP"] then
 					--echo(string.format("Buff=%s, mask=%d, group=%d", buffName, bitMask, groupMask));		
 
-					local start, duration, enabled = GetSpellCooldown(buffName);
-					if start < 3 then
+					local waitForCooldown = false;
+					if buffInfo["COOLDOWN"] then
+						local start, duration, enabled = GetSpellCooldown(buffName);
+						waitForCooldown = (start > 3);
+					end;
+					if not waitForCooldown then
 						--	No cooldown (checking on GCD here as well)
 						--	Iterate over Party / Raid
 						for raidIndex = startNum, endNum, 1 do
 							unitid = "player";
 							if raidIndex > 0 then unitid = grouptype .. raidIndex; end;
-							local unitIsCurrentPlayer = (UnitName(unitid) == playerName);
+							local unitIsCurrentPlayer = (Buffalo_GetPlayerAndRealm(unitid) == castingPlayerAndRealm);
 							local rosterInfo = roster[unitid];
 
 							--	Check 1: Target must be online and alive:
@@ -646,9 +668,14 @@ local function Buffalo_ScanRaid()
 
 												--	Check 6: Missing buff detected! "Selfie" buffs are only available by current player, e.g. "Inner Fire":
 												if buffInfo["BITMASK"] < 256 or unitIsCurrentPlayer then
-													--echo(string.format("Adding: unit=%s, group=%d, buff=%s", UnitName(unitid), groupIndex, buffName));
+													--print(unitIsCurrentPlayer);
+													--print(castingPlayerAndRealm);
 													buffMissingCounter = buffMissingCounter + 1;
-													MissingBuffsInGroup[buffMissingCounter] = { unitid, buffName, buffInfo["ICONID"], buffInfo["PRIORITY"] };
+													local priority = buffInfo["PRIORITY"];
+													if unitIsCurrentPlayer then
+														priority = priority + CONFIG_PlayerBuffPriority;
+													end;
+													MissingBuffsInGroup[buffMissingCounter] = { unitid, buffName, buffInfo["ICONID"], priority };
 												end;
 											end;											
 										end;
@@ -680,20 +707,29 @@ local function Buffalo_ScanRaid()
 		--	Sort by Priority (descending order):
 		table.sort(MissingBuffs, Buffalo_ComparePriority);
 
-		if debug then	--	For debugging: output all missing buffs in prio:
-			for buffIndex = 1, missingBuffIndex, 1 do
-				local buff = MissingBuffs[buffIndex];
-				local playername = UnitName(buff[1]) or UnitName("player");
-				echo(string.format("Missing: UnitID=%s, Player=%s, Buff=%s, Prio=%d", buff[1], playername, buff[2], buff[3]));
-			end;
-		end;
-
 		--	Now pick first buff from list and set icon:
 		local missingBuff = MissingBuffs[1];
 		unitid = missingBuff[1];
-		Buffalo_UpdateBuffButton(unitid, missingBuff[2], missingBuff[3]);
+
+		local buffName = missingBuff[2];
+		if debug then
+			local targetPlayer = Buffalo_GetPlayerAndRealm(unitid);
+			if lastBuffTarget ~= targetPlayer..buffName then
+				lastBuffTarget = targetPlayer..buffName;
+				Buffalo_Echo(string.format("%s is missing %s.", targetPlayer, buffName));
+			end;
+		end;
+
+		Buffalo_UpdateBuffButton(unitid, buffName, missingBuff[3]);
 	else
 		Buffalo_UpdateBuffButton();
+
+		if debug then
+			if lastBuffTarget ~= "" then
+				Buffalo_Echo("No pending buffs.");
+				lastBuffTarget = "";
+			end;
+		end;
 	end;
 end;
 
@@ -745,6 +781,15 @@ end;
 --[[
 	UI Control
 --]]
+function Buffalo_OpenConfigurationDialogue()
+	Buffalo_RefreshGroupBuffUI();
+	BuffaloConfigFrame:Show();
+end;
+
+function Buffalo_CloseConfigurationDialogue()
+	BuffaloConfigFrame:Hide();
+end;
+
 function Buffalo_RepositionateButton(self)
 	local x, y = self:GetLeft(), self:GetTop() - UIParent:GetHeight();
 
@@ -830,9 +875,6 @@ function Buffalo_GetGroupBuffProperties(includeSelfBuffs)
 
 	table.sort(buffProperties, Buffalo_ComparePriority);
 
---	for n = 1, table.getn(Buffalo_GroupBuffProperties), 1 do
---		echo(string.format("[%d] Found %s", n, Buffalo_GroupBuffProperties[n][1]));
---	end;
 	return buffProperties;
 end;
 
@@ -899,6 +941,10 @@ end;
 	Set the alpha value on each icon, depending on the current buff's status
 --]]
 function Buffalo_RefreshGroupBuffUI()
+	if not Buffalo_InitializationComplete then
+		return;
+	end;
+
 	local buffCount = table.getn(Buffalo_GroupBuffProperties);
 
 	--	RAID buffs:
@@ -1012,9 +1058,6 @@ end;
 --[[
 	Timers
 --]]
-local TimerTick = 0
-local NextScanTime = 0;
-
 function Buffalo_GetTimerTick()
 	return TimerTick;
 end
@@ -1030,8 +1073,9 @@ function Buffalo_OnEvent(self, event, ...)
 	if (event == "ADDON_LOADED") then
 		local addonname = ...;
 		if addonname == BUFFALO_NAME then
-		    Buffalo_InitializeConfigSettings();
-			Buffalo_InitializeGroupBuffUI();
+			Buffalo_MainInitialization();
+			Buffalo_RepositionateButton(BuffButton);
+			Buffalo_HideBuffButton();
 		end
 
 	elseif (event == "CHAT_MSG_ADDON") then
@@ -1071,11 +1115,6 @@ function Buffalo_OnLoad()
     BuffaloEventFrame:RegisterEvent("CHAT_MSG_ADDON");
 
 	C_ChatInfo.RegisterAddonMessagePrefix(BUFFALO_MESSAGE_PREFIX);
-
-	Buffalo_InitClassSpecificStuff();
-
-	Buffalo_RepositionateButton(BuffButton);
-	Buffalo_HideBuffButton();
 end
 
 function Buffalo_OnTimer(elapsed)
@@ -1085,6 +1124,11 @@ function Buffalo_OnTimer(elapsed)
 		Buffalo_ScanRaid();
 		NextScanTime = TimerTick;
 	end;
+
+	if not Buffalo_InitializationComplete and TimerTick > Buffalo_InitializationRetryTimer then
+		Buffalo_MainInitialization();
+	end;
+
 end
 
 
