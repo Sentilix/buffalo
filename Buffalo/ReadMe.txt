@@ -15,13 +15,15 @@ Buffalo does not need much setup, so there are only a few commands available:
 
 * /buffalo config - opens the Group/Buff configuration screen. This can also be done by right-clicking the buff button.
 * /buffalo hide - hides the Buff button
-* /buffalo show - shows the Buff button again (yay!)
+* /buffalo show - (default) shows the Buff button again (yay!)
 * /buffalo version - shows the current version of Buffalo.
+* /buffalo announce - write a message locally when a buff is missing.
+* /buffalo stopannounce - (default) stop writing missing buffs.
 
  
 
 Note:
-This is an Alpha version, and there may be bugs. Should you find one, feel free to report it below, together with relevant information, such as:
+This is a beta version, and there may be bugs. Should you find one, feel free to report it below, together with relevant information, such as:
 * What class did you play
 * What buff failed
 * What realm type (Classic Era, Tbc, WoTLK ...)
@@ -48,10 +50,37 @@ Buffalo works differently, and have a stronger focus on party/raid buffing, wher
 
 
 
+Buff priority:
+--------------
+ALL			FindHerbs					10
+ALL			FindMinerals				10
+
+Druid		Thorns						11
+Druid		GiftOfTheWild				52
+Druid		MarkOfTheWild				52
+
+Mage		IceBarrier					11
+Mage		IceArmor					12
+Mage		MageArmor					13
+Mage		DampenMagic					51
+Mage		AmplifyMagic				52
+Mage		ArcaneBrilliance			53
+Mage		ArcaneIntellect				53
+
+Priest		InnerFire					11
+Priest		PrayerOfShadowProtection	51
+Priest		ShadowProtection			51
+Priest		PrayerOfSpirit				52
+Priest		DivineSpirit				52
+Priest		PrayerOfFortitude			53
+Priest		PowerWordFortitude			53
+
+
 
 Version history
 ---------------
 version 0.3.0-beta1
+* Added: Option to announce next buff in queue (/buffalo announce).
 * Bugfix: Init of Buffalo sometimes failed due to WoW still not done caching data, added a delay to fix that.
 * Bugfix: Buffalo repeatedly attempted to buff selfie buffs on others.
 * Bugfix: The buff scanner did not always pick up missing buffs as it should.

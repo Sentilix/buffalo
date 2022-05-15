@@ -28,6 +28,7 @@ local Buffalo_InitializationRetryTimer			= 0;
 local Buffalo_UpdateMessageShown				= false;
 local TimerTick = 0
 local NextScanTime = 0;
+local lastBuffTarget = "";
 
 --	Array of buff properties for the griuo UI: { buffname, iconid, bitmask, priority }
 local Buffalo_GroupBuffProperties				= { }
@@ -48,16 +49,19 @@ Buffalo_Options = { }
 local CONFIG_KEY_BuffButtonPosX					= "BuffButton.X";
 local CONFIG_KEY_BuffButtonPosY					= "BuffButton.Y";
 local CONFIG_KEY_BuffButtonVisible				= "BuffButton.Visible";
+local CONFIG_KEY_AnnounceMissingBuff			= "AnnounceMissingBuff";
 local CONFIG_KEY_AssignedBuffGroups				= "AssignedBuffGroups";
 local CONFIG_KEY_AssignedBuffSelf				= "AssignedBuffSelf";
 
 local CONFIG_DEFAULT_AssignedBuffSelf			= 0x0000;
+local CONFIG_DEFAULT_AnnounceMissingBuff		= false;
 
 --	Configured values (TODO: a few selected are still not configurable)
-local CONFIG_AssignedBuffGroups					= { };		-- List of groups and their assigned buffs via bitmask
-local CONFIG_AssignedBuffSelf					= 0x0000;	-- List of assigned self buffs
+local CONFIG_AssignedBuffGroups					= { };		-- List of groups and their assigned buffs via bitmask. Persisted, but no UI for it.
+local CONFIG_AssignedBuffSelf					= 0x0000;	-- (TODO: Make configurable!) List of assigned self buffs. Persisted, but no UI for it.
 local CONFIG_GroupBuffThreshold					= 4;		-- (TODO: Make configurable!) If at least N persons are missing same buff, group buffs will be used.
 local CONFIG_ScanFrequency						= 0.2;		-- (TODO: Make configurable!) Scan every N second.
+local CONFIG_AnnounceMissingBuff				= false;	-- (TODO: Make configurable!) Announce next buff being cast. Persisted, but no UI for it.
 local CONFIG_BuffButtonSize						= 32;		-- (TODO: Make configurable!) Size of buff button
 local CONFIG_PlayerBuffPriority					= 90;		-- (TODO: Make configurable!) Priority to Self
 
@@ -115,6 +119,10 @@ SlashCmdList["BUFFALO_BUFFALO"] = function(msg)
 		SlashCmdList["BUFFALO_SHOW"]();
 	elseif option == "HIDE" then
 		SlashCmdList["BUFFALO_HIDE"]();
+	elseif option == "ANNOUNCE" then
+		SlashCmdList["BUFFALO_ANNOUNCE"]();
+	elseif option == "STOPANNOUNCE" then
+		SlashCmdList["BUFFALO_STOPANNOUNCE"]();
 	elseif option == "VERSION" then
 		SlashCmdList["BUFFALO_VERSION"]();
 	else
@@ -133,6 +141,7 @@ SLASH_BUFFALO_CONFIG2 = "/buffalocfg"
 SlashCmdList["BUFFALO_CONFIG"] = function(msg)
 	Buffalo_OpenConfigurationDialogue();
 end
+
 --[[
 	Show the buff button
 	Syntax: /buffaloshow
@@ -155,6 +164,33 @@ SLASH_BUFFALO_HIDE1 = "/buffalohide"
 SlashCmdList["BUFFALO_HIDE"] = function(msg)
 	BuffButton:Hide();
 	Buffalo_SetOption(CONFIG_KEY_BuffButtonVisible, "0");
+end
+
+--[[
+	Enable buff announcements (locally)
+	Syntax: /buffaloannounce
+	Alternative: /buffalo announce
+	Added in: 0.3.0
+]]
+SLASH_BUFFALO_ANNOUNCE1 = "/buffaloannounce"
+SlashCmdList["BUFFALO_ANNOUNCE"] = function(msg)
+	CONFIG_AnnounceMissingBuff = true;
+	lastBuffTarget = "";
+	Buffalo_SetOption(CONFIG_KEY_AnnounceMissingBuff, CONFIG_AnnounceMissingBuff);
+	Buffalo_Echo("Buff announcements are now ON.");
+end
+
+--[[
+	Disable buff announcements (locally)
+	Syntax: /buffalostopannounce
+	Alternative: /buffalo stopannounce
+	Added in: 0.3.0
+]]
+SLASH_BUFFALO_STOPANNOUNCE1 = "/buffalostopannounce"
+SlashCmdList["BUFFALO_STOPANNOUNCE"] = function(msg)
+	CONFIG_AnnounceMissingBuff = false;
+	Buffalo_SetOption(CONFIG_KEY_AnnounceMissingBuff, CONFIG_AnnounceMissingBuff);
+	Buffalo_Echo("Buff announcements are now OFF.");
 end
 
 --[[
@@ -187,6 +223,8 @@ SlashCmdList["BUFFALO_HELP"] = function(msg)
 	Buffalo_Echo("    Config       (default) Open the configuration dialogue. Same as right-clicking buff button.");
 	Buffalo_Echo("    Show         Shows the buff button.");
 	Buffalo_Echo("    Hide         Hides the buff button.");
+	Buffalo_Echo("    Announce     Announce when a buff is missing.");
+	Buffalo_Echo("    stopannounce Stop announcing missing buffs.");
 	Buffalo_Echo("    Version      Request version info from all clients.");
 	Buffalo_Echo("    Help         This help.");
 end
@@ -436,6 +474,9 @@ function Buffalo_InitializeConfigSettings()
 
 	CONFIG_AssignedBuffSelf = Buffalo_GetOption(CONFIG_KEY_AssignedBuffSelf, CONFIG_DEFAULT_AssignedBuffSelf);
 	Buffalo_SetOption(CONFIG_KEY_AssignedBuffSelf, CONFIG_AssignedBuffSelf);
+
+	CONFIG_AnnounceMissingBuff = Buffalo_GetOption(CONFIG_KEY_AnnounceMissingBuff, CONFIG_DEFAULT_AnnounceMissingBuff);
+	Buffalo_SetOption(CONFIG_KEY_AnnounceMissingBuff, CONFIG_AnnounceMissingBuff);
 end
 
 
@@ -478,7 +519,9 @@ function Buffalo_MainInitialization()
 	end;
 
 	Buffalo_InitializationComplete = true;
-	Buffalo_Echo("Buff data loaded, Buffalo is ready.");
+	if CONFIG_AnnounceMissingBuff then
+		Buffalo_Echo("Buff data loaded, Buffalo is ready.");
+	end;
 end;
 
 
@@ -486,7 +529,6 @@ end;
 --[[
 	Raid scanner
 --]]
-local lastBuffTarget = "";
 local function Buffalo_ScanRaid()
 	--Buffalo_Echo("Scanning raid ...");
 	local debug = 0;
@@ -604,6 +646,10 @@ local function Buffalo_ScanRaid()
 				end;
 			end;
 			
+			--	This may be nil when new people joins while scanning is done:
+			if not roster[unitid] then
+				roster[unitid] = { };
+			end;
 			--	Each unitid is now set with a buffMask: a bitmask containing the buffs they currently have.
 			roster[unitid]["BuffMask"] = buffMask;
 		end;		
@@ -712,7 +758,7 @@ local function Buffalo_ScanRaid()
 		unitid = missingBuff[1];
 
 		local buffName = missingBuff[2];
-		if debug then
+		if CONFIG_AnnounceMissingBuff then
 			local targetPlayer = Buffalo_GetPlayerAndRealm(unitid);
 			if lastBuffTarget ~= targetPlayer..buffName then
 				lastBuffTarget = targetPlayer..buffName;
@@ -724,7 +770,7 @@ local function Buffalo_ScanRaid()
 	else
 		Buffalo_UpdateBuffButton();
 
-		if debug then
+		if CONFIG_AnnounceMissingBuff then
 			if lastBuffTarget ~= "" then
 				Buffalo_Echo("No pending buffs.");
 				lastBuffTarget = "";
@@ -743,26 +789,6 @@ end;
 --[[
 	WoW object handling
 --]]
-local function Buffalo_GetClassInfo(classname)
-	classname = Buffalo_UCFirst(classname);
-
-	for key, val in next, Buffalo_ClassInfo do 
-		if val[1] == classname then
-			return val;
-		end
-	end
-	return nil;
-end
-
---[[
-	Return classname for current player in uppercase.
-	TODO: How will this work on e.g. a French client?
---]]
-function Buffalo_UnitClass(unitid)
-	local _, classname = UnitClass(unitid);
-	return classname;
-end;
-
 function Buffalo_IsSpellInRange(spellname, unitid, unitIsCurrentPlayer)
 	local inRange = IsSpellInRange(spellname, unitid);
 	if inRange == 0 then 
@@ -854,10 +880,10 @@ function Buffalo_GetGroupBuffProperties(includeSelfBuffs)
 
 	local includeMask = 0x00ff;
 	local selfiePrio = 0;
-	local selfiePrioMask = 0x0f00;
+	local selfiePrioMask = 0xff00;
 	if includeSelfBuffs then
 		includeMask = 0x0ffff;
-		selfiePrio = 100;
+		selfiePrio = 50;
 	end;
 	for buffName, props in pairs(BUFF_MATRIX) do
 		if not props["GROUP"] and (bit.band(props["BITMASK"], includeMask) > 0) then
