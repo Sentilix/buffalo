@@ -79,7 +79,7 @@ Priest		PowerWordFortitude			53
 
 Version history
 ---------------
-version 0.3.0-beta1
+Version 0.3.0-beta1
 * Added: Option to announce next buff in queue (/buffalo announce).
 * Bugfix: Init of Buffalo sometimes failed due to WoW still not done caching data, added a delay to fix that.
 * Bugfix: Buffalo repeatedly attempted to buff selfie buffs on others.
