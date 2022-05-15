@@ -18,7 +18,7 @@ Buffalo does not need much setup, so there are only a few commands available:
 
 
 ## Note:
-This is an early Alpha version, and there may be bugs. Should you find one, feel free to report it below, together with relevant information, such as:
+This is a Beta version, and there may be bugs. Should you find one, feel free to report it below, together with relevant information, such as:
 * What class did you play
 * What buff failed
 * What realm type (Classic Era, Tbc, WoTLK ...)
@@ -26,7 +26,6 @@ This is an early Alpha version, and there may be bugs. Should you find one, feel
 
 
 ## Not yet implemented:
-* "Self buffs" are not yet implementet.
 * Paladin buffs are not yet implemented. I hope to make addon 100% compatible with PallyPower, thus exchanging buffs.
 * Addon communication to other instances of Buffalo are not implemented.
 * TBC / WotLK
