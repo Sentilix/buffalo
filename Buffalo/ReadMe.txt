@@ -53,9 +53,9 @@ Version history
 ---------------
 version 0.3.0-beta1
 * Bugfix: Init of Buffalo sometimes failed due to WoW still not done caching data, added a delay to fix that.
-? if the spell have no cd time, can we skip the cd checker?
-? bug: buffer for "raidbuffs" som jeg har sat som "selfies" (men ikke i raidet)
-? bug: buffer konstant for min MageArmor.Muligvis fordi der er andre "classes" der matcher. Spm: skal SELF have sin egen class? F.eks. 0x01000 ?
+* Bugfix: Buffalo repeatedly attempted to buff selfie buffs on others.
+* Bugfix: The buff scanner did not always pick up missing buffs as it should.
+* Bugfix: Addon didnt handle buffs with a cooldown (currently only Ice Barrier).
 
 
 Version 0.3.0-alpha2
