@@ -172,7 +172,7 @@ function Buffalo_InitializeBuffMatrix()
 			["ICONID"]		= 136038,
 			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Druid_GiftOfTheWild_Name),
 			["CLASSES"]		= 0x0fff,
-			["PRIORITY"]	= 52,
+			["PRIORITY"]	= 62,
 			["GROUP"]		= true
 		};
 
@@ -208,7 +208,7 @@ function Buffalo_InitializeBuffMatrix()
 			["ICONID"]		= 135869,
 			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Mage_ArcaneBrilliance_Name),
 			["CLASSES"]		= 0x00ff,
-			["PRIORITY"]	= 53,
+			["PRIORITY"]	= 63,
 			["GROUP"]		= true
 		};
 
@@ -217,7 +217,7 @@ function Buffalo_InitializeBuffMatrix()
 			["BITMASK"]		= 0x0002,
 			["ICONID"]		= 135907,
 			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Mage_AmplifyMagic_Name),
-			["CLASSES"]		= 0x00ff,
+			["CLASSES"]		= BUFFALO_CLASS_MAGE,
 			["PRIORITY"]	= 52,
 			["GROUP"]		= false,
 			["FAMILY"]		= "AmplifyDampen"
@@ -228,7 +228,7 @@ function Buffalo_InitializeBuffMatrix()
 			["BITMASK"]		= 0x0004,
 			["ICONID"]		= 136006,
 			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Mage_DampenMagic_Name),
-			["CLASSES"]		= 0x0fff,
+			["CLASSES"]		= BUFFALO_CLASS_MAGE,
 			["PRIORITY"]	= 51,
 			["GROUP"]		= false,
 			["FAMILY"]		= "AmplifyDampen"
@@ -293,7 +293,7 @@ function Buffalo_InitializeBuffMatrix()
 			["ICONID"]		= 135941, 
 			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Priest_PrayerOfFortitude_Name),
 			["CLASSES"]		= 0x0fff,
-			["PRIORITY"]	= 53, 
+			["PRIORITY"]	= 63, 
 			["GROUP"]		= true 
 		};
 
@@ -314,7 +314,7 @@ function Buffalo_InitializeBuffMatrix()
 			["ICONID"]		= 135946,
 			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Priest_PrayerOfSpirit_Name),
 			["CLASSES"]		= 0x00ff,
-			["PRIORITY"]	= 52,
+			["PRIORITY"]	= 62,
 			["GROUP"]		= true 
 		};
 

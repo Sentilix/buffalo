@@ -79,6 +79,11 @@ Priest		PowerWordFortitude			53
 
 Version history
 ---------------
+Version 0.3.0-beta2
+* Bugfix: Prayer Buffs did not fire correct on foreign groups.
+* Bugfix: Buff detection gave false positive when raid buffs was also selected for self.
+
+
 Version 0.3.0-beta1
 * Added: Option to announce next buff in queue (/buffalo announce).
 * Bugfix: Init of Buffalo sometimes failed due to WoW still not done caching data, added a delay to fix that.

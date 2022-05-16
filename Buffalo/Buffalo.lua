@@ -40,6 +40,9 @@ local BUFF_MATRIX = { };
 --	[classname<english>]=<bitmasl value>
 local CLASS_MATRIX = { };
 
+--	Debugging
+local DEBUG_FunctionList = { };
+
 
 -- Configuration:
 --	Loaded options:	{realmname}{playername}{parameter}
@@ -60,7 +63,7 @@ local CONFIG_DEFAULT_AnnounceMissingBuff		= false;
 local CONFIG_AssignedBuffGroups					= { };		-- List of groups and their assigned buffs via bitmask. Persisted, but no UI for it.
 local CONFIG_AssignedBuffSelf					= 0x0000;	-- (TODO: Make configurable!) List of assigned self buffs. Persisted, but no UI for it.
 local CONFIG_GroupBuffThreshold					= 4;		-- (TODO: Make configurable!) If at least N persons are missing same buff, group buffs will be used.
-local CONFIG_ScanFrequency						= 0.2;		-- (TODO: Make configurable!) Scan every N second.
+local CONFIG_ScanFrequency						= 0.3;		-- (TODO: Make configurable!) Scan every N second.
 local CONFIG_AnnounceMissingBuff				= false;	-- (TODO: Make configurable!) Announce next buff being cast. Persisted, but no UI for it.
 local CONFIG_BuffButtonSize						= 32;		-- (TODO: Make configurable!) Size of buff button
 local CONFIG_PlayerBuffPriority					= 90;		-- (TODO: Make configurable!) Priority to Self
@@ -103,7 +106,7 @@ end
 ]]
 SLASH_BUFFALO_BUFFALO1 = "/buffalo"
 SlashCmdList["BUFFALO_BUFFALO"] = function(msg)
-	local _, _, option = string.find(msg, "(%S*)")
+	local _, _, option, params = string.find(msg, "(%S*).?(%S*)")
 
 	if not option or option == "" then
 		option = "CFG";
@@ -113,6 +116,10 @@ SlashCmdList["BUFFALO_BUFFALO"] = function(msg)
 		
 	if (option == "CFG" or option == "CONFIG") then
 		SlashCmdList["BUFFALO_CONFIG"]();
+	elseif option == "DEBUG" then
+		SlashCmdList["BUFFALO_DEBUG"](params);
+	elseif option == "REMOVEDEBUG" or option == "STOPDEBUG" then
+		SlashCmdList["BUFFALO_REMOVEDEBUG"](params);
 	elseif option == "HELP" then
 		SlashCmdList["BUFFALO_HELP"]();
 	elseif option == "SHOW" then
@@ -208,6 +215,36 @@ SlashCmdList["BUFFALO_VERSION"] = function(msg)
 	end
 end
 
+--[[
+	Add a function to debug. If function is blank, it lists current functions.
+	Syntax: /buffalodebug
+	Alternative: /buffalo debug [function]
+	Added in: 0.3.0
+]]
+SLASH_BUFFALO_DEBUG1 = "/buffalodebug"	
+SlashCmdList["BUFFALO_DEBUG"] = function(msg)
+	if msg and msg ~= "" then
+		Buffalo_AddDebugFunction(msg);
+	else
+		Buffalo_ListDebugFunctions();
+	end;
+end
+
+--[[
+	Remove a function from the debugging list
+	Syntax: /buffaloremovedebug
+	Alternative: /buffalo removedebug [function]
+	Added in: 0.3.0
+]]
+SLASH_BUFFALO_REMOVEDEBUG1 = "/buffaloremovedebug"	
+SLASH_BUFFALO_REMOVEDEBUG2 = "/buffalostopdebug"	
+SlashCmdList["BUFFALO_REMOVEDEBUG"] = function(msg)
+	if msg and msg ~= "" then
+		Buffalo_RemoveDebugFunction(msg);
+	else
+		Buffalo_ListDebugFunctions();
+	end;
+end
 --[[
 	Show HELP options
 	Syntax: /buffalohelp
@@ -378,13 +415,8 @@ function Buffalo_GetMyRealm()
 end;
 
 function Buffalo_GetPlayerAndRealm(unitid)
-	local playername = GetUnitName(unitid, true);
-
-	if not string.find(playername, "-") then
-		playername = playername .."-".. Buffalo_GetMyRealm();
-	end;
-
-	return playername;
+	local playername, realmname = UnitName(unitid);
+	return playername.."-".. (realmname or Buffalo_GetMyRealm());
 end;
 
 function Buffalo_GetPlayerAndRealmFromName(playername)
@@ -531,7 +563,7 @@ end;
 --]]
 local function Buffalo_ScanRaid()
 	--Buffalo_Echo("Scanning raid ...");
-	local debug = 0;
+	local debug = DEBUG_FunctionList["BUFFALO_SCANRAID"];
 
 	if not IsBuffer or not Buffalo_InitializationComplete then
 		return;
@@ -661,15 +693,19 @@ local function Buffalo_ScanRaid()
 	--	Run over Groups -> Buffs -> UnitIDs
 	--	Result: { unitid, buffname, iconid, priority }
 
+	local unitname;
 	local MissingBuffs = { };				-- Final list of all missing buffs with a Priority set.
 	local missingBuffIndex = 0;				-- Buff counter
 	local castingPlayerAndRealm = Buffalo_GetPlayerAndRealm("player");
 	for groupIndex = 1, groupCount, 1 do	-- Iterate over all available groups
 		local groupMask = CONFIG_AssignedBuffGroups[groupIndex];
-		groupMask = bit.bor(groupMask, CONFIG_AssignedBuffSelf);
+		local selfieMask = CONFIG_AssignedBuffSelf;
+		local combiMask = bit.bor(groupMask, selfieMask);
 
 		--	If groupMask is 0 then this group does not have any buffs to apply.
-		if groupMask > 0 then
+		if combiMask > 0 then
+
+			--echo(string.format("Group=%s, mask=%s", groupIndex, combiMask));
 			--	We have found an assigned group now. 
 			--	Search through the buffs, and count each buff per group and unit combo:
 			for buffName, buffInfo in next, BUFF_MATRIX do
@@ -677,8 +713,8 @@ local function Buffalo_ScanRaid()
 				local MissingBuffsInGroup = { };	-- No units missing buffs in group (yet).
 
 				--	Skip buffs which we haven't committed to do. That includes GREATER/PRAYER buffs:
-				if(bit.band(buffInfo["BITMASK"], groupMask) > 0) and not buffInfo["GROUP"] then
-					--echo(string.format("Buff=%s, mask=%d, group=%d", buffName, bitMask, groupMask));		
+				if(bit.band(buffInfo["BITMASK"], combiMask) > 0) and not buffInfo["GROUP"] then
+					--echo(string.format("Buff=%s, bmask=%d, group=%d, gmask=%d", buffName, bitMask, groupIndex, combiMask));
 
 					local waitForCooldown = false;
 					if buffInfo["COOLDOWN"] then
@@ -691,36 +727,41 @@ local function Buffalo_ScanRaid()
 						for raidIndex = startNum, endNum, 1 do
 							unitid = "player";
 							if raidIndex > 0 then unitid = grouptype .. raidIndex; end;
-							local unitIsCurrentPlayer = (Buffalo_GetPlayerAndRealm(unitid) == castingPlayerAndRealm);
+							unitname = Buffalo_GetPlayerAndRealm(unitid);
+
+							local unitIsCurrentPlayer = (unitname == castingPlayerAndRealm);
 							local rosterInfo = roster[unitid];
 
 							--	Check 1: Target must be online and alive:
 							if rosterInfo and rosterInfo["IsOnline"] and not rosterInfo["IsDead"] then
+								--echo(string.format("Checking %s (%s) in group %s", unitname, unitid, groupIndex));
 
 								--	Check 2: Target must be in the current group:
 								if rosterInfo["Group"] == groupIndex then
+									--echo(string.format("Found target %s (%s) in group %s", unitname, unitid, groupIndex));
 
 									-- Check 3: Target class must be eligible for buff:
 									if (bit.band(buffInfo["CLASSES"], rosterInfo["ClassMask"]) > 0)	then
-										--echo(string.format("Class is eligible for buff, Buff=%s, Unitid=%s, BuffClass=%d, ClassMask=%d", buffName, unitid, buffInfo["CLASSES"], rosterInfo["ClassMask"]));
+										--echo(string.format("Class is eligible for buff, Buff=%s, Unit=%s, BuffClass=%d, ClassMask=%d", buffName, unitname, buffInfo["CLASSES"], rosterInfo["ClassMask"]));
 
 										--	Check 4: Target must be in range:
 										if Buffalo_IsSpellInRange(buffName, unitid, unitIsCurrentPlayer) then 
-											--echo(string.format("Spell in range, Buff=%s, Unitid=%s, BuffClass=%d, ClassMask=%d", buffName, unitid, buffInfo["CLASSES"], rosterInfo["ClassMask"]));
+											--echo(string.format("Spell in range, Buff=%s, Unit=%s, BuffClass=%d, ClassMask=%d", buffName, unitname, buffInfo["CLASSES"], rosterInfo["ClassMask"]));
 
 											--	Check 5: There's a person alive in this group. Do he needs this specific buff?
 											if (bit.band(rosterInfo["BuffMask"], buffInfo["BITMASK"]) == 0) then
 												--echo(string.format("Found missing buff, unit=%s, group=%d, buff=%s", UnitName(unitid), groupIndex, buffName));
 
 												--	Check 6: Missing buff detected! "Selfie" buffs are only available by current player, e.g. "Inner Fire":
-												if buffInfo["BITMASK"] < 256 or unitIsCurrentPlayer then
-													--print(unitIsCurrentPlayer);
-													--print(castingPlayerAndRealm);
+												--if buffInfo["BITMASK"] < 256 or unitIsCurrentPlayer then
+												if	(unitIsCurrentPlayer and bit.band(selfieMask, buffInfo["BITMASK"]) > 0) or	-- Selfie buff
+													(bit.band(groupMask, buffInfo["BITMASK"]) > 0) then							-- Raid buff
 													buffMissingCounter = buffMissingCounter + 1;
 													local priority = buffInfo["PRIORITY"];
 													if unitIsCurrentPlayer then
 														priority = priority + CONFIG_PlayerBuffPriority;
 													end;
+													--echo(string.format("Adding: unit=%s, group=%d, buff=%s", unitname, groupIndex, buffName));
 													MissingBuffsInGroup[buffMissingCounter] = { unitid, buffName, buffInfo["ICONID"], priority };
 												end;
 											end;											
@@ -728,7 +769,7 @@ local function Buffalo_ScanRaid()
 									end;
 								end;
 							end;
-						end;
+						end;	-- end iterate raid
 					end;
 				end;
 
@@ -736,8 +777,9 @@ local function Buffalo_ScanRaid()
 				if buffInfo["PARENT"] and buffMissingCounter >= CONFIG_GroupBuffThreshold then
 					--echo(string.format("GROUP: missing=%d, threshold=%d", buffMissingCounter, CONFIG_GroupBuffThreshold));
 					local parentBuffInfo = BUFF_MATRIX[buffInfo["PARENT"]];
+					local bufferUnitid = MissingBuffsInGroup[1][1];
 					missingBuffIndex = missingBuffIndex + 1;
-					MissingBuffs[missingBuffIndex] = { unitid, buffInfo["PARENT"], parentBuffInfo["ICONID"], parentBuffInfo["PRIORITY"] };
+					MissingBuffs[missingBuffIndex] = { bufferUnitid, buffInfo["PARENT"], parentBuffInfo["ICONID"], parentBuffInfo["PRIORITY"] };
 				else
 					-- Use single target buffing:
 					for missingIndex = 1, buffMissingCounter, 1 do
@@ -745,9 +787,10 @@ local function Buffalo_ScanRaid()
 						MissingBuffs[missingBuffIndex] = MissingBuffsInGroup[missingIndex];
 					end;
 				end;
-			end;
+
+			end;	-- end iterate buff matrix
 		end;
-	end;
+	end;	--	End iterate groups
 
 	if missingBuffIndex > 0 then
 		--	Sort by Priority (descending order):
@@ -758,12 +801,16 @@ local function Buffalo_ScanRaid()
 		unitid = missingBuff[1];
 
 		local buffName = missingBuff[2];
+		local targetPlayer = Buffalo_GetPlayerAndRealm(unitid);
 		if CONFIG_AnnounceMissingBuff then
-			local targetPlayer = Buffalo_GetPlayerAndRealm(unitid);
 			if lastBuffTarget ~= targetPlayer..buffName then
 				lastBuffTarget = targetPlayer..buffName;
 				Buffalo_Echo(string.format("%s is missing %s.", targetPlayer, buffName));
 			end;
+		end;
+
+		if debug then
+			Buffalo_Echo(string.format("DEBUG: Buffing unit=%s(%s), Buff=%s, Icon=%s", unitid, targetPlayer, buffName, missingBuff[3]));
 		end;
 
 		Buffalo_UpdateBuffButton(unitid, buffName, missingBuff[3]);
@@ -1088,6 +1135,34 @@ function Buffalo_GetTimerTick()
 	return TimerTick;
 end
 
+
+
+--[[
+	Debugging functions
+	Added in: 0.3.0
+--]]
+function Buffalo_AddDebugFunction(functionName)
+	functionName = Buffalo_CreateFunctionName(functionName);
+	echo(string.format("%s added to debugging list.", functionName));
+	DEBUG_FunctionList[functionName] = true;
+end;
+
+function Buffalo_RemoveDebugFunction(functionName)
+	functionName = Buffalo_CreateFunctionName(functionName);
+	echo(string.format("%s removed from debugging list.", functionName));
+	DEBUG_FunctionList[functionName] = nil;
+end;
+
+function Buffalo_ListDebugFunctions()
+	echo("Debugging list:");
+	for functionName in next, DEBUG_FunctionList do
+		echo("> "..functionName);
+	end;
+end;
+
+function Buffalo_CreateFunctionName(functionName)
+	return "BUFFALO_" .. string.upper(functionName);
+end;
 
 
 --[[
