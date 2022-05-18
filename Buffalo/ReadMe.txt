@@ -79,6 +79,9 @@ Priest		PowerWordFortitude			53
 
 Version history
 ---------------
+Fixed prayer priority
+Updated class priority
+
 Version 0.3.0-beta2
 * Bugfix: Prayer Buffs did not fire correct on foreign groups.
 * Bugfix: Buff detection gave false positive when raid buffs was also selected for self.
