@@ -22,7 +22,7 @@ Buffalo does not need much setup, so there are only a few commands available:
 
 
 ## Note:
-This is a Beta version, and there may be bugs. Should you find one, feel free to report it below, together with relevant information, such as:
+Should you find a bug, feel free to report it below, together with relevant information, such as:
 * What class did you play
 * What buff failed
 * What realm type (Classic Era, Tbc, WoTLK ...)
