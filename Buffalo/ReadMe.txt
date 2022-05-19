@@ -79,8 +79,10 @@ Priest		PowerWordFortitude			53
 
 Version history
 ---------------
-Fixed prayer priority
-Updated class priority
+Version 0.3.0
+* Updated class priority
+* Fixed prayer priority
+
 
 Version 0.3.0-beta2
 * Bugfix: Prayer Buffs did not fire correct on foreign groups.
