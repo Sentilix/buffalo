@@ -62,7 +62,7 @@ local CONFIG_DEFAULT_AnnounceMissingBuff		= false;
 --	Configured values (TODO: a few selected are still not configurable)
 local CONFIG_AssignedBuffGroups					= { };		-- List of groups and their assigned buffs via bitmask. Persisted, but no UI for it.
 local CONFIG_AssignedBuffSelf					= 0x0000;	-- (TODO: Make configurable!) List of assigned self buffs. Persisted, but no UI for it.
-local CONFIG_GroupBuffThreshold					= 2;		-- (TODO: Make configurable!) If at least N persons are missing same buff, group buffs will be used.
+local CONFIG_GroupBuffThreshold					= 4;		-- (TODO: Make configurable!) If at least N persons are missing same buff, group buffs will be used.
 local CONFIG_ScanFrequency						= 0.3;		-- (TODO: Make configurable!) Scan every N second.
 local CONFIG_AnnounceMissingBuff				= false;	-- (TODO: Make configurable!) Announce next buff being cast. Persisted, but no UI for it.
 local CONFIG_BuffButtonSize						= 32;		-- (TODO: Make configurable!) Size of buff button
