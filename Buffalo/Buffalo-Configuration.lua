@@ -228,7 +228,7 @@ function Buffalo_InitializeBuffMatrix()
 			["ICONID"]		= 136006,
 			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Mage_DampenMagic_Name),
 			["CLASSES"]		= BUFFALO_CLASS_ALL,
-			["PRIORITY"]	= 51,
+			["PRIORITY"]	= 53,
 			["GROUP"]		= false,
 			["FAMILY"]		= "AmplifyDampen"
 		};

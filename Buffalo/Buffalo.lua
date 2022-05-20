@@ -993,7 +993,8 @@ function Buffalo_GetGroupBuffProperties(includeSelfBuffs)
 
 	local includeMask = 0x00ff;
 	local selfiePrio = 0;
-	local selfiePrioMask = 0xff00;
+	--	This includes Self buffs, but not Find Herbs/Minerals
+	local selfiePrioMask = 0x0f00;
 	if includeSelfBuffs then
 		includeMask = 0x0ffff;
 		selfiePrio = 50;
