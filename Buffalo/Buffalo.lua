@@ -610,22 +610,30 @@ local function Buffalo_ScanRaid()
 	if grouptype == "solo" then
 		unitid = "player"
 		roster[unitid] = { ["Group"]=1, ["IsOnline"]=true, ["IsDead"]=nil, ["BuffMask"]=0, ["ClassMask"]=BUFFALO_CLASS_ALL };
-	else
+
+	elseif grouptype == "party" then
+		unitid = "player";
+		for raidIndex = startNum, endNum, 1 do
+			if raidIndex > 0 then
+				unitid = grouptype..raidIndex;
+			end;
+			
+			local isOnline = 0 and UnitIsConnected(unitid) and 1;
+			local isDead   = 0 and UnitIsDead(unitid) and 1;
+			local _, classname = UnitClass(unitid);
+
+			roster[unitid] = { ["Group"]=1, ["IsOnline"]=isOnline, ["IsDead"]=isDead, ["BuffMask"]=0, ["ClassMask"]=CLASS_MATRIX[classname] };
+		end;
+
+	else	-- Raid
 		for raidIndex = 1, 40, 1 do
 			local name, rank, subgroup, level, _, filename, zone, online, dead, role, isML = GetRaidRosterInfo(raidIndex);
 			if name then
 				local isOnline = 0 and online and 1;
 				local isDead   = 0 and dead   and 1;
 
-				if grouptype == "raid" then
-					unitid = grouptype..raidIndex;
-				else
-					unitid = "player"
-					if raidIndex > 1 then
-						unitid = grouptype..(raidIndex - 1);
-					end;
-				end;
-
+				unitid = grouptype..raidIndex;
+				
 				--	Find unitid on current player:
 				if name == playername then
 					currentUnitid = unitid;
@@ -712,8 +720,7 @@ local function Buffalo_ScanRaid()
 
 		--	If groupMask is 0 then this group does not have any buffs to apply.
 		if groupMask > 0 then
-
-			--echo(string.format("Group=%s, mask=%s", groupIndex, combiMask));
+			--echo(string.format("Group=%s, mask=%s", groupIndex, groupMask));
 			--	We have found an assigned group now. 
 			--	Search through the buffs, and count each buff per group and unit combo:
 			for buffName, buffInfo in next, BUFF_MATRIX do
@@ -723,7 +730,7 @@ local function Buffalo_ScanRaid()
 
 				--	Skip buffs which we haven't committed to do. That includes GREATER/PRAYER buffs:
 				if(bit.band(buffInfo["BITMASK"], groupMask) > 0) and not buffInfo["GROUP"] then
-					--echo(string.format("Buff=%s, bmask=%d, group=%d, gmask=%d", buffName, bitMask, groupIndex, combiMask));
+					--echo(string.format("Buff=%s, bmask=%d, group=%d, gmask=%d", buffName, bitMask, groupIndex, groupMask));
 					local waitForCooldown = false;
 					if buffInfo["COOLDOWN"] then
 						local start, duration, enabled = GetSpellCooldown(buffName);
@@ -737,12 +744,11 @@ local function Buffalo_ScanRaid()
 							if raidIndex > 0 then unitid = grouptype .. raidIndex; end;
 							unitname = Buffalo_GetPlayerAndRealm(unitid);
 
-							--local unitIsCurrentPlayer = (unitname == castingPlayerAndRealm);
 							local rosterInfo = roster[unitid];
-	
+
 							--	Check 1: Target must be online and alive:
 							if rosterInfo and rosterInfo["IsOnline"] and not rosterInfo["IsDead"] then
-							--echo(string.format("Checking %s (%s) in group %s", unitname, unitid, groupIndex));
+								--echo(string.format("Checking %s (%s) in group %s", unitname, unitid, groupIndex));
 								--	Check 2: Target must be in the current group:
 								if rosterInfo["Group"] == groupIndex then
 									groupMemberCounter = groupMemberCounter + 1;
@@ -767,9 +773,6 @@ local function Buffalo_ScanRaid()
 												if	(bit.band(groupMask, buffInfo["BITMASK"]) > 0) then							-- Raid buff
 													buffMissingCounter = buffMissingCounter + 1;
 													local priority = buffInfo["PRIORITY"];
-													--if unitIsCurrentPlayer then
-													--	priority = priority + CONFIG_PlayerBuffPriority;
-													--end;
 													--echo(string.format("Adding: unit=%s, group=%d, buff=%s", unitname, groupIndex, buffName));
 													MissingBuffsInGroup[buffMissingCounter] = { unitid, buffName, buffInfo["ICONID"], priority };
 												end;
@@ -836,7 +839,7 @@ local function Buffalo_ScanRaid()
 								--echo(string.format("Found missing buff, unit=%s, group=%d, buff=%s", UnitName(unitid), groupIndex, buffName));
 
 								if (bit.band(groupMask, buffInfo["BITMASK"]) > 0) then
-									--echo(string.format("Adding: unit=%s, group=%d, buff=%s", unitname, groupIndex, buffName));
+									--echo(string.format("Adding: unitid=%s, unit=%s, group=%d, buff=%s", unitid, unitname, groupIndex, buffName));
 									missingBuffIndex = missingBuffIndex + 1;
 									local priority = buffInfo["PRIORITY"];
 									if not buffInfo["GROUP"] then

@@ -79,6 +79,11 @@ Priest		PowerWordFortitude			53
 
 Version history
 ---------------
+Version 0.3.1
+* Fixed selfie buffs in Solo and Party.
+* Reordered buff display order in UI.
+
+
 Version 0.3.0
 * Updated class priority
 * Fixed prayer priority
