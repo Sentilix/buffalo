@@ -648,6 +648,7 @@ local function Buffalo_ScanRaid()
 		end;
 	end;
 
+
 	--	Part 2:
 	--	This iterate over all players in party/raid and set the bitmapped buff mask on each
 	--	applicable (i.e. not dead, not disconnected) player.
@@ -823,7 +824,6 @@ local function Buffalo_ScanRaid()
 				if not waitForCooldown then
 					--	No cooldown (checking on GCD here as well)
 					local rosterInfo = roster[currentUnitid];
-					--echo("currentUnitid = "..currentUnitid .." (".. UnitName(currentUnitid) ..")");
 	
 					--	Check 1: Target must be online and alive:
 					if rosterInfo and not rosterInfo["IsDead"] then
