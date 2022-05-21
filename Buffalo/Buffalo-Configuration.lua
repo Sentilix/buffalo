@@ -196,7 +196,7 @@ function Buffalo_InitializeBuffMatrix()
 			["ICONID"]		= 135932,
 			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Mage_ArcaneIntellect_Name),
 			["CLASSES"]		= BUFFALO_CLASS_MANAUSERS,
-			["PRIORITY"]	= 51,
+			["PRIORITY"]	= 53,
 			["GROUP"]		= false,
 			["PARENT"]		= "Arcane Brilliance"
 		};
@@ -207,7 +207,7 @@ function Buffalo_InitializeBuffMatrix()
 			["ICONID"]		= 135869,
 			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Mage_ArcaneBrilliance_Name),
 			["CLASSES"]		= BUFFALO_CLASS_MANAUSERS,
-			["PRIORITY"]	= 51,
+			["PRIORITY"]	= 53,
 			["GROUP"]		= true
 		};
 
@@ -228,7 +228,7 @@ function Buffalo_InitializeBuffMatrix()
 			["ICONID"]		= 136006,
 			["SPELLID"]		= Buffalo_GetSpellID(BUFFALO_BUFF_Mage_DampenMagic_Name),
 			["CLASSES"]		= BUFFALO_CLASS_ALL,
-			["PRIORITY"]	= 53,
+			["PRIORITY"]	= 51,
 			["GROUP"]		= false,
 			["FAMILY"]		= "AmplifyDampen"
 		};
