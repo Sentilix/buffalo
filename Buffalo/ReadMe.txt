@@ -79,6 +79,12 @@ Priest		PowerWordFortitude			53
 
 Version history
 ---------------
+Version 0.4.0-beta1
+* Added class configuration UI.
+* Added Deathknight class, although not selectable in UI yet.
+* Updated configuration UI.
+
+
 Version 0.3.0
 * Updated class priority
 * Fixed prayer priority
