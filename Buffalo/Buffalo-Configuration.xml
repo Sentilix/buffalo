@@ -12,7 +12,7 @@
 				self:RegisterForClicks("LeftButtonDown", "RightButtonDown");
 			</OnLoad>
 			<OnClick>
-				Buffalo_OnGroupBuffClick(self);
+				Buffalo_ConfigurationBuffOnClick(self);
 			</OnClick>
 		</Scripts>
 	</Button>
@@ -24,7 +24,7 @@
 			<KeyValue key="backdropColor" value="BLACK" type="global"/>
 			<KeyValue key="backdropBorderColor" value="WHITE" type="global"/>
 		</KeyValues>
-		<Size x="440" y="340" />
+		<Size x="450" y="310" />
 		<Anchors>
 			<Anchor point="CENTER"/>
 		</Anchors>
@@ -34,29 +34,44 @@
 			<Frame name="$parentGroups" hidden="false">
 				<Size x="320" y="200" />
 				<Anchors>
-					<Anchor point="TOPLEFT" x="30" y="-92" />
+					<Anchor point="TOPLEFT" x="35" y="-60" />
 				</Anchors>
 			</Frame>
 
+			<!-- Self buff row is inserted here -->
 			<Frame name="$parentSelf" hidden="false">
 				<Size x="320" y="200" />
 				<Anchors>
-					<Anchor point="TOPLEFT" x="30" y="-250" />
+					<Anchor point="TOPLEFT" x="35" y="-220" />
 				</Anchors>
 			</Frame>
 
-			<!-- Close button -->
-			<Button name="CloseButton" inherits="UIPanelButtonTemplate" movable="true" text="Close">
+			<!-- Switch config button -->
+			<Button name="$parentClassConfigButton" inherits="UIPanelButtonTemplate" movable="true" text="Class config">
 				<Size>
 					<AbsDimension x="100" y="23" />
 				</Size>
 				<Anchors>
 					<Anchor point="BOTTOM">
-						<Offset x="0" y="35" />
+						<Offset x="-60" y="30" />
 					</Anchor>
 				</Anchors>
 				<Scripts>
-					<OnClick>Buffalo_OnCloseButtonClick();</OnClick>
+					<OnClick>Buffalo_SwitchToClassConfig();</OnClick>
+				</Scripts>
+			</Button>
+			<!-- Close button -->
+			<Button name="$parentCloseButton" inherits="UIPanelButtonTemplate" movable="true" text="Close">
+				<Size>
+					<AbsDimension x="100" y="23" />
+				</Size>
+				<Anchors>
+					<Anchor point="BOTTOM">
+						<Offset x="60" y="30" />
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>Buffalo_ConfigurationOnCloseButtonClick();</OnClick>
 				</Scripts>
 			</Button>
 		</Frames>
@@ -65,7 +80,7 @@
 			<Layer level="ARTWORK">
 				<Texture name="$parentHeaderTexture" file="Interface\DialogFrame\UI-DialogBox-Header">
 					<Size>
-						<AbsDimension x="256" y="64"/>
+						<AbsDimension x="880" y="64"/>
 					</Size>
 					<Anchors>
 						<Anchor point="TOP">
@@ -75,7 +90,7 @@
 						</Anchor>
 					</Anchors>
 				</Texture>
-				<FontString inherits="GameFontNormal" text="Buffalo Options">
+				<FontString inherits="GameFontNormal" text="Assign buffs for specific groups by left/right clicking the icons.">
 					<Anchors>
 						<Anchor point="TOP" relativeTo="$parentHeaderTexture">
 							<Offset>
@@ -84,19 +99,11 @@
 						</Anchor>
 					</Anchors>
 				</FontString>
-
-				<FontString inherits="GameFontNormal" text="Assign buffs for specific groups by left/right clicking the icons.">
-					<Anchors>
-						<Anchor point="TOP">
-							<Offset x="0" y="-40"/>
-						</Anchor>
-					</Anchors>
-				</FontString>
-				
+			
 				<FontString inherits="GameFontNormal" text="Grp 1">
 					<Anchors>
 						<Anchor point="TOPLEFT">
-							<Offset x="30" y="-70"/>
+							<Offset x="30" y="-30"/>
 						</Anchor>
 					</Anchors>
 					<Color r="1" g="1" b="1" a="1.0"/>
@@ -104,7 +111,7 @@
 				<FontString inherits="GameFontNormal" text="Grp 2">
 					<Anchors>
 						<Anchor point="TOPLEFT">
-							<Offset x="80" y="-70"/>
+							<Offset x="80" y="-30"/>
 						</Anchor>
 					</Anchors>
 					<Color r="1" g="1" b="1" a="1.0"/>
@@ -112,7 +119,7 @@
 				<FontString inherits="GameFontNormal" text="Grp 3">
 					<Anchors>
 						<Anchor point="TOPLEFT">
-							<Offset x="130" y="-70"/>
+							<Offset x="130" y="-30"/>
 						</Anchor>
 					</Anchors>
 					<Color r="1" g="1" b="1" a="1.0"/>
@@ -120,7 +127,7 @@
 				<FontString inherits="GameFontNormal" text="Grp 4">
 					<Anchors>
 						<Anchor point="TOPLEFT">
-							<Offset x="180" y="-70"/>
+							<Offset x="180" y="-30"/>
 						</Anchor>
 					</Anchors>
 					<Color r="1" g="1" b="1" a="1.0"/>
@@ -128,7 +135,7 @@
 				<FontString inherits="GameFontNormal" text="Grp 5">
 					<Anchors>
 						<Anchor point="TOPLEFT">
-							<Offset x="230" y="-70"/>
+							<Offset x="230" y="-30"/>
 						</Anchor>
 					</Anchors>
 					<Color r="1" g="1" b="1" a="1.0"/>
@@ -136,7 +143,7 @@
 				<FontString inherits="GameFontNormal" text="Grp 6">
 					<Anchors>
 						<Anchor point="TOPLEFT">
-							<Offset x="280" y="-70"/>
+							<Offset x="280" y="-30"/>
 						</Anchor>
 					</Anchors>
 					<Color r="1" g="1" b="1" a="1.0"/>
@@ -144,7 +151,7 @@
 				<FontString inherits="GameFontNormal" text="Grp 7">
 					<Anchors>
 						<Anchor point="TOPLEFT">
-							<Offset x="330" y="-70"/>
+							<Offset x="330" y="-30"/>
 						</Anchor>
 					</Anchors>
 					<Color r="1" g="1" b="1" a="1.0"/>
@@ -152,7 +159,7 @@
 				<FontString inherits="GameFontNormal" text="Grp 8">
 					<Anchors>
 						<Anchor point="TOPLEFT">
-							<Offset x="380" y="-70"/>
+							<Offset x="380" y="-30"/>
 						</Anchor>
 					</Anchors>
 					<Color r="1" g="1" b="1" a="1.0"/>
@@ -160,8 +167,8 @@
 
 				<FontString inherits="GameFontNormal" text="Self buffs:">
 					<Anchors>
-						<Anchor point="TOPLEFT">
-							<Offset x="30" y="-220"/>
+						<Anchor point="TOPLEFT" relativeTo="$parentSelf">
+							<Offset x="0" y="30"/>
 						</Anchor>
 					</Anchors>
 					<Color r="1" g="1" b="1" a="1.0"/>
@@ -171,11 +178,11 @@
 					<Anchors>
 						<Anchor point="BOTTOM">
 							<Offset>
-								<AbsDimension x="0" y="15"/>
+								<AbsDimension x="0" y="8"/>
 							</Offset>
 						</Anchor>
 					</Anchors>
-					<Color r="0.3" g="0.3" b="0.3" a="1.0"/>
+					<Color r="0.4" g="0.3" b="0.1" a="1.0"/>
 				</FontString>
 
 			</Layer>

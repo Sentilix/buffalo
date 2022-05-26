@@ -8,4 +8,5 @@
 ## X-Curse-Project-ID: 623031
 ## X-WoWI-ID: 26305
 Buffalo-Configuration.xml
+Buffalo-ClassConfig.xml
 Buffalo.xml

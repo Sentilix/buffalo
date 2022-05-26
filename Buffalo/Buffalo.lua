@@ -19,6 +19,17 @@ local BUFFALO_COLOUR_INTRO						= BUFFALO_COLOUR_BEGINMARK.."F8F8F8"
 local BUFFALO_ICON_PASSIVE						= 136112;
 local BUFFALO_ICON_COMBAT						= "Interface\\Icons\\Ability_dualwield";
 local BUFFALO_ICON_PLAYERDEAD					= "Interface\\Icons\\Ability_rogue_feigndeath";
+local BUFFALO_ALPHA_DISABLED					= 0.3;
+local BUFFALO_ALPHA_ENABLED						= 1.0;
+
+local BUFFALO_BACKDROPINFO = {
+	bgFile = "Interface\\CharacterFrame\\UI-Party-Background",
+	edgeFile = "Interface\\AchievementFrame\\UI-Achievement-WoodBorder",
+	edgeSize = 64,
+	tileEdge = true,
+};
+
+
 
 --	Internal variables
 local IsBuffer									= false;
@@ -26,19 +37,20 @@ local Buffalo_PlayerNameAndRealm				= "";
 local Buffalo_InitializationComplete			= false;
 local Buffalo_InitializationRetryTimer			= 0;
 local Buffalo_UpdateMessageShown				= false;
-local TimerTick = 0
-local NextScanTime = 0;
-local lastBuffTarget = "";
+local TimerTick									= 0
+local NextScanTime								= 0;
+local lastBuffTarget							= "";
 
---	Array of buff properties for the griuo UI: { buffname, iconid, bitmask, priority }
+--	Array of buff properties for the group UI: { buffname, iconid, bitmask, priority }
 local Buffalo_GroupBuffProperties				= { }
 local Buffalo_SelfBuffProperties				= { }
 
 --	[buffname]=<bitmask value>
 local BUFF_MATRIX = { };
 
---	[classname<english>]=<bitmasl value>
+--	[classname<english>]={ ICONID=<icon id>, MASK=<bitmask value> }
 local CLASS_MATRIX = { };
+local CLASS_MASK_ALL = 0x0000;
 
 --	Debugging
 local DEBUG_FunctionList = { };
@@ -55,13 +67,16 @@ local CONFIG_KEY_BuffButtonVisible				= "BuffButton.Visible";
 local CONFIG_KEY_AnnounceMissingBuff			= "AnnounceMissingBuff";
 local CONFIG_KEY_AssignedBuffGroups				= "AssignedBuffGroups";
 local CONFIG_KEY_AssignedBuffSelf				= "AssignedBuffSelf";
+local CONFIG_KEY_AssignedClasses				= "AssignedClasses";
+local CONFIG_DEFAULT_AssignedClasses			= { };
 
 local CONFIG_DEFAULT_AssignedBuffSelf			= 0x0000;
 local CONFIG_DEFAULT_AnnounceMissingBuff		= false;
 
 --	Configured values (TODO: a few selected are still not configurable)
+local CONFIG_AssignedClasses					= { };		-- Classes with buff assignments: CONFIG_AssignedClasses[classname] = [bitmask]
 local CONFIG_AssignedBuffGroups					= { };		-- List of groups and their assigned buffs via bitmask. Persisted, but no UI for it.
-local CONFIG_AssignedBuffSelf					= 0x0000;	-- (TODO: Make configurable!) List of assigned self buffs. Persisted, but no UI for it.
+local CONFIG_AssignedBuffSelf					= 0x0000;	-- List of assigned self buffs.
 local CONFIG_GroupBuffThreshold					= 4;		-- (TODO: Make configurable!) If at least N persons are missing same buff, group buffs will be used.
 local CONFIG_ScanFrequency						= 0.3;		-- (TODO: Make configurable!) Scan every N second.
 local CONFIG_AnnounceMissingBuff				= false;	-- (TODO: Make configurable!) Announce next buff being cast. Persisted, but no UI for it.
@@ -90,9 +105,43 @@ local function partyEcho(msg)
 end
 
 --	Echo a message for the local user only, including Buffalo "logo"
-function Buffalo_Echo(msg)
+local function Buffalo_Echo(msg)
 	echo("-["..BUFFALO_COLOUR_INTRO.."BUFFALO"..BUFFALO_COLOUR_CHAT.."]- "..msg);
 end
+
+local function Buffalo_PrintAll(object, name, level)
+	if not name then name = ""; end;
+	if not level then level = 0; end;
+
+	local indent = "";
+	for n= 1, level, 1 do
+		indent = indent .."  ";
+	end;
+
+	if type(object) == "string" then
+		print(string.format("%s%s => %s", indent, name, object));
+	elseif type(object) == "number" then
+		print(string.format("%s%s => %s", indent, name, object));
+	elseif type(object) == "boolean" then
+		if object then
+			print(string.format("%s%s => %s", indent, name, "true"));
+		else
+			print(string.format("%s%s => %s", indent, name, "false"));
+		end;
+	elseif type(object) == "function" then
+		print(string.format("%s%s => %s", indent, name, "FUNCTION"));
+	elseif type(object) == "nil" then
+		print(string.format("%s%s => %s", indent, name, "NIL"));
+	elseif type(object) == "table" then
+		print(string.format("%s%s => {", indent, name));
+
+		for key, value in next, object do
+			Buffalo_PrintAll(value, key, level + 1);
+		end;
+
+		print(string.format("%s}", indent));
+	end;
+end;
 
 
 
@@ -275,7 +324,7 @@ end
 --	Internal Communication Functions
 --
 --]]
-function Buffalo_SendAddonMessage(message)
+local function Buffalo_SendAddonMessage(message)
 	local memberCount = GetNumGroupMembers();
 	if memberCount > 0 then
 		local channel = nil;
@@ -298,7 +347,7 @@ end
 	We therefore generate a response back (RX) in raid with the syntax:
 	Buffalo:<sender (which is actually the receiver!)>:<version number>
 ]]
-function Buffalo_HandleTXVersion(message, sender)
+local function Buffalo_HandleTXVersion(message, sender)
 	local response = GetAddOnMetadata(BUFFALO_NAME, "Version");
 	Buffalo_SendAddonMessage("RX_VERSION#"..response.."#"..sender)
 end
@@ -307,23 +356,15 @@ end
 	A version response (RX) was received.
 	The version information is displayed locally.
 ]]
-function Buffalo_HandleRXVersion(message, sender)
+local function Buffalo_HandleRXVersion(message, sender)
 	Buffalo_Echo(string.format("[%s] is using Buffalo version %s", sender, message))
 end
 
-function Buffalo_HandleTXVerCheck(message, sender)
+local function Buffalo_HandleTXVerCheck(message, sender)
 	Buffalo_CheckIsNewVersion(message);
 end
 
-function Buffalo_OnChatMsgAddon(event, ...)
-	local prefix, msg, channel, sender = ...;
-
-	if prefix == BUFFALO_MESSAGE_PREFIX then
-		Buffalo_HandleAddonMessage(msg, sender);
-	end
-end
-
-function Buffalo_HandleAddonMessage(msg, sender)
+local function Buffalo_HandleAddonMessage(msg, sender)
 	local _, _, cmd, message, recipient = string.find(msg, "([^#]*)#([^#]*)#([^#]*)");	
 
 	--	Ignore message if it is not for me. 
@@ -347,6 +388,13 @@ function Buffalo_HandleAddonMessage(msg, sender)
 	end
 end
 
+local function Buffalo_OnChatMsgAddon(event, ...)
+	local prefix, msg, channel, sender = ...;
+
+	if prefix == BUFFALO_MESSAGE_PREFIX then
+		Buffalo_HandleAddonMessage(msg, sender);
+	end
+end
 
 
 
@@ -371,7 +419,7 @@ function Buffalo_UCFirst(playername)
 	return string.upper(firstletter) .. string.lower(string.sub(playername, offset));
 end
 
-function Buffalo_CalculateVersion(versionString)
+local function Buffalo_CalculateVersion(versionString)
 	local _, _, major, minor, patch = string.find(versionString, "([^\.]*)\.([^\.]*)\.([^\.]*)");
 	local version = 0;
 
@@ -382,7 +430,7 @@ function Buffalo_CalculateVersion(versionString)
 	return version;
 end
 
-function Buffalo_CheckIsNewVersion(versionstring)
+local function Buffalo_CheckIsNewVersion(versionstring)
 	local incomingVersion = Buffalo_CalculateVersion( versionstring );
 
 	if (BUFFALO_CURRENT_VERSION > 0 and incomingVersion > 0) then
@@ -467,6 +515,11 @@ function Buffalo_SetOption(parameter, value)
 	Buffalo_Options[realmname][playername][parameter] = value;
 end
 
+
+
+--[[
+	Initialization
+--]]
 function Buffalo_InitializeConfigSettings()
 	if not Buffalo_Options then
 		Buffalo_options = { };
@@ -504,6 +557,8 @@ function Buffalo_InitializeConfigSettings()
 	end;
 	Buffalo_SetOption(CONFIG_KEY_AssignedBuffGroups, CONFIG_AssignedBuffGroups);
 
+	CONFIG_AssignedClasses = Buffalo_GetOption(CONFIG_KEY_AssignedClasses, CONFIG_DEFAULT_AssignedClasses)
+	
 	CONFIG_AssignedBuffSelf = Buffalo_GetOption(CONFIG_KEY_AssignedBuffSelf, CONFIG_DEFAULT_AssignedBuffSelf);
 	Buffalo_SetOption(CONFIG_KEY_AssignedBuffSelf, CONFIG_AssignedBuffSelf);
 
@@ -513,8 +568,63 @@ end
 
 
 --[[
-	Initialization
+	Generate a class matrix, based on the current expansion level.
+	Added in 0.4.0
 --]]
+function Buffalo_InitializeClassMatrix()
+
+	local expansionLevel = 1 * GetAddOnMetadata(BUFFALO_NAME, "X-Expansion-Level");
+	local factionEN = UnitFactionGroup("player");
+
+	CLASS_MATRIX = { };
+	CLASS_MASK_ALL = 0x0000;
+
+	local expacKey = "ALLIANCE-EXPAC";
+	if factionEN == "Horde" then
+		expacKey = "HORDE-EXPAC";
+	end;
+
+	for className, classInfo in next, BUFFALO_CLASS_MATRIX_MASTER do
+		if not classInfo[expacKey] or classInfo[expacKey] <= expansionLevel then
+			CLASS_MATRIX[className] = classInfo;
+			CLASS_MASK_ALL = bit.bor(CLASS_MASK_ALL, classInfo["MASK"]);
+		end;
+	end;
+end;
+
+
+--[[
+	Generate array of Classes with a Buff mask each.
+	If the array already exists, info is preserved. This is
+	so we can load the array from settings.
+--]]
+local function Buffalo_InitializeClassBuffs()
+	if not CONFIG_AssignedClasses then
+		CONFIG_AssignedClasses = { };
+	end;
+
+	for className, classInfo in next, BUFFALO_CLASS_MATRIX_MASTER do
+		if not CONFIG_AssignedClasses[className] then
+			--	The setting for this class does not exist. Create one by looking
+			--	at the matrix defaults.
+			local classMask = 0;
+			for buffName, buffInfo in next, BUFF_MATRIX do
+
+				if bit.band(classInfo["MASK"], buffInfo["CLASSES"]) > 0 then
+				--	Strip off selfie buffs:
+					local buffMask = bit.band(buffInfo["BITMASK"], 0x00ff);
+					classMask = bit.bor(classMask, buffMask);
+				end;
+			end;
+			CONFIG_AssignedClasses[className] = classMask;
+		end;
+	end;
+	
+	Buffalo_SetOption(CONFIG_KEY_AssignedClasses, CONFIG_AssignedClasses);
+end;
+
+
+
 function Buffalo_MainInitialization()
 	Buffalo_InitializeConfigSettings();
 
@@ -533,10 +643,15 @@ function Buffalo_MainInitialization()
 		return;
 	end;
 
-	--	This sets up a class matrix with a bit for each class:
-	CLASS_MATRIX = Buffalo_InitializeClassMatrix();
+	Buffalo_GroupBuffProperties = Buffalo_GetGroupBuffProperties();
+	Buffalo_SelfBuffProperties = Buffalo_GetGroupBuffProperties(true);
 
-	Buffalo_InitializeGroupBuffUI();
+	--	This sets up a matrix with icon+mask for each class, based on expansion level:
+	Buffalo_InitializeClassMatrix();
+
+	Buffalo_InitializeClassBuffs();
+
+	Buffalo_InitializeBuffSettingsUI();
 
 	--	Expansion-specific settings.
 	local expansionLevel = 1 * GetAddOnMetadata(BUFFALO_NAME, "X-Expansion-Level");
@@ -609,7 +724,9 @@ local function Buffalo_ScanRaid()
 	local currentUnitid = "player";
 	if grouptype == "solo" then
 		unitid = "player"
-		roster[unitid] = { ["Group"]=1, ["IsOnline"]=true, ["IsDead"]=nil, ["BuffMask"]=0, ["ClassMask"]=BUFFALO_CLASS_ALL };
+		local _, classname = UnitClass(unitid);
+		local classUpper = string.upper(classname);
+		roster[unitid] = { ["Group"]=1, ["IsOnline"]=true, ["IsDead"]=nil, ["BuffMask"]=0, ["Class"]=classUpper, ["ClassMask"]=CLASS_MASK_ALL };
 
 	elseif grouptype == "party" then
 		unitid = "player";
@@ -621,8 +738,9 @@ local function Buffalo_ScanRaid()
 			local isOnline = 0 and UnitIsConnected(unitid) and 1;
 			local isDead   = 0 and UnitIsDead(unitid) and 1;
 			local _, classname = UnitClass(unitid);
+			local classUpper = string.upper(classname);
 
-			roster[unitid] = { ["Group"]=1, ["IsOnline"]=isOnline, ["IsDead"]=isDead, ["BuffMask"]=0, ["ClassMask"]=CLASS_MATRIX[classname] };
+			roster[unitid] = { ["Group"]=1, ["IsOnline"]=isOnline, ["IsDead"]=isDead, ["BuffMask"]=0, ["Class"]=classUpper, ["ClassMask"]=CLASS_MATRIX[classname]["MASK"] };
 		end;
 
 	else	-- Raid
@@ -642,8 +760,9 @@ local function Buffalo_ScanRaid()
 				-- GetRaidRosterInfo delivers the localized class name.
 				-- We need the english class name:
 				local _, classname = UnitClass(unitid);
+				local classUpper = string.upper(classname);
 
-				roster[unitid] = { ["Group"]=subgroup, ["IsOnline"]=isOnline, ["IsDead"]=isDead, ["BuffMask"]=0, ["ClassMask"]=CLASS_MATRIX[classname] };
+				roster[unitid] = { ["Group"]=subgroup, ["IsOnline"]=isOnline, ["IsDead"]=isDead, ["BuffMask"]=0, ["Class"]=classUpper, ["ClassMask"]=CLASS_MATRIX[classname]["MASK"] };
 			end;
 		end;
 	end;
@@ -720,7 +839,6 @@ local function Buffalo_ScanRaid()
 
 		--	If groupMask is 0 then this group does not have any buffs to apply.
 		if groupMask > 0 then
-			--echo(string.format("Group=%s, mask=%s", groupIndex, groupMask));
 			--	We have found an assigned group now. 
 			--	Search through the buffs, and count each buff per group and unit combo:
 			for buffName, buffInfo in next, BUFF_MATRIX do
@@ -755,8 +873,11 @@ local function Buffalo_ScanRaid()
 									--echo(string.format("Found target %s (%s) in group %s", unitname, unitid, groupIndex));
 
 									-- Check 3: Target class must be eligible for buff:
-									if (bit.band(buffInfo["CLASSES"], rosterInfo["ClassMask"]) > 0)	then
-										--echo(string.format("Class is eligible for buff, Buff=%s, Unit=%s, BuffClass=%d, ClassMask=%d", buffName, unitname, buffInfo["CLASSES"], rosterInfo["ClassMask"]));
+									local classMask = CONFIG_AssignedClasses[rosterInfo["Class"]];
+									--echo(string.format("cmask=%s, bmask=%s", classMask or "nil", buffInfo["BITMASK"] or "nil"));
+
+									if (bit.band(classMask, buffInfo["BITMASK"]) > 0)	then
+										--echo(string.format("Class is eligible for buff, Buff=%s, Unit=%s", buffName, unitname));
 
 										--	Check 4: Target must be in range:
 										--if Buffalo_IsSpellInRange(buffName, unitid, unitIsCurrentPlayer) then 
@@ -932,6 +1053,25 @@ function Buffalo_CloseConfigurationDialogue()
 	BuffaloConfigFrame:Hide();
 end;
 
+function Buffalo_OpenClassConfigDialogue()
+	--TODO: Refresh class configuration settings
+	BuffaloClassConfigFrame:Show();
+end;
+
+function Buffalo_CloseClassConfigDialogue()
+	BuffaloClassConfigFrame:Hide();
+end;
+
+function Buffalo_SwitchToClassConfig()
+	Buffalo_CloseConfigurationDialogue();
+	Buffalo_OpenClassConfigDialogue();
+end;
+
+function Buffalo_SwitchToGroupConfig()
+	Buffalo_CloseClassConfigDialogue();
+	Buffalo_OpenConfigurationDialogue();
+end;
+
 function Buffalo_RepositionateButton(self)
 	local x, y = self:GetLeft(), self:GetTop() - UIParent:GetHeight();
 
@@ -981,7 +1121,7 @@ function Buffalo_UpdateBuffButton(unitid, spellname, textureId)
 end;
 
 function Buffalo_OnAfterBuffClick(self, ...)
-	local buttonName = ...;
+	local buttonName, a, b, c, d, e, f = ...;
 
 	if buttonName == "RightButton" then
 		Buffalo_OpenConfigurationDialogue();
@@ -1021,10 +1161,7 @@ function Buffalo_GetGroupBuffProperties(includeSelfBuffs)
 	return buffProperties;
 end;
 
-function Buffalo_InitializeGroupBuffUI()
-	Buffalo_GroupBuffProperties = Buffalo_GetGroupBuffProperties();
-	Buffalo_SelfBuffProperties = Buffalo_GetGroupBuffProperties(true);
-
+function Buffalo_InitializeBuffSettingsUI()
 	local buffCount = table.getn(Buffalo_GroupBuffProperties);
 
 	--	UI settings:
@@ -1047,7 +1184,7 @@ function Buffalo_InitializeGroupBuffUI()
 			buttonName = string.format("$parentBuffRow%dCol%d", rowNumber, groupNumber);
 			local entry = CreateFrame("Button", buttonName, BuffaloConfigFrameGroups, "BuffaloGroupButtonTemplate");
 			entry:SetID(buttonId);
-			entry:SetAlpha(0.4);
+			entry:SetAlpha(BUFFALO_ALPHA_DISABLED);
 			entry:SetPoint("TOPLEFT", buttonX, buttonY);
 			entry:SetNormalTexture(Buffalo_GroupBuffProperties[rowNumber][2]);
 			entry:SetPushedTexture(Buffalo_GroupBuffProperties[rowNumber][2]);
@@ -1075,8 +1212,64 @@ function Buffalo_InitializeGroupBuffUI()
 		buttonId = buttonId + 1;
 	end;
 
+
+	--	Class configuration:
+	local colWidth = 40;				-- Width of each column.
+	local rowHeight = 40;				-- Height of each row.
+	local posX, posY, buffMask;
+
+	--	Step 1:
+	--	Display a row of Class icons.
+	posX = 0;
+	posY = 0;
+	for className, classInfo in next, CLASS_MATRIX do
+		buttonName = string.format("ClassImage%s", className);
+
+		local entry = CreateFrame("Button", buttonName, BuffaloClassConfigFrameClass, "BuffaloClassButtonTemplate");
+		entry:SetID(buttonId);
+		entry:SetAlpha(1.0);
+		entry:SetPoint("TOPLEFT", posX, posY);
+		entry:SetNormalTexture(classInfo["ICONID"]);
+		entry:SetPushedTexture(classInfo["ICONID"]);
+		buttonId = buttonId + 1;
+
+		posX = posX + colWidth;
+	end;
+
+
+	--	Step 2:
+	--	Display buff image for each buff+class combo:
+	posY = 0;
+	buffCount = table.getn(Buffalo_GroupBuffProperties);
+	for rowNumber = 1, buffCount, 1 do
+		posX = 0;
+		posY = posY - rowHeight;
+
+		for className, classInfo in next, CLASS_MATRIX do
+			-- We just disable the buttons, we will refresh status in a second.
+			buttonName = string.format("%s_row%s", className, rowNumber);
+
+			local entry = CreateFrame("Button", buttonName, BuffaloClassConfigFrameClass, "BuffaloBuffButtonTemplate");
+			entry:SetID(buttonId);
+			entry:SetAlpha(BUFFALO_ALPHA_DISABLED);
+			entry:SetPoint("TOPLEFT", 4+posX, posY);
+			entry:SetNormalTexture(Buffalo_GroupBuffProperties[rowNumber][2]);
+			entry:SetPushedTexture(Buffalo_GroupBuffProperties[rowNumber][2]);
+
+			buttonId = buttonId + 1;
+			posX = posX + colWidth;
+		end;
+	end;
+	
+	--	Step 3:
+	--	Set windows size to fit icons:
+	BuffaloClassConfigFrame:SetHeight(128 + buffCount * rowHeight);
+	BuffaloClassConfigFrame:SetWidth(posX + 52);
+	BuffaloClassConfigFrameHeaderTexture:SetWidth(2 * (posX + 52));
+
 	--	So now, lets apply the alpha values for enabled/disabled buffs:
 	Buffalo_RefreshGroupBuffUI();
+	Buffalo_RefreshClassSettingsUI();
 end;
 
 
@@ -1101,33 +1294,51 @@ function Buffalo_RefreshGroupBuffUI()
 			local entry = _G[buttonName];
 
 			if (bit.band(buffMask, Buffalo_GroupBuffProperties[rowNumber][3]) > 0) then
-				entry:SetAlpha(1.0);
+				entry:SetAlpha(BUFFALO_ALPHA_ENABLED);
 			else
-				entry:SetAlpha(0.4);
+				entry:SetAlpha(BUFFALO_ALPHA_DISABLED);
 			end;
 		end;
 	end;
 
 	--	SELF buffs:
 	--	Iterate over all rows and render icons.
-	local buttonName;
+	local buttonName, entry;
 	local buffMask = CONFIG_AssignedBuffSelf;
 
 	buffCount = table.getn(Buffalo_SelfBuffProperties);
 	for rowNumber = 1, buffCount, 1 do
 		buttonName = string.format("BuffaloConfigFrameSelf%dCol0", rowNumber);
-		local entry = _G[buttonName];
+		entry = _G[buttonName];
 
 		if (bit.band(buffMask, Buffalo_SelfBuffProperties[rowNumber][3]) > 0) then
-			entry:SetAlpha(1.0);
+			entry:SetAlpha(BUFFALO_ALPHA_ENABLED);
 		else
-			entry:SetAlpha(0.4);
+			entry:SetAlpha(BUFFALO_ALPHA_DISABLED);
 		end;
 	end;
-
 end;
 
-function Buffalo_OnGroupBuffClick(self, ...)
+
+function Buffalo_RefreshClassSettingsUI()
+	--	Update alpha value on each button so it matches the current settings.
+	buffCount = table.getn(Buffalo_GroupBuffProperties);
+	for rowNumber = 1, buffCount, 1 do
+		for className, classInfo in next, CLASS_MATRIX do
+			buttonName = string.format("%s_row%s", className, rowNumber);
+
+			local entry = _G[buttonName];
+			if bit.band(CONFIG_AssignedClasses[className], Buffalo_GroupBuffProperties[rowNumber][3]) > 0 then
+				entry:SetAlpha(BUFFALO_ALPHA_ENABLED);
+			else
+				entry:SetAlpha(BUFFALO_ALPHA_DISABLED);
+			end;
+		end;
+	end;
+end;
+
+
+function Buffalo_ConfigurationBuffOnClick(self, ...)
 	local buttonName = self:GetName();
 	local buttonType = GetMouseButtonClicked();
 
@@ -1192,10 +1403,40 @@ function Buffalo_OnGroupBuffClick(self, ...)
 	Buffalo_RefreshGroupBuffUI();
 end;
 
-function Buffalo_OnCloseButtonClick()
+function Buffalo_ClassConfigOnClick(self, ...)
+	local buttonName = self:GetName();
+	local buttonType = GetMouseButtonClicked();
+
+	local _, _, className, row = string.find(buttonName, "([A-Z]*)_row(%d)");
+
+	row = 1 * row;
+
+	local classMask = CONFIG_AssignedClasses[className];
+	local buffMask = Buffalo_GroupBuffProperties[row][3];
+
+	if buttonType == "LeftButton" then
+		--	Left button: ADD the buff
+		classMask = bit.bor(classMask, buffMask);
+	else
+		--	Right button: REMOVE the buff
+		classMask = bit.band(classMask, 0x0fff - buffMask);
+	end;
+
+	CONFIG_AssignedClasses[className] = classMask;
+
+	Buffalo_SetOption(CONFIG_KEY_AssignedClasses, CONFIG_AssignedClasses);
+
+	Buffalo_RefreshClassSettingsUI();
+end;
+
+
+function Buffalo_ConfigurationOnCloseButtonClick()
 	Buffalo_CloseConfigurationDialogue();
 end;
 
+function Buffalo_ClassConfigOnCloseButtonClick()
+	Buffalo_CloseClassConfigDialogue();
+end;
 
 
 --[[
@@ -1284,6 +1525,10 @@ function Buffalo_OnLoad()
 
     BuffaloEventFrame:RegisterEvent("ADDON_LOADED");
     BuffaloEventFrame:RegisterEvent("CHAT_MSG_ADDON");
+
+	BuffaloConfigFrame:SetBackdrop(BUFFALO_BACKDROPINFO);
+	BuffaloClassConfigFrame:SetBackdrop(BUFFALO_BACKDROPINFO);
+
 
 	C_ChatInfo.RegisterAddonMessagePrefix(BUFFALO_MESSAGE_PREFIX);
 end
