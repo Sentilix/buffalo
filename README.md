@@ -5,14 +5,14 @@ You can move the button by pressing Shift while dragging the icon to a desired p
 
 Buffalo works for WoW Classic and TBC.
 
-Buff configuration as seen as a holy priest:<br/>
-<img src="https://github.com/Sentilix/buffalo/blob/main/Images/buffalo-config.jpg?raw=true" />
+Buff configuration as seen as a holy priest with herbalism:<br/>
+<img src="https://github.com/Sentilix/buffalo/blob/6c5cf96f0ba16257972d2df24f7bc06ac66ece56/Images/buffalo-configuration-priest.jpg?raw=true" />
 
-Buff configuration as seen as a frost mage with herbalism:<br/>
-<img src="https://github.com/Sentilix/buffalo/blob/main/Images/buffalo-config2.jpg?raw=true" />
-
-Class configration: chose which buffs goes to what classes:
+Class configration: chose which buffs goes to what classes:<br/>
 <img src="https://github.com/Sentilix/buffalo/blob/buffalo-0.4.0-buffconfig/Images/buffalo-classconfig-priest.jpg?raw=true" />
+
+Misc. configuration options to control the addon:<br/>
+<img src="https://github.com/Sentilix/buffalo/blob/6c5cf96f0ba16257972d2df24f7bc06ac66ece56/Images/buffalo-configuration-general.jpg?raw=true" />
 
 
 ## Slash Commands
