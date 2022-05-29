@@ -1,0 +1,204 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<Script file="Buffalo-GeneralConfig.lua" />
+
+	<!-- General Configration frame: main entry -->
+	<Frame name="BuffaloGeneralConfigFrame" parent="UIParent" toplevel="true" inherits="BackdropTemplate" hidden="true" frameStrata="HIGH">
+		<KeyValues>
+			<KeyValue key="backdropInfo" value="BACKDROP_DIALOG_32_32" type="global"/>
+			<KeyValue key="backdropColor" value="BLACK" type="global"/>
+			<KeyValue key="backdropBorderColor" value="WHITE" type="global"/>
+		</KeyValues>
+		<Size x="400" y="350" />
+		<Anchors>
+			<Anchor point="CENTER"/>
+		</Anchors>
+
+		<Frames>
+			<!-- Options are inserted here -->
+			<Frame name="$parentOptions" hidden="false">
+				<Size x="400" y="350" />
+				<Anchors>
+					<Anchor point="TOPLEFT" x="30" y="-40" />
+				</Anchors>
+			</Frame>
+
+			<!-- Group buff threshold -->
+			<Slider name="BuffaloConfigFramePrayerThreshold" minValue="1" maxValue="5" defaultValue="4" valueStep="1" inherits="OptionsSliderTemplate" enableMouse="true">
+				<Size x="260" y="20" />
+				<Anchors>
+					<Anchor point="TOPLEFT" x="0" y="-20" relativeTo="$parentOptions"/>
+				</Anchors>
+				<Scripts>
+					<OnLoad>
+						_G[self:GetName().."Low"]:SetText("1 (always use greater buffs)");
+						_G[self:GetName().."High"]:SetText("5 (only full groups)");
+					</OnLoad>
+					<OnValueChanged>
+						if Buffalo_PrayerThresholdChanged then
+						Buffalo_PrayerThresholdChanged(self);
+						end;
+					</OnValueChanged>
+				</Scripts>
+			</Slider>
+			<!-- Renew overlap period -->
+			<Slider name="BuffaloConfigFrameRenewOverlap" minValue="0" maxValue="120" defaultValue="10" valueStep="10" inherits="OptionsSliderTemplate" enableMouse="true">
+				<Size x="260" y="20" />
+				<Anchors>
+					<Anchor point="TOPLEFT" x="0" y="-80" relativeTo="$parentOptions"/>
+				</Anchors>
+				<Scripts>
+					<OnLoad>
+						_G[self:GetName().."Low"]:SetText("0 minutes (wait for expiration)");
+						_G[self:GetName().."High"]:SetText("2 minutes");
+					</OnLoad>
+					<OnValueChanged>
+						if Buffalo_RenewOverlapChanged then
+						Buffalo_RenewOverlapChanged(self);
+						end;
+					</OnValueChanged>
+				</Scripts>
+			</Slider>
+			<!-- Scan frequency slider -->
+			<Slider name="BuffaloConfigFrameScanFrequency" minValue="1" maxValue="10" defaultValue="3" valueStep="1" inherits="OptionsSliderTemplate" enableMouse="true">
+				<Size x="260" y="20" />
+				<Anchors>
+					<Anchor point="TOPLEFT" x="0" y="-140" relativeTo="$parentOptions"/>
+				</Anchors>
+				<Scripts>
+					<OnLoad>
+						_G[self:GetName().."Low"]:SetText("Fast scan (10 per sec)");
+						_G[self:GetName().."High"]:SetText("Slow scan (1 per sec)");
+					</OnLoad>
+					<OnValueChanged>
+						if Buffalo_ScanFrequencyChanged then
+						Buffalo_ScanFrequencyChanged(self);
+						end;
+					</OnValueChanged>
+				</Scripts>
+			</Slider>
+
+			<!-- checkbox options -->
+			<CheckButton name="BuffaloConfigFrameOptionAnnounceMissing" inherits="OptionsCheckButtonTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" x="0" y="-195" relativeTo="$parentOptions"/>
+				</Anchors>
+				<Scripts>
+					<OnLoad>
+						_G[self:GetName().."Text"]:SetText("Display missing buffs in Local Chat")
+					</OnLoad>
+					<OnClick>
+						Buffalo_HandleCheckbox(self);
+					</OnClick>
+				</Scripts>
+			</CheckButton>
+			<CheckButton name="BuffaloConfigFrameOptionAnnounceComplete" inherits="OptionsCheckButtonTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" x="0" y="-225" relativeTo="$parentOptions"/>
+				</Anchors>
+				<Scripts>
+					<OnLoad>
+						_G[self:GetName().."Text"]:SetText("Display buffed targets in Local Chat")
+					</OnLoad>
+					<OnClick>
+						Buffalo_HandleCheckbox(self);
+					</OnClick>
+				</Scripts>
+			</CheckButton>
+
+			<!-- Close button -->
+			<Button name="$parentCloseButton" inherits="UIPanelButtonTemplate" movable="true" text="Close">
+				<Size>
+					<AbsDimension x="100" y="23" />
+				</Size>
+				<Anchors>
+					<Anchor point="BOTTOM">
+						<Offset x="0" y="24" />
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>Buffalo_GeneralConfigOnCloseButtonClick();</OnClick>
+				</Scripts>
+			</Button>
+		</Frames>
+
+		<Layers>
+			<Layer level="ARTWORK">
+				<Texture name="$parentHeaderTexture" file="Interface\DialogFrame\UI-DialogBox-Header">
+					<Size>
+						<AbsDimension x="800" y="64"/>
+					</Size>
+					<Anchors>
+						<Anchor point="TOP">
+							<Offset>
+								<AbsDimension x="0" y="12"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</Texture>
+				<FontString name="BuffaloClassConfigHeaderText" inherits="GameFontNormal" text="General Buffalo configuration">
+					<Anchors>
+						<Anchor point="TOP" relativeTo="$parentHeaderTexture">
+							<Offset>
+								<AbsDimension x="0" y="-14"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</FontString>
+
+				<!-- slider captions -->
+				<FontString name="$parentPrayerThresholdCaption" inherits="GameFontNormal" text="Number of players needed to trigger group buff">
+					<Anchors>
+						<Anchor point="LEFT" x="0" y="20" relativeTo="BuffaloConfigFramePrayerThreshold"/>
+					</Anchors>
+					<Color r="0.9" g="0.8" b="0.2" a="1.0"/>
+				</FontString>
+				<FontString name="$parentRenewOverlapCaption" inherits="GameFontNormal" text="Time left (in seconds) until a buff will be renewed">
+					<Anchors>
+						<Anchor point="LEFT" x="0" y="20" relativeTo="BuffaloConfigFrameRenewOverlap"/>
+					</Anchors>
+					<Color r="0.9" g="0.8" b="0.2" a="1.0"/>
+				</FontString>
+				<FontString name="$parentScanFrequencyCaption" inherits="GameFontNormal" text="Buff scan frequency: slower = better performance">
+					<Anchors>
+						<Anchor point="LEFT" x="0" y="20" relativeTo="BuffaloConfigFrameScanFrequency"/>
+					</Anchors>
+					<Color r="0.9" g="0.8" b="0.2" a="1.0"/>
+				</FontString>
+
+				<!-- slider values -->
+				<FontString name="BuffaloSliderPrayerThresholdText" inherits="GameFontNormal" text="?">
+					<Anchors>
+						<Anchor point="RIGHT" x="80" y="0" relativeTo="BuffaloConfigFramePrayerThreshold"/>
+					</Anchors>
+					<Color r="1" g="1" b="1" a="1.0"/>
+				</FontString>
+				<FontString name="BuffaloSliderRenewOverlapText" inherits="GameFontNormal" text="?">
+					<Anchors>
+						<Anchor point="RIGHT" x="80" y="0" relativeTo="BuffaloConfigFrameRenewOverlap"/>
+					</Anchors>
+					<Color r="1" g="1" b="1" a="1.0"/>
+				</FontString>
+				<FontString name="BuffaloSliderScanFrequencyText" inherits="GameFontNormal" text="?">
+					<Anchors>
+						<Anchor point="RIGHT" x="80" y="0" relativeTo="BuffaloConfigFrameScanFrequency"/>
+					</Anchors>
+					<Color r="1" g="1" b="1" a="1.0"/>
+				</FontString>
+
+			</Layer>
+		</Layers>
+
+		<Scripts>
+			<OnLoad inherit="prepend">
+				tinsert(UISpecialFrames, self:GetName());
+			</OnLoad>
+			<OnShow>
+				PlaySound(IG_MAINMENU_OPEN);
+			</OnShow>
+			<OnHide>
+				PlaySound(IG_MAINMENU_CLOSE);
+			</OnHide>
+		</Scripts>
+	</Frame>
+
+</Ui>

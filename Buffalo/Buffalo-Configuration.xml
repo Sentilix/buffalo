@@ -18,13 +18,13 @@
 	</Button>
 
 	<!-- Configration frame: main entry -->
-	<Frame name="BuffaloConfigFrame" parent="UIParent" toplevel="true" inherits="BackdropTemplate" hidden="true">
+	<Frame name="BuffaloConfigFrame" parent="UIParent" toplevel="true" inherits="BackdropTemplate" hidden="true" frameStrata="MEDIUM">
 		<KeyValues>
 			<KeyValue key="backdropInfo" value="BACKDROP_DIALOG_32_32" type="global"/>
 			<KeyValue key="backdropColor" value="BLACK" type="global"/>
 			<KeyValue key="backdropBorderColor" value="WHITE" type="global"/>
 		</KeyValues>
-		<Size x="450" y="310" />
+		<Size x="450" y="350" />
 		<Anchors>
 			<Anchor point="CENTER"/>
 		</Anchors>
@@ -32,42 +32,56 @@
 		<Frames>
 			<!-- Raid buff rows are inserted here -->
 			<Frame name="$parentGroups" hidden="false">
-				<Size x="320" y="200" />
+				<Size x="400" y="200" />
 				<Anchors>
-					<Anchor point="TOPLEFT" x="35" y="-60" />
+					<Anchor point="TOPLEFT" x="30" y="-50" />
 				</Anchors>
 			</Frame>
 
-			<!-- Self buff row is inserted here -->
+			<!-- Self buff row is inserted here. All controls below are positioned relative tho this. -->
 			<Frame name="$parentSelf" hidden="false">
-				<Size x="320" y="200" />
+				<Size x="400" y="200" />
 				<Anchors>
-					<Anchor point="TOPLEFT" x="35" y="-220" />
+					<Anchor point="BOTTOMLEFT" x="30" y="-110" relativeTo="BuffaloConfigFrame" />
 				</Anchors>
 			</Frame>
 
-			<!-- Switch config button -->
-			<Button name="$parentClassConfigButton" inherits="UIPanelButtonTemplate" movable="true" text="Class config">
+			<!-- Class config button -->
+			<Button name="$parentClassConfigButton" inherits="UIPanelButtonTemplate" movable="true" text="Class options">
 				<Size>
-					<AbsDimension x="100" y="23" />
+					<AbsDimension x="120" y="23" />
 				</Size>
 				<Anchors>
 					<Anchor point="BOTTOM">
-						<Offset x="-60" y="30" />
+						<Offset x="-130" y="24" />
 					</Anchor>
 				</Anchors>
 				<Scripts>
-					<OnClick>Buffalo_SwitchToClassConfig();</OnClick>
+					<OnClick>Buffalo_OpenClassConfigDialogue();</OnClick>
+				</Scripts>
+			</Button>
+			<!-- General config button -->
+			<Button name="$parentClassConfigButton" inherits="UIPanelButtonTemplate" movable="true" text="General options">
+				<Size>
+					<AbsDimension x="120" y="23" />
+				</Size>
+				<Anchors>
+					<Anchor point="BOTTOM">
+						<Offset x="0" y="24" />
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>Buffalo_OpenGeneralConfigDialogue();</OnClick>
 				</Scripts>
 			</Button>
 			<!-- Close button -->
 			<Button name="$parentCloseButton" inherits="UIPanelButtonTemplate" movable="true" text="Close">
 				<Size>
-					<AbsDimension x="100" y="23" />
+					<AbsDimension x="120" y="23" />
 				</Size>
 				<Anchors>
 					<Anchor point="BOTTOM">
-						<Offset x="60" y="30" />
+						<Offset x="130" y="24" />
 					</Anchor>
 				</Anchors>
 				<Scripts>
@@ -202,10 +216,14 @@
 				PlaySound(IG_MAINMENU_CLOSE);
 			</OnHide>
 			<OnDragStart>
-				self:StartMoving()
+				if not BUFFALO_SubConfigOpen then
+					self:StartMoving()
+				end;
 			</OnDragStart>
 			<OnDragStop>
-				self:StopMovingOrSizing()
+				if not BUFFALO_SubConfigOpen then
+					self:StopMovingOrSizing()
+				end;
 			</OnDragStop>
 		</Scripts>
 	</Frame>

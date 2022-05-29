@@ -25,6 +25,13 @@
     <Content Include="Buffalo-Configuration.xml">
       <SubType>Frame</SubType>
     </Content>
+    <Content Include="Buffalo-GeneralConfig.lua">
+      <SubType>Code</SubType>
+      <DependentUpon>Buffalo-GeneralConfig.xml</DependentUpon>
+    </Content>
+    <Content Include="Buffalo-GeneralConfig.xml">
+      <SubType>Frame</SubType>
+    </Content>
     <Content Include="Buffalo.toc">
       <SubType>TableOfContents</SubType>
     </Content>

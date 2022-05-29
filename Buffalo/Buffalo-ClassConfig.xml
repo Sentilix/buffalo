@@ -34,7 +34,7 @@
 	</Button>
 
 	<!-- Class Configration frame: main entry -->
-	<Frame name="BuffaloClassConfigFrame" parent="UIParent" toplevel="true" inherits="BackdropTemplate" hidden="true">
+	<Frame name="BuffaloClassConfigFrame" parent="UIParent" toplevel="true" inherits="BackdropTemplate" hidden="true" frameStrata="HIGH">
 		<KeyValues>
 			<KeyValue key="backdropInfo" value="BACKDROP_DIALOG_32_32" type="global"/>
 			<KeyValue key="backdropColor" value="BLACK" type="global"/>
@@ -54,20 +54,6 @@
 				</Anchors>
 			</Frame>
 
-			<!-- Switch config button -->
-			<Button name="$parentGroupConfigButton" inherits="UIPanelButtonTemplate" movable="true" text="Group config">
-				<Size>
-					<AbsDimension x="100" y="23" />
-				</Size>
-				<Anchors>
-					<Anchor point="BOTTOM">
-						<Offset x="-60" y="24" />
-					</Anchor>
-				</Anchors>
-				<Scripts>
-					<OnClick>Buffalo_SwitchToGroupConfig();</OnClick>
-				</Scripts>
-			</Button>
 			<!-- Close button -->
 			<Button name="$parentCloseButton" inherits="UIPanelButtonTemplate" movable="true" text="Close">
 				<Size>
@@ -75,7 +61,7 @@
 				</Size>
 				<Anchors>
 					<Anchor point="BOTTOM">
-						<Offset x="60" y="24" />
+						<Offset x="0" y="24" />
 					</Anchor>
 				</Anchors>
 				<Scripts>
@@ -112,9 +98,6 @@
 
 		<Scripts>
 			<OnLoad inherit="prepend">
-				self:SetMovable(true)
-				self:SetUserPlaced(true)
-				self:RegisterForDrag("LeftButton")
 				tinsert(UISpecialFrames, self:GetName());
 			</OnLoad>
 			<OnShow>
@@ -123,12 +106,6 @@
 			<OnHide>
 				PlaySound(IG_MAINMENU_CLOSE);
 			</OnHide>
-			<OnDragStart>
-				self:StartMoving()
-			</OnDragStart>
-			<OnDragStop>
-				self:StopMovingOrSizing()
-			</OnDragStop>
 		</Scripts>
 	</Frame>
 

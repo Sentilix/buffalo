@@ -79,6 +79,16 @@ Priest		PowerWordFortitude			53
 
 Version history
 ---------------
+Version 0.4.0-beta2
+* Added new frame for general configuration options:
+* Added configuration option: Prayer/Group buff threshold
+* Added configuration option: Scan time interval
+* Added configuration option: Option renew before buff expire
+* Added configuration option: Show missing buffs
+* Added configuration option: Show completed buffs
+* Bugfix: "/buffalo version" gave a LUA error.
+
+
 Version 0.4.0-beta1
 * Added class configuration UI.
 * Added Deathknight class, although not selectable in UI yet.
@@ -154,8 +164,6 @@ version 0.1.0-alpha1:
 
 
 Backlog:
-* x.x.x:	Ranking of buffs; i.e. 5-player (full group) before 4-player for example. Need to think this one throug: that are the exact rules?
-* x.x.x:	Configure class-level buffs via UI
 * x.x.x:	Add window with next 5 expiring buffs?
 * x.x.x:	Make a 10% buff warning window?
 * x.x.x:	Paladins!
