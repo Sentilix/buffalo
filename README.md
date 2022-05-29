@@ -9,7 +9,7 @@ Buff configuration as seen as a holy priest with herbalism:<br/>
 <img src="https://github.com/Sentilix/buffalo/blob/6c5cf96f0ba16257972d2df24f7bc06ac66ece56/Images/buffalo-configuration-priest.jpg?raw=true" />
 
 Class configration: chose which buffs goes to what classes:<br/>
-<img src="https://github.com/Sentilix/buffalo/blob/buffalo-0.4.0-buffconfig/Images/buffalo-classconfig-priest.jpg?raw=true" />
+<img src="https://github.com/Sentilix/buffalo/blob/002abc5f4a8a794d8dcd2deb1d2b6c597af14384/Images/buffalo-classconfig-priest.jpg?raw=true" />
 
 Misc. configuration options to control the addon:<br/>
 <img src="https://github.com/Sentilix/buffalo/blob/6c5cf96f0ba16257972d2df24f7bc06ac66ece56/Images/buffalo-configuration-general.jpg?raw=true" />
