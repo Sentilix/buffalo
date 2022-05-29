@@ -11,6 +11,9 @@ Buff configuration as seen as a holy priest:<br/>
 Buff configuration as seen as a frost mage with herbalism:<br/>
 <img src="https://github.com/Sentilix/buffalo/blob/main/Images/buffalo-config2.jpg?raw=true" />
 
+Class configration: chose which buffs goes to what classes:
+<img src="https://github.com/Sentilix/buffalo/blob/buffalo-0.4.0-buffconfig/Images/buffalo-classconfig-priest.jpg?raw=true" />
+
 
 ## Slash Commands
 Buffalo does not need much setup, so there are only a few commands available:
