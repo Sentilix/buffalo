@@ -11,11 +11,25 @@
     <OutputPath>.</OutputPath>
   </PropertyGroup>
   <ItemGroup>
+    <Content Include="Buffalo-ClassConfig.lua">
+      <SubType>Code</SubType>
+      <DependentUpon>Buffalo-ClassConfig.xml</DependentUpon>
+    </Content>
+    <Content Include="Buffalo-ClassConfig.xml">
+      <SubType>Frame</SubType>
+    </Content>
     <Content Include="Buffalo-Configuration.lua">
       <SubType>Code</SubType>
       <DependentUpon>Buffalo-Configuration.xml</DependentUpon>
     </Content>
     <Content Include="Buffalo-Configuration.xml">
+      <SubType>Frame</SubType>
+    </Content>
+    <Content Include="Buffalo-GeneralConfig.lua">
+      <SubType>Code</SubType>
+      <DependentUpon>Buffalo-GeneralConfig.xml</DependentUpon>
+    </Content>
+    <Content Include="Buffalo-GeneralConfig.xml">
       <SubType>Frame</SubType>
     </Content>
     <Content Include="Buffalo.toc">

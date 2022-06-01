@@ -1,0 +1,112 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<Script file="Buffalo-ClassConfig.lua" />
+
+	<!-- Frame template for one class button -->
+	<Button name="BuffaloClassButtonTemplate" inherits="ActionButtonTemplate" frameStrata="HIGH" hidden="false" virtual="true">
+		<Size>
+			<AbsDimension x="32" y="32" />
+		</Size>
+		<NormalTexture file="Interface\PaperDoll\UI-Backpack-EmptySlot" />
+		<Scripts>
+			<OnLoad>
+				--self:RegisterForClicks("LeftButtonDown", "RightButtonDown");
+			</OnLoad>
+			<OnClick>
+				--	TODO: What should we do when clicking a class? Enable all buffs?
+			</OnClick>
+		</Scripts>
+	</Button>
+
+	<!-- Frame template for one class buff button -->
+	<Button name="BuffaloBuffButtonTemplate" inherits="ActionButtonTemplate" frameStrata="HIGH" hidden="false" virtual="true">
+		<Size>
+			<AbsDimension x="24" y="24" />
+		</Size>
+		<NormalTexture file="Interface\PaperDoll\UI-Backpack-EmptySlot" />
+		<Scripts>
+			<OnLoad>
+				self:RegisterForClicks("LeftButtonDown", "RightButtonDown");
+			</OnLoad>
+			<OnClick>
+				Buffalo_ClassConfigOnClick(self);
+			</OnClick>
+		</Scripts>
+	</Button>
+
+	<!-- Class Configration frame: main entry -->
+	<Frame name="BuffaloClassConfigFrame" parent="UIParent" toplevel="true" inherits="BackdropTemplate" hidden="true" frameStrata="HIGH">
+		<KeyValues>
+			<KeyValue key="backdropInfo" value="BACKDROP_DIALOG_32_32" type="global"/>
+			<KeyValue key="backdropColor" value="BLACK" type="global"/>
+			<KeyValue key="backdropBorderColor" value="WHITE" type="global"/>
+		</KeyValues>
+		<Size x="180" y="300" />
+		<Anchors>
+			<Anchor point="CENTER"/>
+		</Anchors>
+
+		<Frames>
+			<!-- Class names are inserted here -->
+			<Frame name="$parentClass" hidden="false">
+				<Size x="320" y="200" />
+				<Anchors>
+					<Anchor point="TOPLEFT" x="30" y="-40" />
+				</Anchors>
+			</Frame>
+
+			<!-- Close button -->
+			<Button name="$parentCloseButton" inherits="UIPanelButtonTemplate" movable="true" text="Close">
+				<Size>
+					<AbsDimension x="100" y="23" />
+				</Size>
+				<Anchors>
+					<Anchor point="BOTTOM">
+						<Offset x="0" y="24" />
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>Buffalo_ClassConfigOnCloseButtonClick();</OnClick>
+				</Scripts>
+			</Button>
+		</Frames>
+
+		<Layers>
+			<Layer level="ARTWORK">
+				<Texture name="$parentHeaderTexture" file="Interface\DialogFrame\UI-DialogBox-Header">
+					<Size>
+						<AbsDimension x="880" y="64"/>
+					</Size>
+					<Anchors>
+						<Anchor point="TOP">
+							<Offset>
+								<AbsDimension x="0" y="12"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</Texture>
+				<FontString name="BuffaloClassConfigHeaderText" inherits="GameFontNormal" text="Assign buffs to specific classes.">
+					<Anchors>
+						<Anchor point="TOP" relativeTo="$parentHeaderTexture">
+							<Offset>
+								<AbsDimension x="0" y="-14"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</FontString>
+			</Layer>
+		</Layers>
+
+		<Scripts>
+			<OnLoad inherit="prepend">
+				tinsert(UISpecialFrames, self:GetName());
+			</OnLoad>
+			<OnShow>
+				PlaySound(IG_MAINMENU_OPEN);
+			</OnShow>
+			<OnHide>
+				PlaySound(IG_MAINMENU_CLOSE);
+			</OnHide>
+		</Scripts>
+	</Frame>
+
+</Ui>
