@@ -72,6 +72,8 @@ BUFFALO_CLASS_MATRIX_MASTER = {
 	},
 };
 
+SpellName_Generel_FindHerbs = "";
+SpellName_Generel_FindMinerals = "";
 
 
 IG_MAINMENU_OPEN			= 850;
@@ -119,8 +121,8 @@ function Buffalo_InitializeBuffMatrix()
 	local matrix = { };
 
 	--	General spells:
-	local SpellName_Generel_FindHerbs = Buffalo_GetSpellName(2383); 
-	local SpellName_Generel_FindMinerals = Buffalo_GetSpellName(2580); 
+	SpellName_Generel_FindHerbs = Buffalo_GetSpellName(2383); 
+	SpellName_Generel_FindMinerals = Buffalo_GetSpellName(2580); 
 
 	local Generel_FindHerbs = {
 		["BITMASK"]		= 0x01000,

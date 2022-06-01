@@ -79,6 +79,10 @@ Priest		PowerWordFortitude			53
 
 Version history
 ---------------
+Version 0.4.0
+* Bugfix: TBC Find Herbs / Find Minerals now working.
+
+
 Version 0.4.0-beta2
 * Added new frame for general configuration options:
 * Added configuration option: Prayer/Group buff threshold

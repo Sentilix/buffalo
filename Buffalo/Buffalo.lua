@@ -43,6 +43,7 @@ BUFFALO_SubConfigOpen							= false;
 
 --	Internal variables
 local IsBuffer									= false;
+local Buffalo_ExpansionLevel					= 0;
 local Buffalo_PlayerNameAndRealm				= "";
 local Buffalo_InitializationComplete			= false;
 local Buffalo_InitializationRetryTimer			= 0;
@@ -621,8 +622,6 @@ end
 	Added in 0.4.0
 --]]
 local function Buffalo_InitializeClassMatrix()
-
-	local expansionLevel = 1 * GetAddOnMetadata(BUFFALO_NAME, "X-Expansion-Level");
 	local factionEN = UnitFactionGroup("player");
 
 	CLASS_MATRIX = { };
@@ -634,7 +633,7 @@ local function Buffalo_InitializeClassMatrix()
 	end;
 
 	for className, classInfo in next, BUFFALO_CLASS_MATRIX_MASTER do
-		if not classInfo[expacKey] or classInfo[expacKey] <= expansionLevel then
+		if not classInfo[expacKey] or classInfo[expacKey] <= Buffalo_ExpansionLevel then
 			CLASS_MATRIX[className] = classInfo;
 			CLASS_MASK_ALL = bit.bor(CLASS_MASK_ALL, classInfo["MASK"]);
 		end;
@@ -676,6 +675,8 @@ end;
 local function Buffalo_MainInitialization(reloaded)
 	Buffalo_InitializeConfigSettings();
 
+	Buffalo_ExpansionLevel = 1 * GetAddOnMetadata(BUFFALO_NAME, "X-Expansion-Level");
+
 	--	This sets the buffs up for MY class:
 	BUFF_MATRIX = Buffalo_InitializeBuffMatrix();
 
@@ -705,8 +706,7 @@ local function Buffalo_MainInitialization(reloaded)
 
 	--	Expansion-specific settings.
 	IsBuffer = false;
-	local expansionLevel = 1 * GetAddOnMetadata(BUFFALO_NAME, "X-Expansion-Level");
-	if expansionLevel == 1 or expansionLevel == 2 then
+	if Buffalo_ExpansionLevel == 1 or Buffalo_ExpansionLevel == 2 then
 		--	Check if the current class can cast buffs.
 		--	Note: herbing/mining is excluded via the 0x00ff mask:
 		for buffName, buffInfo in next, BUFF_MATRIX do
@@ -895,13 +895,33 @@ local function Buffalo_ScanRaid()
 				end;
 			end
 
-			--	Add tracking icons ("Find Herbs", "Find Minerals" ...)
-			local trackingIcon = GetTrackingTexture();
-			for buffName, buffInfo in next, BUFF_MATRIX do
-				if buffInfo["ICONID"] == trackingIcon then
-					buffMask = bit.bor(buffMask, buffInfo["BITMASK"]);
+			--	Add tracking icons ("Find Herbs", "Find Minerals" ...).
+			--	Methods differs between classic and tbc:
+			if Buffalo_ExpansionLevel == 1 then
+				--	Classic:
+				--	Possible problem: Documentation does not state wether the returned name is localized or not.
+				--	All examples shows English names, so going for that until I know better ...
+				local trackingIcon = GetTrackingTexture();
+				for buffName, buffInfo in next, BUFF_MATRIX do
+					if buffInfo["ICONID"] == trackingIcon then
+						--echo(string.format("<CLASSIC> Adding TrackingIcon buff:%s, mask:%s", buffName, buffInfo["BITMASK"]));
+						buffMask = bit.bor(buffMask, buffInfo["BITMASK"]);
+					end;
+				end;
+			elseif Buffalo_ExpansionLevel == 2 then
+				--	TBC:
+				for n=1, GetNumTrackingTypes() do
+					local buffName, spellID, active = GetTrackingInfo(n);
+					if active then
+						buffInfo = BUFF_MATRIX[buffName];
+						if buffInfo then
+							--echo(string.format("<TBC> Adding TrackingIcon buff:%s, mask:%s", buffName, buffInfo["BITMASK"]));
+							buffMask = bit.bor(buffMask, buffInfo["BITMASK"]);
+						end;
+					end;
 				end;
 			end;
+ 
 			
 			--	This may be nil when new people joins while scanning is done:
 			if not roster[unitid] then
@@ -1226,7 +1246,7 @@ function Buffalo_SetButtonTexture(textureName, isEnabled)
 end;
 
 function Buffalo_UpdateBuffButton(unitid, spellname, textureId)
-	if unitid then
+	if unitid and not UnitAffectingCombat("player") then
 		Buffalo_SetButtonTexture(textureId, true);
 		BuffButton:SetAttribute("*type1", "spell");
 		BuffButton:SetAttribute("spell", spellname);
@@ -1245,7 +1265,7 @@ function Buffalo_OnAfterBuffClick(self, ...)
 	if buttonName == "RightButton" then
 		Buffalo_OpenConfigurationDialogue();
 	else
-		if CONFIG_AnnounceCompletedBuff then
+		if CONFIG_AnnounceCompletedBuff and not UnitAffectingCombat("player") then
 			local unitid = BuffButton:GetAttribute("unit");
 			local spellID = BuffButton:GetAttribute("spell");
 			if unitid and spellID then
