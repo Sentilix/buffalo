@@ -19,6 +19,7 @@
 				self:RegisterForDrag("LeftButton");
 				self:RegisterForClicks("LeftButtonUp", "RightButtonUp");
 
+				self:SetScript("PreClick", Buffalo_OnBeforeBuffClick);
 				self:SetScript("PostClick", Buffalo_OnAfterBuffClick);
 
 				self:SetAttribute("*type1", "spell");

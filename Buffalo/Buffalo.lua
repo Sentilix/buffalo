@@ -52,6 +52,7 @@ local TimerTick									= 0
 local NextScanTime								= 0;
 local lastBuffTarget							= "";
 local lastBuffStatus							= "";
+local lastBuffFired								= nil;
 
 local Buffalo_GroupBuffProperties				= { };		--	Array of buff properties for the group UI: { buffname, iconid, bitmask, priority }
 local Buffalo_SelfBuffProperties				= { };
@@ -1259,19 +1260,15 @@ function Buffalo_UpdateBuffButton(unitid, spellname, textureId)
 	end;
 end;
 
+function Buffalo_OnBeforeBuffClick(self, ...)
+	lastBuffFired = BuffButton:GetAttribute("spell");
+end;
+
 function Buffalo_OnAfterBuffClick(self, ...)
 	local buttonName = ...;
 
 	if buttonName == "RightButton" then
 		Buffalo_OpenConfigurationDialogue();
-	else
-		if CONFIG_AnnounceCompletedBuff and not UnitAffectingCombat("player") then
-			local unitid = BuffButton:GetAttribute("unit");
-			local spellID = BuffButton:GetAttribute("spell");
-			if unitid and spellID then
-				Buffalo_Echo(string.format("%s was buffed with %s.", Buffalo_GetPlayerAndRealm(unitid) or "nil", GetSpellInfo(spellID)));
-			end;
-		end;
 	end;
 end;
 
@@ -1740,6 +1737,34 @@ function Buffalo_OnEvent(self, event, ...)
 	elseif (event == "CHAT_MSG_ADDON") then
 		Buffalo_OnChatMsgAddon(event, ...)
 
+	elseif(event == "UNIT_SPELLCAST_STOP") then
+		local caster = ...;
+		if caster == "player" then
+			lastBuffFired = nil;
+		end;
+
+	elseif(event == "UNIT_SPELLCAST_FAILED") then
+		local caster = ...;
+		if caster == "player" then
+			lastBuffFired = nil;
+		end;
+
+	elseif(event == "UNIT_SPELLCAST_SUCCEEDED") then
+		local caster, _, spellId = ...;
+
+		if caster == "player" then
+			local buffName = GetSpellInfo(spellId);
+			if buffName and buffName == lastBuffFired then
+				lastBuffFired = nil;
+				if CONFIG_AnnounceCompletedBuff and not UnitAffectingCombat("player") then
+					local unitid = BuffButton:GetAttribute("unit");
+					if unitid then
+						Buffalo_Echo(string.format("%s was buffed with %s.", Buffalo_GetPlayerAndRealm(unitid) or "nil", buffName));
+					end;
+				end;
+			end;
+		end;
+
 	else
 		if(debug) then 
 			echo("**DEBUG**: Other event: "..event);
@@ -1772,6 +1797,9 @@ function Buffalo_OnLoad()
 
     BuffaloEventFrame:RegisterEvent("ADDON_LOADED");
     BuffaloEventFrame:RegisterEvent("CHAT_MSG_ADDON");
+    BuffaloEventFrame:RegisterEvent("UNIT_SPELLCAST_STOP");
+    BuffaloEventFrame:RegisterEvent("UNIT_SPELLCAST_FAILED");
+    BuffaloEventFrame:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED");
 
 	BuffaloConfigFrame:SetBackdrop(BUFFALO_BACKDROP_FRAME);
 	BuffaloGeneralConfigFrame:SetBackdrop(BUFFALO_BACKDROP_FRAME);

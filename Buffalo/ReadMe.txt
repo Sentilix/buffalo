@@ -79,6 +79,10 @@ Priest		PowerWordFortitude			53
 
 Version history
 ---------------
+Version 0.4.1
+* Bugfix: Failed buffs (out of LOS e.g.) are no longer announced in chat.
+
+
 Version 0.4.0
 * Bugfix: TBC Find Herbs / Find Minerals now working.
 
