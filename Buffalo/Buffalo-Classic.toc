@@ -1,14 +1,14 @@
 ## Title: Buffalo - One-button buffing
 ## Notes: Smart addon to buff party / raid members
-## Version: 0.4.1
+## Version: 0.5.0-sync1
 ## Author: Mimma @ <EU-Pyrewood Village>
 ## Interface: 11403
 ## SavedVariables: Buffalo_Options
 ## X-Expansion-Level: 1
 ## X-Curse-Project-ID: 623031
 ## X-WoWI-ID: 26305
+
 Buffalo-Configuration.xml
 Buffalo-ClassConfig.xml
 Buffalo-GeneralConfig.xml
 Buffalo.xml
-
