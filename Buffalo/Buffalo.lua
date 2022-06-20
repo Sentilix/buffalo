@@ -23,6 +23,9 @@ local BUFFALO_ICON_COMBAT						= "Interface\\Icons\\Ability_dualwield";
 local BUFFALO_ICON_PLAYERDEAD					= "Interface\\Icons\\Ability_rogue_feigndeath";
 local BUFFALO_ALPHA_DISABLED					= 0.3;
 local BUFFALO_ALPHA_ENABLED						= 1.0;
+local BUFFALO_COLOR_GROUPLABELS					= { 1.0, 0.7, 0.0 };
+local BUFFALO_COLOR_BUFFERS						= { 1.0, 1.0, 1.0 };
+local BUFFALO_COLOR_UNUSED						= { 0.4, 0.4, 0.4 };
 
 local BUFFALO_BACKDROP_FRAME = {
 	bgFile = "Interface\\CharacterFrame\\UI-Party-Background",
@@ -37,9 +40,6 @@ local BUFFALO_BACKDROP_SLIDER = {
 	edgeSize = 16,
 };
 
-
---	If true, main config frame is locked while a sub frame is open:
-BUFFALO_SubConfigOpen							= false;
 
 --	Internal variables
 local IsBuffer									= false;
@@ -705,6 +705,8 @@ local function Buffalo_MainInitialization(reloaded)
 
 	Buffalo_InitializeBuffSettingsUI();
 
+	Buffalo_InitializeBuffSync();
+
 	--	Expansion-specific settings.
 	IsBuffer = false;
 	if Buffalo_ExpansionLevel == 1 or Buffalo_ExpansionLevel == 2 then
@@ -1156,22 +1158,32 @@ end;
 	UI Control
 --]]
 function Buffalo_OpenConfigurationDialogue()
-	BUFFALO_SubConfigOpen = false;
-
 	Buffalo_RefreshGroupBuffUI();
 
+	Buffalo_CloseClassConfigDialogue();
+	Buffalo_CloseGeneralConfigDialogue();
+	Buffalo_CloseSynchronizationDialogue();
 	BuffaloConfigFrame:Show();
 end;
 
 function Buffalo_CloseConfigurationDialogue()
-	if not BUFFALO_SubConfigOpen then
-		BuffaloConfigFrame:Hide();
-	end;
+	Buffalo_CloseClassConfigDialogue();
+	Buffalo_CloseGeneralConfigDialogue();
+	BuffaloConfigFrame:Hide();
+end;
+
+function Buffalo_OpenSynchronizationDialogue()
+	Buffalo_CloseConfigurationDialogue();
+
+	Buffalo_UpdateBuffSync();
+	Buffalo_OpenSyncFrame();
+end;
+
+function Buffalo_CloseSynchronizationDialogue()
+	Buffalo_CloseSyncFrame();
 end;
 
 function Buffalo_OpenGeneralConfigDialogue()
-	BUFFALO_SubConfigOpen = true;
-
 	Buffalo_RefreshGeneralSettingsUI();
 
 	local bleft = BuffaloConfigFrame:GetLeft();
@@ -1187,13 +1199,10 @@ function Buffalo_OpenGeneralConfigDialogue()
 end;
 
 function Buffalo_CloseGeneralConfigDialogue()
-	BUFFALO_SubConfigOpen = false;
 	BuffaloGeneralConfigFrame:Hide();
 end;
 
 function Buffalo_OpenClassConfigDialogue()
-	BUFFALO_SubConfigOpen = true;
-
 	Buffalo_RefreshClassSettingsUI();
 
 	local bleft, btop = BuffaloConfigFrame:GetLeft(), BuffaloConfigFrame:GetTop();
@@ -1208,7 +1217,6 @@ function Buffalo_OpenClassConfigDialogue()
 end;
 
 function Buffalo_CloseClassConfigDialogue()
-	BUFFALO_SubConfigOpen = false;
 	BuffaloClassConfigFrame:Hide();
 end;
 
@@ -1268,7 +1276,11 @@ function Buffalo_OnAfterBuffClick(self, ...)
 	local buttonName = ...;
 
 	if buttonName == "RightButton" then
-		Buffalo_OpenConfigurationDialogue();
+		if IsControlKeyDown() then
+			Buffalo_OpenSynchronizationDialogue();
+		else
+			Buffalo_OpenConfigurationDialogue();
+		end;
 	end;
 end;
 
@@ -1415,6 +1427,107 @@ function Buffalo_InitializeBuffSettingsUI()
 	--	So now, lets apply the alpha values for enabled/disabled buffs:
 	--Buffalo_RefreshGroupBuffUI();
 	--Buffalo_RefreshClassSettingsUI();
+end;
+
+
+--	For each Buff: generate a row with buffer names per group.
+--	Buffer names will be displayed in a clickable frame (button), which can
+--	do a popup for replacements.
+local Buffalo_SynchronizedBuffs = nil;
+function Buffalo_InitializeBuffSync()
+	local width = 100;
+	local height = 40;
+	local top = 0;
+	local left = 80;
+
+	local posX = left;
+	local posY = top;
+
+	--	Generate group labels:
+	for groupIndex = 1, 8, 1 do
+		local labelName = string.format("buffgrouplabel_%s", groupIndex);
+		local fLabel = BuffaloSyncFrameBuff:CreateFontString(labelName, "ARTWORK", "GameFontNormal");
+		fLabel:SetText(string.format("Grp %s", groupIndex));
+		fLabel:SetPoint("TOPLEFT", posX, posY);
+		fLabel:SetTextColor(BUFFALO_COLOR_GROUPLABELS[1], BUFFALO_COLOR_GROUPLABELS[2], BUFFALO_COLOR_GROUPLABELS[3]);
+	
+		posX = posX + width;
+	end;
+
+	--	Iterate over all buffs for this class, and store result in a "temp" table
+	--	so we do not do this every time we update also.
+	--	Sync.Buffs = { priority, buffname, buffmask, iconid }
+	Buffalo_SynchronizedBuffs = { };
+	for buffName, buffInfo in next, BUFF_MATRIX do
+		if not buffInfo["GROUP"] and bit.band(buffInfo["BITMASK"], 0x00ff) > 0 then
+			tinsert(Buffalo_SynchronizedBuffs, { buffInfo["PRIORITY"], buffName, buffInfo["MASK"], buffInfo["ICONID"]});
+		end;
+	end;
+
+	--	And now in correct order:
+	table.sort(Buffalo_SynchronizedBuffs, function (a, b) return a[1] > b[1]; end);
+
+	--	Now render the buff icon, and thereby defining the final size of the frame:
+	posX = left - 70;
+	posY = top - 20;
+	for buffIndex = 1, table.getn(Buffalo_SynchronizedBuffs), 1 do
+		local buttonName = string.format("buffrow_%s", buffIndex);
+		local fButton = CreateFrame("Button", buttonName, BuffaloSyncFrameBuff, "BuffaloBuffButtonTemplate");
+		fButton:SetPoint("TOPLEFT", posX, posY);
+		fButton:SetNormalTexture(Buffalo_SynchronizedBuffs[buffIndex][4]);
+		fButton:SetPushedTexture(Buffalo_SynchronizedBuffs[buffIndex][4]);
+		fButton:SetScript("OnClick", nil);
+
+		posY = posY - height;
+	end;
+
+	--	Confused? Remember posY is negative!
+	local frameHeight = 80 - posY;
+	
+	--	Last, render frame buttons for all potential buffers.
+	posY = top -20;
+	for buffIndex = 1, table.getn(Buffalo_SynchronizedBuffs), 1 do
+		posX = left;
+
+		for groupIndex = 1, 8, 1 do
+			local bufferName = string.format("buffgroup_%s_%s", buffIndex, groupIndex);
+
+			local fBuffer = CreateFrame("Button", bufferName, BuffaloSyncFrameBuff, "GroupBuffTemplate");
+			fBuffer:SetPoint("TOPLEFT", posX, posY);
+			_G[bufferName.."Text"]:SetTextColor(BUFFALO_COLOR_UNUSED[1], BUFFALO_COLOR_UNUSED[2], BUFFALO_COLOR_UNUSED[3]);
+			_G[bufferName.."Text"]:SetText("(None)");
+			fBuffer:Show();
+
+			posX = posX + width;
+		end;
+		posY = posY - height;
+	end;
+
+	BuffaloSyncFrame:SetHeight(frameHeight);
+	BuffaloSyncFrameBuff:SetHeight(frameHeight-50);
+end;
+
+function Buffalo_UpdateBuffSync()
+	if not Buffalo_SynchronizedBuffs then return; end;
+
+	for buffIndex = 1, table.getn(Buffalo_SynchronizedBuffs), 1 do
+
+		for groupIndex = 1, 8, 1 do
+			local bufferName = string.format("buffgroup_%s_%s", buffIndex, groupIndex);
+			local fBuffer = _G[bufferName];
+
+			--	TODO:
+			--	Check sync setup:
+			--	Sync setup is maintained seperately from the existing buff setup.
+			--	Figure out how to do a SYNC MATRIX, which can be easy maintained.
+
+			--_G[bufferName.."Text"]:SetTextColor(BUFFALO_COLOR_BUFFER[1], BUFFALO_COLOR_BUFFER[2], BUFFALO_COLOR_BUFFER[3]);
+			--_G[bufferName.."Text"]:SetTextColor(BUFFALO_COLOR_UNUSED[1], BUFFALO_COLOR_UNUSED[2], BUFFALO_COLOR_UNUSED[3]);
+
+			--_G[bufferName.."Text"]:SetText("(Foobar)");
+		end;
+	end;
+
 end;
 
 
@@ -1804,6 +1917,7 @@ function Buffalo_OnLoad()
 	BuffaloConfigFrame:SetBackdrop(BUFFALO_BACKDROP_FRAME);
 	BuffaloGeneralConfigFrame:SetBackdrop(BUFFALO_BACKDROP_FRAME);
 	BuffaloClassConfigFrame:SetBackdrop(BUFFALO_BACKDROP_FRAME);
+	BuffaloSyncFrame:SetBackdrop(BUFFALO_BACKDROP_FRAME);
 
 	BuffaloConfigFramePrayerThreshold:SetBackdrop(BUFFALO_BACKDROP_SLIDER);
 	BuffaloConfigFrameRenewOverlap:SetBackdrop(BUFFALO_BACKDROP_SLIDER);

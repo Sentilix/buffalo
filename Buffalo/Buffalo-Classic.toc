@@ -11,4 +11,5 @@
 Buffalo-Configuration.xml
 Buffalo-ClassConfig.xml
 Buffalo-GeneralConfig.xml
+Buffalo-Synchronization.xml
 Buffalo.xml
