@@ -24,8 +24,13 @@ local BUFFALO_ICON_PLAYERDEAD					= "Interface\\Icons\\Ability_rogue_feigndeath"
 local BUFFALO_ALPHA_DISABLED					= 0.3;
 local BUFFALO_ALPHA_ENABLED						= 1.0;
 local BUFFALO_COLOR_GROUPLABELS					= { 1.0, 0.7, 0.0 };
-local BUFFALO_COLOR_BUFFERS						= { 1.0, 1.0, 1.0 };
+local BUFFALO_COLOR_BUFFER						= { 1.0, 1.0, 1.0 };
 local BUFFALO_COLOR_UNUSED						= { 0.4, 0.4, 0.4 };
+
+local BUFFALO_ICON_RAID_NONE					= 136058;		--	Raid mode 0: Silver key
+local BUFFALO_ICON_RAID_OPEN					= 134238;		--	Raid mode 1: Yellow key
+local BUFFALO_ICON_RAID_CLOSED					= 134235;		--	Raid mode 2: Red key
+local BUFFALO_ICON_RAID_CENTRAL					= 134236;		--	Raid mode 3: Purple key
 
 local BUFFALO_BACKDROP_FRAME = {
 	bgFile = "Interface\\CharacterFrame\\UI-Party-Background",
@@ -41,6 +46,30 @@ local BUFFALO_BACKDROP_SLIDER = {
 };
 
 
+local BUFFALO_SYNC_UNUSED						= "(None)";
+
+
+--	Render Raid modes: currently supporting mode 0/1/2:
+local BUFFALO_RAIDMODE_PERSONAL					= 0x0001;		--	Assignments are using the "normal" SOLO frame.
+local BUFFALO_RAIDMODE_OPEN						= 0x0010;		--	Assignments are using Raid frame. Everyone can assign.
+local BUFFALO_RAIDMODE_CLOSED					= 0x0020;		--	Assignments are using Raid frame. Promoted can assign.
+local BUFFALO_RAIDMODE_CENTRAL					= 0x0100;		--	Currently unsupported
+
+local Buffalo_RaidModes = {
+	{ ["RAIDMODE"] = BUFFALO_RAIDMODE_PERSONAL,	["ICON"] = BUFFALO_ICON_RAID_NONE, ["CAPTION"] = "Personal assignments" },
+	{ ["RAIDMODE"] = BUFFALO_RAIDMODE_OPEN,		["ICON"] = BUFFALO_ICON_RAID_OPEN, ["CAPTION"] = "Open Raid assignments" },
+	{ ["RAIDMODE"] = BUFFALO_RAIDMODE_CLOSED,	["ICON"] = BUFFALO_ICON_RAID_CLOSED, ["CAPTION"] = "Closed Raid assignments" },
+};
+
+local BUFFALO_RaidMode1RequiresPromotion		= true;		-- true: (switching to) Raidmode 1 requires promotion
+local BUFFALO_RaidMode2RequiresPromotion		= true;		-- true: (switching to) Raidmode 2 requires promotion
+local BUFFALO_DisplayRaidModeChanges			= false;	-- true: show a local message when raid mode changes. Can be spammy.
+
+
+--	Note: This is NOT persisted. We want players to always be in 
+--	PERSONAL mode unless specified otherwise (aka: in a raid!)
+local BUFFALO_RaidMode							= BUFFALO_RAIDMODE_PERSONAL;
+
 --	Internal variables
 local IsBuffer									= false;
 local Buffalo_ExpansionLevel					= 0;
@@ -54,6 +83,7 @@ local lastBuffTarget							= "";
 local lastBuffStatus							= "";
 local lastBuffFired								= nil;
 
+local Buffalo_OrderedBuffGroups					= nil;
 local Buffalo_GroupBuffProperties				= { };		--	Array of buff properties for the group UI: { buffname, iconid, bitmask, priority }
 local Buffalo_SelfBuffProperties				= { };
 local BUFF_MATRIX								= { };		--	[buffname]=<bitmask value>
@@ -80,6 +110,7 @@ local CONFIG_KEY_BuffButtonVisible				= "BuffButton.Visible";
 local CONFIG_KEY_GroupBuffThreshold				= "GroupBuffThreshold";
 local CONFIG_KEY_RenewOverlap					= "RenewOverlap";
 local CONFIG_KEY_ScanFrequency					= "ScanFrequency";
+local CONFIG_KEY_SynchronizedBuffs				= "SynchronizedBuffGroups";
 
 local CONFIG_DEFAULT_AnnounceCompletedBuff		= true;		-- Announce when a buff has being cast.
 local CONFIG_DEFAULT_AnnounceMissingBuff		= true;		-- Announce next buff being cast.
@@ -96,6 +127,15 @@ local CONFIG_AnnounceMissingBuff				= CONFIG_DEFAULT_AnnounceMissingBuff;
 local CONFIG_AssignedBuffGroups					= { };		-- List of groups and their assigned buffs via bitmask. Persisted, but no UI for it. Set runtime.
 local CONFIG_AssignedBuffSelf					= CONFIG_DEFAULT_AssignedBuffSelf;
 local CONFIG_AssignedClasses					= CONFIG_DEFAULT_AssignedClasses;
+local CONFIG_SynchronizedBuffs					= { };
+	--[[
+		CONFIG_SynchronizedBuffs[<rowNumber>][<groupNumber>] = {
+			["BUFFNAME"] = <buff name - foreign key to BUFF_MATRIX>,
+			["BITMASK"] = <buff mask>
+			["PLAYER"] = <full playername assigned or nil if none assigned>,
+		}
+	--]]
+
 local CONFIG_BuffButtonVisible					= CONFIG_DEFAULT_BuffButtonVisible;
 local CONFIG_GroupBuffThreshold					= CONFIG_DEFAULT_GroupBuffThreshold;
 local CONFIG_RenewOverlap						= CONFIG_DEFAULT_RenewOverlap;
@@ -104,6 +144,25 @@ local CONFIG_ScanFrequency						= CONFIG_DEFAULT_ScanFrequency;
 --	Other configuration options considered in future releases:
 local CONFIG_BuffButtonSize						= 32;		-- Size of buff button
 local CONFIG_PlayerBuffPriority					= 90;		-- Priority to Self'
+
+
+
+--	Dropdown menu for Healer (add/replace healer) selection:
+Buffalo_SyncBuffGroupDropdownMenu = CreateFrame("FRAME", "BuffaloSyncFrameBuff", UIParent, "UIDropDownMenuTemplate");
+Buffalo_SyncBuffGroupDropdownMenu:SetPoint("CENTER");
+Buffalo_SyncBuffGroupDropdownMenu:Hide();
+UIDropDownMenu_SetWidth(Buffalo_SyncBuffGroupDropdownMenu, 1);
+UIDropDownMenu_SetText(Buffalo_SyncBuffGroupDropdownMenu, "");
+
+UIDropDownMenu_Initialize(Buffalo_SyncBuffGroupDropdownMenu, function(self, level, menuList)
+	if Buffalo_SyncBuffGroupDropdownMenu_Initialize then
+		Buffalo_SyncBuffGroupDropdownMenu_Initialize(self, level, menuList); 
+	end;
+end);
+
+
+
+
 
 --[[
 	Echo functions
@@ -411,6 +470,8 @@ local function Buffalo_HandleAddonMessage(msg, sender)
 		Buffalo_HandleRXVersion(message, sender)
 	elseif cmd == "TX_VERCHECK" then
 		Buffalo_HandleTXVerCheck(message, sender)
+	elseif cmd == "TX_RAIDMODE" then
+		Buffalo_HandleTXRaidMode(message, sender);
 	end
 end
 
@@ -588,7 +649,7 @@ local function Buffalo_InitializeConfigSettings()
 	end
 
 	--	Init the "assigned buff groups". This is a table, so we need to validate the integrity:
-	local assignedBuffGroups = Buffalo_GetOption(CONFIG_KEY_AssignedBuffGroups, x);
+	local assignedBuffGroups = Buffalo_GetOption(CONFIG_KEY_AssignedBuffGroups, nil);
 	if type(assignedBuffGroups) == "table" and table.getn(assignedBuffGroups) == 8 then
 		CONFIG_DEFAULT_AssignedBuffGroups = { }
 		for groupNum = 1, 8, 1 do
@@ -604,6 +665,42 @@ local function Buffalo_InitializeConfigSettings()
 		CONFIG_AssignedBuffGroups = Buffalo_InitializeAssignedGroupDefaults();
 	end;
 	Buffalo_SetOption(CONFIG_KEY_AssignedBuffGroups, CONFIG_AssignedBuffGroups);
+
+	--	Read SyncBuffsfrom Config! initialized a bit later with defaults.
+	local syncBuffTable = { };
+	local failureDetected = false;
+	local syncedBuffs = Buffalo_GetOption(CONFIG_KEY_SynchronizedBuffs, nil);
+	if type(syncedBuffs) == "table" then
+		for buffIndex = 1, table.getn(syncedBuffs), 1 do
+			if type(syncedBuffs[buffIndex]) ~= "table" then
+				failureDetected = true;
+				break;
+			end;
+
+			syncBuffTable[buffIndex] = { };
+			
+			for groupIndex = 1, table.getn(syncedBuffs[buffIndex]), 1 do
+				local buffname = syncedBuffs[buffIndex][groupIndex]["BUFFNAME"];
+				local bitmask = syncedBuffs[buffIndex][groupIndex]["BITMASK"];
+				local player = syncedBuffs[buffIndex][groupIndex]["PLAYER"];
+				if not buffname or not bitmask then
+					failureDetected = true;
+					break;
+				end;
+
+				syncBuffTable[buffIndex][groupIndex] = {
+					["BUFFNAME"] = buffname,
+					["BITMASK"] = bitmask,
+					["PLAYER"] = player,
+				}
+			end;
+		end;
+	end;
+	CONFIG_SynchronizedBuffs = { };
+	if not failureDetected and table.getn(syncBuffTable) > 0 then
+		CONFIG_SynchronizedBuffs = syncBuffTable;
+	end;
+
 
 	CONFIG_AssignedClasses = Buffalo_GetOption(CONFIG_KEY_AssignedClasses, CONFIG_DEFAULT_AssignedClasses)
 	
@@ -674,6 +771,7 @@ end;
 
 
 local function Buffalo_MainInitialization(reloaded)
+	BUFFALO_RaidMode = BUFFALO_RAIDMODE_PERSONAL;
 	Buffalo_InitializeConfigSettings();
 
 	Buffalo_ExpansionLevel = 1 * GetAddOnMetadata(BUFFALO_NAME, "X-Expansion-Level");
@@ -706,6 +804,22 @@ local function Buffalo_MainInitialization(reloaded)
 	Buffalo_InitializeBuffSettingsUI();
 
 	Buffalo_InitializeBuffSync();
+
+	--	Note: setting defaults should be part of the config, but at that time
+	--	the Buffalo_InitializeBuffSync() has not yet been called.
+	if table.getn(CONFIG_SynchronizedBuffs) == 0 then
+		for buffIndex = 1, table.getn(Buffalo_OrderedBuffGroups), 1 do
+			CONFIG_SynchronizedBuffs[buffIndex] = { };
+			for groupIndex = 1, 8, 1 do
+				CONFIG_SynchronizedBuffs[buffIndex][groupIndex] = {   
+					["BUFFNAME"] = Buffalo_OrderedBuffGroups[2],
+					["BITMASK"] = Buffalo_OrderedBuffGroups[3] or 0x000,
+					["PLAYER"] = nil,
+				};
+			end;
+		end;
+	end;
+	Buffalo_SetOption(CONFIG_KEY_SynchronizedBuffs, CONFIG_SynchronizedBuffs);
 
 	--	Expansion-specific settings.
 	IsBuffer = false;
@@ -1433,7 +1547,6 @@ end;
 --	For each Buff: generate a row with buffer names per group.
 --	Buffer names will be displayed in a clickable frame (button), which can
 --	do a popup for replacements.
-local Buffalo_SynchronizedBuffs = nil;
 function Buffalo_InitializeBuffSync()
 	local width = 100;
 	local height = 40;
@@ -1457,36 +1570,36 @@ function Buffalo_InitializeBuffSync()
 	--	Iterate over all buffs for this class, and store result in a "temp" table
 	--	so we do not do this every time we update also.
 	--	Sync.Buffs = { priority, buffname, buffmask, iconid }
-	Buffalo_SynchronizedBuffs = { };
+	Buffalo_OrderedBuffGroups = { };
 	for buffName, buffInfo in next, BUFF_MATRIX do
 		if not buffInfo["GROUP"] and bit.band(buffInfo["BITMASK"], 0x00ff) > 0 then
-			tinsert(Buffalo_SynchronizedBuffs, { buffInfo["PRIORITY"], buffName, buffInfo["MASK"], buffInfo["ICONID"]});
+			tinsert(Buffalo_OrderedBuffGroups, { buffInfo["PRIORITY"], buffName, buffInfo["MASK"], buffInfo["ICONID"]});
 		end;
 	end;
 
 	--	And now in correct order:
-	table.sort(Buffalo_SynchronizedBuffs, function (a, b) return a[1] > b[1]; end);
+	table.sort(Buffalo_OrderedBuffGroups, function (a, b) return a[1] > b[1]; end);
 
 	--	Now render the buff icon, and thereby defining the final size of the frame:
 	posX = left - 70;
 	posY = top - 20;
-	for buffIndex = 1, table.getn(Buffalo_SynchronizedBuffs), 1 do
+	for buffIndex = 1, table.getn(Buffalo_OrderedBuffGroups), 1 do
 		local buttonName = string.format("buffrow_%s", buffIndex);
 		local fButton = CreateFrame("Button", buttonName, BuffaloSyncFrameBuff, "BuffaloBuffButtonTemplate");
 		fButton:SetPoint("TOPLEFT", posX, posY);
-		fButton:SetNormalTexture(Buffalo_SynchronizedBuffs[buffIndex][4]);
-		fButton:SetPushedTexture(Buffalo_SynchronizedBuffs[buffIndex][4]);
+		fButton:SetNormalTexture(Buffalo_OrderedBuffGroups[buffIndex][4]);
+		fButton:SetPushedTexture(Buffalo_OrderedBuffGroups[buffIndex][4]);
 		fButton:SetScript("OnClick", nil);
 
 		posY = posY - height;
 	end;
 
 	--	Confused? Remember posY is negative!
-	local frameHeight = 80 - posY;
+	local frameHeight = 130 - posY;
 	
-	--	Last, render frame buttons for all potential buffers.
+	--	Now render frame buttons for all potential buffers.
 	posY = top -20;
-	for buffIndex = 1, table.getn(Buffalo_SynchronizedBuffs), 1 do
+	for buffIndex = 1, table.getn(Buffalo_OrderedBuffGroups), 1 do
 		posX = left;
 
 		for groupIndex = 1, 8, 1 do
@@ -1495,7 +1608,7 @@ function Buffalo_InitializeBuffSync()
 			local fBuffer = CreateFrame("Button", bufferName, BuffaloSyncFrameBuff, "GroupBuffTemplate");
 			fBuffer:SetPoint("TOPLEFT", posX, posY);
 			_G[bufferName.."Text"]:SetTextColor(BUFFALO_COLOR_UNUSED[1], BUFFALO_COLOR_UNUSED[2], BUFFALO_COLOR_UNUSED[3]);
-			_G[bufferName.."Text"]:SetText("(None)");
+			_G[bufferName.."Text"]:SetText(BUFFALO_SYNC_UNUSED);
 			fBuffer:Show();
 
 			posX = posX + width;
@@ -1503,31 +1616,256 @@ function Buffalo_InitializeBuffSync()
 		posY = posY - height;
 	end;
 
+
+	local width = 220;
+	local posX = 35;
+
+	for _, raidmode in next, Buffalo_RaidModes do
+		local buttonName = string.format("raidmode_%s", raidmode["RAIDMODE"]);
+		local fButton = CreateFrame("Button", buttonName, BuffaloSyncFrame, "BuffaloBuffButtonTemplate");
+		fButton:SetPoint("TOPLEFT", posX,-30);
+		fButton:SetNormalTexture(raidmode["ICON"]);
+		fButton:SetPushedTexture(raidmode["ICON"]);
+		if raidmode["RAIDMODE"] == BUFFALO_RaidMode then
+			fButton:SetAlpha(BUFFALO_ALPHA_ENABLED);
+		else
+			fButton:SetAlpha(BUFFALO_ALPHA_DISABLED);
+		end;
+
+		local fLabel = fButton:CreateFontString(nil, "ARTWORK", "GameFontNormal");
+		fLabel:SetText(raidmode["CAPTION"]);
+		fLabel:SetPoint("LEFT", 40, 0);
+		fButton:SetScript("OnClick", Buffalo_RaidModeOnClick);
+		fButton:Show();
+
+		posX = posX + width;
+	end;
+
 	BuffaloSyncFrame:SetHeight(frameHeight);
 	BuffaloSyncFrameBuff:SetHeight(frameHeight-50);
 end;
 
 function Buffalo_UpdateBuffSync()
-	if not Buffalo_SynchronizedBuffs then return; end;
+	if not Buffalo_OrderedBuffGroups then return; end;
 
-	for buffIndex = 1, table.getn(Buffalo_SynchronizedBuffs), 1 do
+	for buffIndex = 1, table.getn(Buffalo_OrderedBuffGroups), 1 do
 
 		for groupIndex = 1, 8, 1 do
 			local bufferName = string.format("buffgroup_%s_%s", buffIndex, groupIndex);
 			local fBuffer = _G[bufferName];
 
-			--	TODO:
-			--	Check sync setup:
-			--	Sync setup is maintained seperately from the existing buff setup.
-			--	Figure out how to do a SYNC MATRIX, which can be easy maintained.
-
-			--_G[bufferName.."Text"]:SetTextColor(BUFFALO_COLOR_BUFFER[1], BUFFALO_COLOR_BUFFER[2], BUFFALO_COLOR_BUFFER[3]);
-			--_G[bufferName.."Text"]:SetTextColor(BUFFALO_COLOR_UNUSED[1], BUFFALO_COLOR_UNUSED[2], BUFFALO_COLOR_UNUSED[3]);
-
-			--_G[bufferName.."Text"]:SetText("(Foobar)");
+			local buffInfo = CONFIG_SynchronizedBuffs[buffIndex][groupIndex];
+			if buffInfo["PLAYER"] then
+				_G[bufferName.."Text"]:SetTextColor(BUFFALO_COLOR_BUFFER[1], BUFFALO_COLOR_BUFFER[2], BUFFALO_COLOR_BUFFER[3]);
+				_G[bufferName.."Text"]:SetText(buffInfo["PLAYER"]);
+			else
+				_G[bufferName.."Text"]:SetTextColor(BUFFALO_COLOR_UNUSED[1], BUFFALO_COLOR_UNUSED[2], BUFFALO_COLOR_UNUSED[3]);
+				_G[bufferName.."Text"]:SetText(BUFFALO_SYNC_UNUSED);
+			end;
 		end;
 	end;
 
+	for _, raidmode in next, Buffalo_RaidModes do
+		local fButton = _G[string.format("raidmode_%s", raidmode["RAIDMODE"])];
+		if raidmode["RAIDMODE"] == BUFFALO_RaidMode then
+			fButton:SetAlpha(BUFFALO_ALPHA_ENABLED);
+		else
+			fButton:SetAlpha(BUFFALO_ALPHA_DISABLED);
+		end;
+	end;
+end;
+
+--	Switch raidmode:
+--	Must b promoted to Switch
+function Buffalo_RaidModeOnClick(sender)
+	local buttonName = sender:GetName();
+
+	local _, _, raidmode = string.find(buttonName, "raidmode_(%d*)");
+	if raidmode then
+		raidmode = tonumber(raidmode);
+
+		local unitIsPromoted = UnitIsGroupAssistant("player") or UnitIsGroupLeader("player");
+
+		--	Raidmode 1 and 2 may reqire promotions, so check both current and new mode:
+		if raidmode == BUFFALO_RAIDMODE_OPEN or BUFFALO_RaidMode == BUFFALO_RAIDMODE_OPEN then
+			if BUFFALO_RaidMode1RequiresPromotion and not unitIsPromoted then
+				Buffalo_Echo("You cannot change raid mode unless you are promoted.");
+				return;
+			end;
+		end;
+
+		if raidmode == BUFFALO_RAIDMODE_CLOSED or BUFFALO_RaidMode == BUFFALO_RAIDMODE_CLOSED then
+			if BUFFALO_RaidMode2RequiresPromotion and not unitIsPromoted then
+				Buffalo_Echo("You cannot change raid mode unless you are promoted.");
+				return;
+			end;
+		end;
+
+		Buffalo_SetRaidMode(raidmode, true);
+	end;
+
+	Buffalo_UpdateBuffSync();
+end;
+
+--	Change raidmode:
+--	UI is updated, and if AnnounceRaidModeChange is set, a message is sent
+--	to all other people of same class.
+function Buffalo_SetRaidMode(raidmode, AnnounceRaidModeChange)
+	BUFFALO_RaidMode = raidmode;
+	Buffalo_UpdateBuffSync();
+
+	if AnnounceRaidModeChange then
+		local _, classname = UnitClass("player");
+		local payload = string.format("%s/%s", classname, raidmode);
+
+		Buffalo_SendAddonMessage(string.format("TX_RAIDMODE#%s#", payload));
+	end;
+end;
+
+function Buffalo_HandleTXRaidMode(message, sender)
+	local _, _, classname, raidmode = string.find(message, "([^/]*)/([^/]*)");
+
+	if sender == Buffalo_PlayerNameAndRealm then	
+		-- If sender is myself, no need to refresh or update again	
+		return;
+	end;
+
+	raidmode = tonumber(raidmode);
+	Buffalo_SetRaidMode(raidmode);
+
+	if not BUFFALO_DisplayRaidModeChanges then
+		--	Displaying raid mode changes has been disabled.
+		return;
+	end;
+
+	for _, rmInfo in next, Buffalo_RaidModes do
+		if rmInfo["RAIDMODE"] == raidmode then
+			Buffalo_Echo(string.format("[%s] changed raid mode to [%s].", sender, rmInfo["CAPTION"]));
+			return;
+		end;
+	end;
+
+	--	Oops, someone changed raid mode to a mode this client does not know!
+	--	Can happen if a RaidMode3 is implemented, and the user does not upgrade!!
+	Buffalo_Echo(string.format("[%s] changed raid mode.", sender));
+end;
+
+
+local Buffalo_SyncClass = nil;
+local Buffalo_SyncBuff = nil;
+local Buffalo_SyncGroup = nil;
+function Buffalo_SyncBuffGroupOnClick(sender)
+	local buttonName = sender:GetName();
+	local _, _, buffIndex, groupIndex = string.find(buttonName, "buffgroup_(%d)_(%d)");
+
+	if not buffIndex or not groupIndex then return; end;
+
+	--	Show popup with option to add a player from the current class.
+	--	TODO: What is the current class? Same as the current player!
+
+	local _, classname = UnitClass("player");
+	Buffalo_SyncClass = classname;
+	Buffalo_SyncBuff = tonumber(buffIndex);
+	Buffalo_SyncGroup = tonumber(groupIndex);
+
+	--	Now we are ready to open the popup ...!
+	ToggleDropDownMenu(1, nil, Buffalo_SyncBuffGroupDropdownMenu, "cursor", 3, -3);
+end;
+
+function Buffalo_SyncBuffGroupDropdownMenu_Initialize(self, level, menuList)
+	--	Unassign: first choice.
+	local info = UIDropDownMenu_CreateInfo();
+	info.notCheckable = true;
+	info.text       = BUFFALO_SYNC_UNUSED;
+	info.icon		= nil;
+	info.func       = function() Buffalo_SyncBuffGroupDropdownMenu_OnClick(this, nil) end;
+	UIDropDownMenu_AddButton(info);
+
+	local classInfo = CLASS_MATRIX[Buffalo_SyncClass];
+	local players = Buffalo_GetPlayersInRoster(classInfo["MASK"]);
+	for playerIndex = 1, table.getn(players), 1 do
+		local info = UIDropDownMenu_CreateInfo();
+		info.notCheckable = true;
+		info.text       = players[playerIndex]["NAME"];
+		info.icon		= players[playerIndex]["ICONID"];
+		info.func       = function() Buffalo_SyncBuffGroupDropdownMenu_OnClick(this, players[playerIndex]) end;
+		UIDropDownMenu_AddButton(info);
+	end
+end;
+
+--	nil means unassign
+function Buffalo_SyncBuffGroupDropdownMenu_OnClick(sender, playerInfo)
+	local syncBuff = CONFIG_SynchronizedBuffs[Buffalo_SyncBuff][Buffalo_SyncGroup];
+
+	if playerInfo then
+		syncBuff["PLAYER"] = playerInfo["NAME"];
+	else
+		syncBuff["PLAYER"] = nil;
+	end;
+
+	Buffalo_UpdateBuffSync();
+end;
+
+function Buffalo_GetPlayersInRoster(classMask)
+	local players = { };		-- List of { "NAME", "MASK", "ICONID", "CLASS" }
+
+	if IsInRaid() then
+		for n = 1, 40, 1 do
+			local unitid = "raid"..n;
+			if not UnitName(unitid) then break; end;
+			
+			local fullName = Buffalo_GetPlayerAndRealm(unitid);
+			local _, className = UnitClass(unitid);
+			local classInfo = CLASS_MATRIX[className];
+
+			if bit.band(classInfo["MASK"], classMask) > 0 then
+				tinsert(players, { 
+					["NAME"] = fullName,
+					["MASK"] = classInfo["MASK"], 
+					["ICONID"] = classInfo["ICONID"],
+					["CLASS"] = className,
+				});
+			end;
+		end;
+
+	elseif Buffalo_IsInParty() then
+		for n = 1, GetNumGroupMembers(), 1 do
+			local unitid = "party"..n;
+			if not UnitName(unitid) then
+				unitid = "player";
+			end;
+
+			local fullName = Buffalo_GetPlayerAndRealm(unitid);
+			local _, className = UnitClass(unitid);		
+			local classInfo = CLASS_MATRIX[className];
+
+			if bit.band(classInfo["MASK"], classMask) > 0 then
+				tinsert(players, {
+					["NAME"] = fullName, 
+					["MASK"] = classInfo["MASK"], 
+					["ICONID"] = classInfo["ICONID"],
+					["CLASS"] = className, 
+				});
+			end;
+		end;
+	else
+		--	SOLO play, somewhat usefull when testing
+		local unitid = "player";
+		local fullName = Buffalo_GetPlayerAndRealm(unitid);
+		local _, className = UnitClass(unitid);
+		local classInfo = CLASS_MATRIX[className];
+
+		if bit.band(classInfo["MASK"], classMask) > 0 then
+			tinsert(players, {
+				["NAME"] = fullName,
+				["MASK"] = classInfo["MASK"], 
+				["ICONID"] = classInfo["ICONID"],
+				["CLASS"] = className,
+			});
+		end;
+	end;
+
+	return players;
 end;
 
 

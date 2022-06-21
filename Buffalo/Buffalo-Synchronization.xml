@@ -25,7 +25,7 @@
 		<Scripts>
 			<OnClick>
 				PlaySound(882, "Master")
-				--CHA_TemplateOnClick(self)
+				Buffalo_SyncBuffGroupOnClick(self)
 			</OnClick>
 			<OnEnter>
 				_G[self:GetName().."BG"]:SetVertexColor(1.0, 1.0, 1.0, 1.0)
@@ -50,7 +50,7 @@
 			<KeyValue key="backdropColor" value="BLACK" type="global"/>
 			<KeyValue key="backdropBorderColor" value="WHITE" type="global"/>
 		</KeyValues>
-		<Size x="950" y="500" />
+		<Size x="950" y="550" />
 		<Anchors>
 			<Anchor point="CENTER"/>
 		</Anchors>
@@ -60,7 +60,7 @@
 			<Frame name="$parentBuff" hidden="false">
 				<Size x="900" y="450" />
 				<Anchors>
-					<Anchor point="TOP" x="0" y="-30" />
+					<Anchor point="TOP" x="0" y="-80" />
 				</Anchors>
 			</Frame>
 
@@ -94,7 +94,7 @@
 						</Anchor>
 					</Anchors>
 				</Texture>
-				<FontString inherits="GameFontNormal" text="Assign buffers to specific groups.">
+				<FontString inherits="GameFontNormal" text="Raid-wide buff assignments: Assign buffers to specific groups.">
 					<Anchors>
 						<Anchor point="TOP" relativeTo="$parentHeaderTexture">
 							<Offset>
@@ -103,63 +103,6 @@
 						</Anchor>
 					</Anchors>
 				</FontString>
-
-				<!--<FontString name="$parentGrp1" inherits="GameFontNormal">
-					<Anchors>
-						<Anchor point="TOPLEFT">
-							<Offset x="70" y="-30"/>
-						</Anchor>
-					</Anchors>
-				</FontString>
-				<FontString name="$parentGrp2" inherits="GameFontNormal">
-					<Anchors>
-						<Anchor point="TOPLEFT">
-							<Offset x="120" y="-30"/>
-						</Anchor>
-					</Anchors>
-				</FontString>
-				<FontString name="$parentGrp3" inherits="GameFontNormal">
-					<Anchors>
-						<Anchor point="TOPLEFT">
-							<Offset x="170" y="-30"/>
-						</Anchor>
-					</Anchors>
-				</FontString>
-				<FontString name="$parentGrp4" inherits="GameFontNormal">
-					<Anchors>
-						<Anchor point="TOPLEFT">
-							<Offset x="220" y="-30"/>
-						</Anchor>
-					</Anchors>
-				</FontString>
-				<FontString name="$parentGrp5" inherits="GameFontNormal">
-					<Anchors>
-						<Anchor point="TOPLEFT">
-							<Offset x="270" y="-30"/>
-						</Anchor>
-					</Anchors>
-				</FontString>
-				<FontString name="$parentGrp6" inherits="GameFontNormal">
-					<Anchors>
-						<Anchor point="TOPLEFT">
-							<Offset x="320" y="-30"/>
-						</Anchor>
-					</Anchors>
-				</FontString>
-				<FontString name="$parentGrp7" inherits="GameFontNormal">
-					<Anchors>
-						<Anchor point="TOPLEFT">
-							<Offset x="370" y="-30"/>
-						</Anchor>
-					</Anchors>
-				</FontString>
-				<FontString name="$parentGrp8" inherits="GameFontNormal">
-					<Anchors>
-						<Anchor point="TOPLEFT">
-							<Offset x="420" y="-30"/>
-						</Anchor>
-					</Anchors>
-				</FontString>-->
 			</Layer>
 		</Layers>
 
