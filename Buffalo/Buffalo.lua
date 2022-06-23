@@ -69,6 +69,8 @@ local BUFFALO_DisplayRaidModeChanges			= false;	-- true: show a local message wh
 --	Note: This is NOT persisted. We want players to always be in 
 --	PERSONAL mode unless specified otherwise (aka: in a raid!)
 local Buffalo_CurrentRaidMode					= BUFFALO_RAIDMODE_PERSONAL;
+local Buffalo_RaidModeLockedBy					= "";
+local Buffalo_RaidModeQueryDone					= false;
 
 --	Internal variables
 local IsBuffer									= false;
@@ -464,10 +466,28 @@ end
 	same class via the TX_RDUPDATE. There is no response for this.
 	request:
 		TX_RDUPDATE#<buffIndex>/<groupIndex>/<playername>#<classname>
+		
+	Request current raidmode. All promoted client of same class should
+	respond current raidmode back. Until then, current client will use
+	raid mode 0.
+	This is used when a client enters raid, relog or reloads UI.
+		TX_QRYRAIDMODE##<classname>
+		RX_QRYRAIDMODE#<raid mode>/<lock owner>#<recipient=myself>
+		
+	Request Raid Assignments. Called after a RX_QRYRAIDMODE is returned.
+		TX_QRYRAIDASSIGNMENTS##<promoted sender>
+	Response: List of (one per group):
+		RX_QRYRAIDASSIGNMENTS#<groupIndex>/<buffer 2>/<buffer 2>/<buffer 3>#sender
+
 
 --]]
 local function Buffalo_HandleAddonMessage(msg, sender)
 	local _, _, cmd, message, recipient = string.find(msg, "([^#]*)#([^#]*)#([^#]*)");	
+
+	--	Ignore messages sent from myself:
+	if sender == Buffalo_PlayerNameAndRealm then
+		return;
+	end;
 
 	--	Ignore message if it is not for me. 
 	--	Receipient can be blank, which means it is for everyone.
@@ -492,10 +512,19 @@ local function Buffalo_HandleAddonMessage(msg, sender)
 		Buffalo_HandleRXVersion(message, sender)
 	elseif cmd == "TX_VERCHECK" then
 		Buffalo_HandleTXVerCheck(message, sender)
+
 	elseif cmd == "TX_RAIDMODE" then
 		Buffalo_HandleTXRaidMode(message, sender);
 	elseif cmd == "TX_RDUPDATE" then
 		Buffalo_HandleTXRdUpdate(message, sender);
+	elseif cmd == "TX_QRYRAIDMODE" then
+		Buffalo_HandleTXQueryRaidMode(message, sender);
+	elseif cmd == "RX_QRYRAIDMODE" then
+		Buffalo_HandleRXQueryRaidMode(message, sender);
+	elseif cmd == "TX_QRYRAIDASSIGNMENTS" then
+		Buffalo_HandleTXQueryRaidAssignments(message, sender);
+	elseif cmd == "RX_QRYRAIDASSIGNMENTS" then
+		Buffalo_HandleRXQueryRaidAssignments(message, sender);
 	end
 end
 
@@ -575,7 +604,11 @@ end;
 
 function Buffalo_GetPlayerAndRealm(unitid)
 	local playername, realmname = UnitName(unitid);
-	return playername.."-".. (realmname or Buffalo_GetMyRealm());
+	if not realmname or realmname == "" then
+		realmname = Buffalo_GetMyRealm();
+	end;
+
+	return playername.."-".. realmname;
 end;
 
 function Buffalo_GetPlayerAndRealmFromName(playername)
@@ -705,6 +738,11 @@ local function Buffalo_InitializeConfigSettings()
 			syncBuffTable[buffIndex] = { };
 			
 			for groupIndex = 1, table.getn(syncedBuffs[buffIndex]), 1 do
+				if not syncedBuffs[buffIndex][groupIndex] then
+					failureDetected = true;
+					break;
+				end;
+
 				local buffname = syncedBuffs[buffIndex][groupIndex]["BUFFNAME"];
 				local bitmask = syncedBuffs[buffIndex][groupIndex]["BITMASK"];
 				local player = syncedBuffs[buffIndex][groupIndex]["PLAYER"];
@@ -846,6 +884,8 @@ local function Buffalo_MainInitialization(reloaded)
 		end;
 	end;
 	Buffalo_SetOption(CONFIG_KEY_SynchronizedBuffs, CONFIG_SynchronizedBuffs);
+
+	Buffalo_RequestRaidModeUpdate();
 
 	--	Expansion-specific settings.
 	IsBuffer = false;
@@ -1305,7 +1345,7 @@ end;
 	UI Control
 --]]
 function Buffalo_OpenConfigurationDialogue()
-	Buffalo_RefreshGroupBuffUI();
+	Buffalo_UpdateGroupBuffUI();
 
 	Buffalo_CloseClassConfigDialogue();
 	Buffalo_CloseGeneralConfigDialogue();
@@ -1572,7 +1612,7 @@ function Buffalo_InitializeBuffSettingsUI()
 	BuffaloClassConfigFrameHeaderTexture:SetWidth(2 * (posX + 52));
 
 	--	So now, lets apply the alpha values for enabled/disabled buffs:
-	--Buffalo_RefreshGroupBuffUI();
+	--Buffalo_UpdateGroupBuffUI();
 	--Buffalo_RefreshClassSettingsUI();
 end;
 
@@ -1711,7 +1751,7 @@ function Buffalo_UpdateBuffSync()
 end;
 
 --	Switch raidmode:
---	Must b promoted to Switch
+--	Must be promoted to Switch
 function Buffalo_RaidModeOnClick(sender)
 	local buttonName = sender:GetName();
 
@@ -1719,7 +1759,7 @@ function Buffalo_RaidModeOnClick(sender)
 	if raidmode then
 		raidmode = tonumber(raidmode);
 
-		local unitIsPromoted = UnitIsGroupAssistant("player") or UnitIsGroupLeader("player");
+		local unitIsPromoted = Buffalo_UnitIsPromoted("player");
 
 		--	Raidmode 1 and 2 may reqire promotions, so check both current and new mode:
 		if raidmode == BUFFALO_RAIDMODE_OPEN or Buffalo_CurrentRaidMode == BUFFALO_RAIDMODE_OPEN then
@@ -1736,6 +1776,12 @@ function Buffalo_RaidModeOnClick(sender)
 			end;
 		end;
 
+		if raidmode == BUFFALO_RAIDMODE_PERSONAL then
+			Buffalo_RaidModeLockedBy = "";
+		else
+			Buffalo_RaidModeLockedBy = Buffalo_PlayerNameAndRealm;
+		end;
+
 		Buffalo_SetRaidMode(raidmode, true);
 	end;
 
@@ -1746,20 +1792,25 @@ end;
 --	UI is updated, and if AnnounceRaidModeChange is set, a message is sent
 --	to all other people of same class.
 function Buffalo_SetRaidMode(raidmode, AnnounceRaidModeChange)
-	Buffalo_CurrentRaidMode = raidmode;
+	Buffalo_CurrentRaidMode = tonumber(raidmode);
 
 	if AnnounceRaidModeChange then
 		Buffalo_SendAddonMessage(string.format("TX_RAIDMODE#%s#%s", raidmode, Buffalo_PlayerClass));
 	end;
 
 	Buffalo_UpdateBuffSync();
-	Buffalo_RefreshGroupBuffUI();
+	Buffalo_UpdateGroupBuffUI();
 end;
 
 --	Called when another client switches raid mode.
 function Buffalo_HandleTXRaidMode(message, sender)
---	local _, _, raidmode = string.find(message, "([^/]*)/[^/]*");
 	local raidmode = tonumber(message);
+
+	if raidmode == BUFFALO_RAIDMODE_PERSONAL then
+		Buffalo_RaidModeLockedBy = "";
+	else
+		Buffalo_RaidModeLockedBy = sender;
+	end;
 
 	if sender == Buffalo_PlayerNameAndRealm then
 		-- If sender is myself, no need to refresh or update again	
@@ -1785,7 +1836,7 @@ function Buffalo_HandleTXRaidMode(message, sender)
 	Buffalo_Echo(string.format("[%s] changed raid mode.", sender));
 end;
 
---	Called when another client updates the raid assignments.
+--	TX_RDUPDATE: Called when another client updates the raid assignments.
 function Buffalo_HandleTXRdUpdate(message, sender)
 	local _, _, buffIndex, groupIndex, playername = string.find(message, "([^/]*)/([^/]*)/([^/]*)");
 
@@ -1800,9 +1851,110 @@ function Buffalo_HandleTXRdUpdate(message, sender)
 	end;
 
 	Buffalo_UpdateBuffSync();
-	Buffalo_RefreshGroupBuffUI();
+	Buffalo_UpdateGroupBuffUI();
 end;
 
+--	TX_QRYRAIDMODE:
+--	If player is promoted, answer current raidmode back.
+function Buffalo_HandleTXQueryRaidMode(message, sender)
+	if Buffalo_UnitIsPromoted("player") then
+		Buffalo_SendAddonMessage(string.format("RX_QRYRAIDMODE#%s/%s#%s", Buffalo_CurrentRaidMode, Buffalo_RaidModeLockedBy, sender));
+	end;
+end;
+
+--	RX_QRYRAIDMODE:
+function Buffalo_HandleRXQueryRaidMode(message, sender)
+	local _, _, raidmode, lockedBy = string.find(message, "([^/]*)/([^/]*)");
+
+	raidmode = tonumber(raidmode);
+	if raidmode and (raidmode == BUFFALO_RAIDMODE_OPEN or raidmode == BUFFALO_RAIDMODE_CLOSED) then
+		Buffalo_SetRaidMode(raidmode);
+		Buffalo_RaidModeLockedBy = lockedBy or "";
+
+		--	Now we got the raidmode solved, but we don't have the raid assignments yet.
+		--	This time we know who to ask.
+		--	However there is a potential problem here: 
+		--	If more than one person whispers back we don't want to send requests to ALL
+		--	of them, only the first one. 
+		if not Buffalo_RaidModeQueryDone then
+			Buffalo_RaidModeQueryDone = true;
+			Buffalo_SendAddonMessage(string.format("TX_QRYRAIDASSIGNMENTS##%s", sender));
+		end;
+
+		Buffalo_UpdateBuffSync();
+		Buffalo_UpdateGroupBuffUI();
+	end;
+end;
+
+function Buffalo_RequestRaidModeUpdate()
+	if IsInRaid() then
+		Buffalo_RaidModeQueryDone = false;
+		Buffalo_ResetRaidAssignments();
+
+		Buffalo_SendAddonMessage(string.format("TX_QRYRAIDMODE##%s", Buffalo_PlayerClass));
+	end;
+end;
+
+--	Send all assignments for current raid back to the requester.
+function Buffalo_HandleTXQueryRaidAssignments(message, sender)
+	for groupIndex = 1, 8, 1 do
+		local payload = string.format("%s", groupIndex);
+
+		--	Note: We HAVE to set a name in the empty spots, otherwise string split later on fucks up:
+		for buffIndex = 1, table.getn(CONFIG_SynchronizedBuffs), 1 do
+			local syncBuff = CONFIG_SynchronizedBuffs[buffIndex][groupIndex];
+			local bufferName = syncBuff["PLAYER"] or "?";
+			if bufferName == "" then
+				bufferName = "?";
+			end;
+			payload = payload.."/".. bufferName;
+		end;
+
+		--	A message per group:
+		--	RX_QRYRAIDASSIGNMENTS#<groupnum>/<buffer 2>/<buffer 2>/<buffer 3>#sender
+		Buffalo_SendAddonMessage(string.format("RX_QRYRAIDASSIGNMENTS#%s#%s", payload, sender));			
+	end;
+end;
+
+function Buffalo_HandleRXQueryRaidAssignments(message, sender)
+	local _, _, groupIndex, buffers = string.find(message, "([^/]*)/(%S*)");
+
+	groupIndex = tonumber(groupIndex);
+	local buffTable = Buffalo_SplitString(buffers);
+
+	for buffIndex = 1, table.getn(buffTable), 1 do
+		local buffer = buffTable[buffIndex];
+		if buffer == "?" then
+			buffer = nil;
+		end;
+		CONFIG_SynchronizedBuffs[buffIndex][groupIndex]["PLAYER"] = buffer;
+	end;
+end;
+
+function Buffalo_SplitString(string, separator)
+	if not separator then
+		separator = "/";
+	end;
+
+	local worktable = { };
+	for str in string.gmatch(string, "([^"..separator.."]+)") do
+		table.insert(worktable, str);
+	end;
+	return worktable;
+end;
+
+function Buffalo_ResetRaidAssignments()
+	for buffIndex = 1, table.getn(CONFIG_SynchronizedBuffs), 1 do
+		for groupIndex = 1, 8, 1 do
+			CONFIG_SynchronizedBuffs[buffIndex][groupIndex]["PLAYER"] = nil;
+		end;
+	end;
+end;
+
+
+function Buffalo_UnitIsPromoted(unitid)
+	return UnitIsGroupAssistant(unitid) or UnitIsGroupLeader(unitid);
+end;
 
 local Buffalo_SyncClass = nil;
 local Buffalo_SyncBuff = nil;
@@ -1950,18 +2102,26 @@ end;
 --[[
 	Set the alpha value on each icon, depending on the current buff's status
 --]]
-function Buffalo_RefreshGroupBuffUI()
+function Buffalo_UpdateGroupBuffUI()
 	if not Buffalo_InitializationComplete then
 		return;
 	end;
 
+	Buffalo_UpdateConfigHeadline();
+
 	local buffCount = table.getn(Buffalo_GroupBuffProperties);
+
+	local assignedGroups = CONFIG_AssignedBuffGroups;
+	if Buffalo_CurrentRaidMode ~= BUFFALO_RAIDMODE_PERSONAL then
+		assignedGroups = CONFIG_AssignedRaidGroups;
+	end;
 
 	--	RAID buffs:
 	--	Iterate over all groups and render icons.
 	local buttonName;
 	for groupNumber = 1, 8, 1 do
-		local buffMask = CONFIG_AssignedBuffGroups[groupNumber];
+		--local buffMask = CONFIG_AssignedBuffGroups[groupNumber];
+		local buffMask = assignedGroups[groupNumber];
 
 		for rowNumber = 1, buffCount, 1 do
 			buttonName = string.format("BuffaloConfigFrameGroupsBuffRow%dCol%d", rowNumber, groupNumber);
@@ -1974,7 +2134,6 @@ function Buffalo_RefreshGroupBuffUI()
 
 			if Buffalo_CurrentRaidMode ~= BUFFALO_RAIDMODE_PERSONAL then
 				entry:Disable();
-				alpha = (alpha + 0.3) / 3;
 			else
 				entry:Enable();
 			end;			
@@ -2043,8 +2202,15 @@ function Buffalo_RefreshClassSettingsUI()
 	end;
 end;
 
-
-
+function Buffalo_UpdateConfigHeadline()
+	if Buffalo_CurrentRaidMode == BUFFALO_RAIDMODE_PERSONAL then
+		BuffaloConfigFrameCaption:SetText("Assign buffs for specific groups by left/right clicking the icons.");
+	elseif Buffalo_CurrentRaidMode == BUFFALO_RAIDMODE_OPEN then
+		BuffaloConfigFrameCaption:SetText(string.format("Raid assignments are enabled by [%s]", Buffalo_RaidModeLockedBy));
+	elseif Buffalo_CurrentRaidMode == BUFFALO_RAIDMODE_CLOSED then
+		BuffaloConfigFrameCaption:SetText(string.format("Raid assignments are locked by [%s]", Buffalo_RaidModeLockedBy));
+	end;
+end;
 
 function Buffalo_ConfigurationBuffOnClick(self, ...)
 	local buttonName = self:GetName();
@@ -2103,7 +2269,7 @@ function Buffalo_ConfigurationBuffOnClick(self, ...)
 		CONFIG_AssignedBuffGroups[col] = groupMask;
 	end;
 
-	Buffalo_RefreshGroupBuffUI();
+	Buffalo_UpdateGroupBuffUI();
 end;
 
 function Buffalo_ClassConfigOnClick(self, ...)

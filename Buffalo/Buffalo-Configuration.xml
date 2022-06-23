@@ -28,6 +28,31 @@
 		<Anchors>
 			<Anchor point="CENTER"/>
 		</Anchors>
+		<Layers>
+			<Layer>
+				<Texture name="$parentHeaderTexture" file="Interface\DialogFrame\UI-DialogBox-Header">
+					<Size>
+						<AbsDimension x="880" y="64"/>
+					</Size>
+					<Anchors>
+						<Anchor point="TOP">
+							<Offset>
+								<AbsDimension x="0" y="12"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</Texture>
+				<FontString name="$parentCaption" inherits="GameFontNormal" text="Assign buffs for specific groups by left/right clicking the icons.">
+					<Anchors>
+						<Anchor point="TOP" relativeTo="$parentHeaderTexture">
+							<Offset>
+								<AbsDimension x="0" y="-14"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</FontString>
+			</Layer>
+		</Layers>
 
 		<Frames>
 			<!-- Raid buff rows are inserted here -->
@@ -92,28 +117,6 @@
 		
 		<Layers>
 			<Layer level="ARTWORK">
-				<Texture name="$parentHeaderTexture" file="Interface\DialogFrame\UI-DialogBox-Header">
-					<Size>
-						<AbsDimension x="880" y="64"/>
-					</Size>
-					<Anchors>
-						<Anchor point="TOP">
-							<Offset>
-								<AbsDimension x="0" y="12"/>
-							</Offset>
-						</Anchor>
-					</Anchors>
-				</Texture>
-				<FontString inherits="GameFontNormal" text="Assign buffs for specific groups by left/right clicking the icons.">
-					<Anchors>
-						<Anchor point="TOP" relativeTo="$parentHeaderTexture">
-							<Offset>
-								<AbsDimension x="0" y="-14"/>
-							</Offset>
-						</Anchor>
-					</Anchors>
-				</FontString>
-			
 				<FontString inherits="GameFontNormal" text="Grp 1">
 					<Anchors>
 						<Anchor point="TOPLEFT">
