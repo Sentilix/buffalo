@@ -32,13 +32,6 @@
     <Content Include="Buffalo-GeneralConfig.xml">
       <SubType>Frame</SubType>
     </Content>
-    <Content Include="Buffalo-Synchronization.lua">
-      <SubType>Code</SubType>
-      <DependentUpon>Buffalo-Synchronization.xml</DependentUpon>
-    </Content>
-    <Content Include="Buffalo-Synchronization.xml">
-      <SubType>Frame</SubType>
-    </Content>
     <Content Include="Buffalo.toc">
       <SubType>TableOfContents</SubType>
     </Content>

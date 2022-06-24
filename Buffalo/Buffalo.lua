@@ -27,10 +27,9 @@ local BUFFALO_COLOR_GROUPLABELS					= { 1.0, 0.7, 0.0 };
 local BUFFALO_COLOR_BUFFER						= { 1.0, 1.0, 1.0 };
 local BUFFALO_COLOR_UNUSED						= { 0.4, 0.4, 0.4 };
 
-local BUFFALO_ICON_RAID_NONE					= 136058;		--	Raid mode 0: Silver key
-local BUFFALO_ICON_RAID_OPEN					= 134238;		--	Raid mode 1: Yellow key
-local BUFFALO_ICON_RAID_CLOSED					= 134235;		--	Raid mode 2: Red key
-local BUFFALO_ICON_RAID_CENTRAL					= 134236;		--	Raid mode 3: Purple key
+local BUFFALO_ICON_RAID_NONE					= 134121;	-- Raid mode 0: white
+local BUFFALO_ICON_RAID_OPEN					= 134125;	-- Raid mode 1: green
+local BUFFALO_ICON_RAID_CLOSED					= 134124;	-- Raid mode 2: red
 
 local BUFFALO_BACKDROP_FRAME = {
 	bgFile = "Interface\\CharacterFrame\\UI-Party-Background",
@@ -467,9 +466,8 @@ end
 	request:
 		TX_RDUPDATE#<buffIndex>/<groupIndex>/<playername>#<classname>
 		
-	Request current raidmode. All promoted client of same class should
-	respond current raidmode back. Until then, current client will use
-	raid mode 0.
+	Request current raidmode. All  client of same class should respond 
+	current raidmode back. Until then, current client will use raid mode 0.
 	This is used when a client enters raid, relog or reloads UI.
 		TX_QRYRAIDMODE##<classname>
 		RX_QRYRAIDMODE#<raid mode>/<lock owner>#<recipient=myself>
@@ -866,7 +864,7 @@ local function Buffalo_MainInitialization(reloaded)
 
 	Buffalo_InitializeBuffSettingsUI();
 
-	Buffalo_InitializeBuffSync();
+	--Buffalo_InitializeBuffSync();
 
 	--	Note: setting defaults should be part of the config, but at that time
 	--	the Buffalo_InitializeBuffSync() has not yet been called.
@@ -1349,7 +1347,6 @@ function Buffalo_OpenConfigurationDialogue()
 
 	Buffalo_CloseClassConfigDialogue();
 	Buffalo_CloseGeneralConfigDialogue();
-	Buffalo_CloseSynchronizationDialogue();
 	BuffaloConfigFrame:Show();
 end;
 
@@ -1357,17 +1354,6 @@ function Buffalo_CloseConfigurationDialogue()
 	Buffalo_CloseClassConfigDialogue();
 	Buffalo_CloseGeneralConfigDialogue();
 	BuffaloConfigFrame:Hide();
-end;
-
-function Buffalo_OpenSynchronizationDialogue()
-	Buffalo_CloseConfigurationDialogue();
-
-	Buffalo_UpdateBuffSync();
-	Buffalo_OpenSyncFrame();
-end;
-
-function Buffalo_CloseSynchronizationDialogue()
-	Buffalo_CloseSyncFrame();
 end;
 
 function Buffalo_OpenGeneralConfigDialogue()
@@ -1463,11 +1449,7 @@ function Buffalo_OnAfterBuffClick(self, ...)
 	local buttonName = ...;
 
 	if buttonName == "RightButton" then
-		if IsControlKeyDown() then
-			Buffalo_OpenSynchronizationDialogue();
-		else
-			Buffalo_OpenConfigurationDialogue();
-		end;
+		Buffalo_OpenConfigurationDialogue();
 	end;
 end;
 
@@ -1503,54 +1485,85 @@ function Buffalo_GetGroupBuffProperties(includeSelfBuffs)
 	return buffProperties;
 end;
 
+--	Initialize the overall buffing UI.
+--	UI is split into PERSONAL and RAID buffing UI.
+--	This function will initiate both, but the Update function
+--	will only show the current active one.
 function Buffalo_InitializeBuffSettingsUI()
 	local buffCount = table.getn(Buffalo_GroupBuffProperties);
+	local selfCount = table.getn(Buffalo_SelfBuffProperties);
 
-	--	UI settings:
-	local offsetX = 0;
-	local offsetY = 0;
-	local width = 50;
-	local height= 40;
-	local buttonX, buttonY;
+	local posX, posY;
+	local UISettings = {
+		Top = 0,
+		Left = 120,
+		Width = 100,
+		Height = 40,
+		ButtonWidth = 200,
+	};
 
-	--	RAID buffs:
-	--	Iterate over all groups and render icons.
-	--	Note: all icons are dimmed out as if they were disabled.
-	--	We will refresh the alpha value after rendering.
-	local buttonName;
-	local buttonId = 1;
-	for groupNumber = 1, 8, 1 do
-		buttonX = offsetX + width * (groupNumber - 1);
-		for rowNumber = 1, buffCount, 1 do
-			buttonY = offsetY - height * (rowNumber - 1);
-			buttonName = string.format("$parentBuffRow%dCol%d", rowNumber, groupNumber);
-			local entry = CreateFrame("Button", buttonName, BuffaloConfigFrameGroups, "BuffaloGroupButtonTemplate");
-			entry:SetID(buttonId);
-			entry:SetAlpha(BUFFALO_ALPHA_DISABLED);
-			entry:SetPoint("TOPLEFT", buttonX, buttonY);
-			entry:SetNormalTexture(Buffalo_GroupBuffProperties[rowNumber][2]);
-			entry:SetPushedTexture(Buffalo_GroupBuffProperties[rowNumber][2]);
-
-			buttonId = buttonId + 1;
+	--	Generate Raid Mode buttons:
+	posX = UISettings.Left;
+	posY = UISettings.Top - 40;
+	for _, raidmode in next, Buffalo_RaidModes do
+		local buttonName = string.format("raidmode_%s", raidmode["RAIDMODE"]);
+		local fButton = CreateFrame("Button", buttonName, BuffaloConfigFrame, "BuffaloBuffButtonTemplate");
+		fButton:SetPoint("TOPLEFT", posX, posY);
+		fButton:SetNormalTexture(raidmode["ICON"]);
+		fButton:SetPushedTexture(raidmode["ICON"]);
+		if raidmode["RAIDMODE"] == Buffalo_CurrentRaidMode then
+			fButton:SetAlpha(BUFFALO_ALPHA_ENABLED);
+		else
+			fButton:SetAlpha(BUFFALO_ALPHA_DISABLED);
 		end;
+
+		local fLabel = fButton:CreateFontString(nil, "ARTWORK", "GameFontNormal");
+		fLabel:SetText(raidmode["CAPTION"]);
+		fLabel:SetPoint("LEFT", 40, 0);
+		fButton:SetScript("OnClick", Buffalo_RaidModeOnClick);
+		fButton:Show();
+
+		posX = posX + UISettings.ButtonWidth;
 	end;
 
-	--	SELF buffs:
-	--	Iterate over all buffs and render icons.
-	buttonY = 10;
-	buffCount = table.getn(Buffalo_SelfBuffProperties);
-	for rowNumber = 1, buffCount, 1 do
-		buttonX = offsetX + width * (rowNumber - 1);
+	--	Generate group labels:
+	posX = UISettings.Left;
+	posY = UISettings.Top - 80;
+	for groupIndex = 1, 8, 1 do
+		local labelName = string.format("buffgrouplabel_%s", groupIndex);
+		local fLabel = BuffaloConfigFrame:CreateFontString(labelName, "ARTWORK", "GameFontNormal");
+		fLabel:SetText(string.format("Group %s", groupIndex));
+		fLabel:SetPoint("TOPLEFT", posX, posY);
+		fLabel:SetTextColor(BUFFALO_COLOR_GROUPLABELS[1], BUFFALO_COLOR_GROUPLABELS[2], BUFFALO_COLOR_GROUPLABELS[3]);
+	
+		posX = posX + UISettings.Width;
+	end;
 
-		buttonName = string.format("BuffaloConfigFrameSelf%dCol0", rowNumber);
+
+	Buffalo_InitializePersonalGroupBuffs(UISettings);
+	Buffalo_InitializeRaidGroupBuffs(UISettings);
+
+
+	--	SELF buffs, label:
+	posX = 32;
+	posY = -10;
+	local fLabel = BuffaloConfigFrameSelf:CreateFontString("selfbufflabel", "ARTWORK", "GameFontNormal");
+	fLabel:SetText("Self buffs");
+	fLabel:SetPoint("TOPLEFT", posX, posY);
+	fLabel:SetTextColor(BUFFALO_COLOR_GROUPLABELS[1], BUFFALO_COLOR_GROUPLABELS[2], BUFFALO_COLOR_GROUPLABELS[3]);
+
+	--	Iterate over all buffs and render icons.
+	posX = UISettings.Left;
+	posY = 0;
+	for rowNumber = 1, selfCount, 1 do
+		buttonName = string.format("buffalo_personal_buff_%d_0", rowNumber);
 		local entry = CreateFrame("Button", buttonName, BuffaloConfigFrameSelf, "BuffaloGroupButtonTemplate");
-		entry:SetID(buttonId);
 		entry:SetAlpha(BUFFALO_ALPHA_DISABLED);
-		entry:SetPoint("TOPLEFT", buttonX, buttonY);
+		entry:SetPoint("TOPLEFT", posX, posY);
 		entry:SetNormalTexture(Buffalo_SelfBuffProperties[rowNumber][2]);
 		entry:SetPushedTexture(Buffalo_SelfBuffProperties[rowNumber][2]);
 
-		buttonId = buttonId + 1;
+		posX = posX + UISettings.Width;
 	end;
 
 
@@ -1567,12 +1580,10 @@ function Buffalo_InitializeBuffSettingsUI()
 		buttonName = string.format("ClassImage%s", className);
 
 		local entry = CreateFrame("Button", buttonName, BuffaloClassConfigFrameClass, "BuffaloClassButtonTemplate");
-		entry:SetID(buttonId);
 		entry:SetAlpha(BUFFALO_ALPHA_ENABLED);
 		entry:SetPoint("TOPLEFT", posX, posY);
 		entry:SetNormalTexture(classInfo["ICONID"]);
 		entry:SetPushedTexture(classInfo["ICONID"]);
-		buttonId = buttonId + 1;
 
 		posX = posX + colWidth;
 	end;
@@ -1591,54 +1602,51 @@ function Buffalo_InitializeBuffSettingsUI()
 			buttonName = string.format("%s_row%s", className, rowNumber);
 
 			local entry = CreateFrame("Button", buttonName, BuffaloClassConfigFrameClass, "BuffaloBuffButtonTemplate");
-			entry:SetID(buttonId);
 			entry:SetAlpha(BUFFALO_ALPHA_DISABLED);
 			entry:SetPoint("TOPLEFT", 4+posX, posY);
 			entry:SetNormalTexture(Buffalo_GroupBuffProperties[rowNumber][2]);
 			entry:SetPushedTexture(Buffalo_GroupBuffProperties[rowNumber][2]);
 
-			buttonId = buttonId + 1;
 			posX = posX + colWidth;
 		end;
 	end;
 	
-	--	Step 3:
-	--	Set windows size to fit icons for buff config:
-	BuffaloConfigFrame:SetHeight(180 + buffCount * rowHeight);
-
 	--	Set windows size to fit icons for class config:
 	BuffaloClassConfigFrame:SetHeight(128 + buffCount * rowHeight);
 	BuffaloClassConfigFrame:SetWidth(posX + 52);
 	BuffaloClassConfigFrameHeaderTexture:SetWidth(2 * (posX + 52));
-
-	--	So now, lets apply the alpha values for enabled/disabled buffs:
-	--Buffalo_UpdateGroupBuffUI();
-	--Buffalo_RefreshClassSettingsUI();
 end;
 
+local personalBuffFrameHeight = 0;
+function Buffalo_InitializePersonalGroupBuffs(UISettings)
+	local buffCount = table.getn(Buffalo_GroupBuffProperties);
+	local posX, posY;
 
---	For each Buff: generate a row with buffer names per group.
---	Buffer names will be displayed in a clickable frame (button), which can
---	do a popup for replacements.
-function Buffalo_InitializeBuffSync()
-	local width = 100;
-	local height = 40;
-	local top = 0;
-	local left = 80;
+	--	RAID buffs:
+	--	Iterate over all groups and render icons.
+	--	Note: all icons are dimmed out as if they were disabled.
+	--	We will refresh the alpha value after rendering.
+	local buttonName;
+	for groupNumber = 1, 8, 1 do
+		posX = UISettings.Left + UISettings.Width * (groupNumber - 1);
+		posY = UISettings.Top - 20;
+		for rowNumber = 1, buffCount, 1 do
+			buttonName = string.format("buffalo_personal_buff_%d_%d", rowNumber, groupNumber);
+			local entry = CreateFrame("Button", buttonName, BuffaloConfigFramePersonal, "BuffaloGroupButtonTemplate");
+			entry:SetAlpha(BUFFALO_ALPHA_DISABLED);
+			entry:SetPoint("TOPLEFT", posX, posY);
+			entry:SetNormalTexture(Buffalo_GroupBuffProperties[rowNumber][2]);
+			entry:SetPushedTexture(Buffalo_GroupBuffProperties[rowNumber][2]);
 
-	local posX = left;
-	local posY = top;
-
-	--	Generate group labels:
-	for groupIndex = 1, 8, 1 do
-		local labelName = string.format("buffgrouplabel_%s", groupIndex);
-		local fLabel = BuffaloSyncFrameBuff:CreateFontString(labelName, "ARTWORK", "GameFontNormal");
-		fLabel:SetText(string.format("Grp %s", groupIndex));
-		fLabel:SetPoint("TOPLEFT", posX, posY);
-		fLabel:SetTextColor(BUFFALO_COLOR_GROUPLABELS[1], BUFFALO_COLOR_GROUPLABELS[2], BUFFALO_COLOR_GROUPLABELS[3]);
-	
-		posX = posX + width;
+			posY = posY - UISettings.Height;
+		end;
 	end;
+
+	personalBuffFrameHeight = posY * -1;
+end;
+
+local raidBuffFrameHeight = 0;
+function Buffalo_InitializeRaidGroupBuffs(UISettings)
 
 	--	Iterate over all buffs for this class, and store result in a "temp" table
 	--	so we do not do this every time we update also.
@@ -1653,101 +1661,40 @@ function Buffalo_InitializeBuffSync()
 	--	And now in correct order (by priority):
 	table.sort(Buffalo_OrderedBuffGroups, function (a, b) return a[1] > b[1]; end);
 
-	--	Now render the buff icon, and thereby defining the final size of the frame:
-	posX = left - 70;
-	posY = top - 20;
+	--	Render the buff icon, and thereby defining the final size of the frame:
+	local posX = 32;
+	local posY = UISettings.Top - 20;
 	for buffIndex = 1, table.getn(Buffalo_OrderedBuffGroups), 1 do
 		local buttonName = string.format("buffrow_%s", buffIndex);
-		local fButton = CreateFrame("Button", buttonName, BuffaloSyncFrameBuff, "BuffaloBuffButtonTemplate");
+		local fButton = CreateFrame("Button", buttonName, BuffaloConfigFrameRaid, "BuffaloBuffButtonTemplate");
 		fButton:SetPoint("TOPLEFT", posX, posY);
 		fButton:SetNormalTexture(Buffalo_OrderedBuffGroups[buffIndex][4]);
 		fButton:SetPushedTexture(Buffalo_OrderedBuffGroups[buffIndex][4]);
 		fButton:SetScript("OnClick", nil);
 
-		posY = posY - height;
+		posY = posY - UISettings.Height;
 	end;
 
-	--	Confused? Remember posY is negative!
-	local frameHeight = 130 - posY;
+	raidBuffFrameHeight = -1 * posY;
 	
 	--	Now render frame buttons for all potential buffers.
-	posY = top -20;
+	posY = UISettings.Top - 20;
 	for buffIndex = 1, table.getn(Buffalo_OrderedBuffGroups), 1 do
-		posX = left;
+		posX = UISettings.Left;
 
 		for groupIndex = 1, 8, 1 do
 			local bufferName = string.format("buffgroup_%s_%s", buffIndex, groupIndex);
 
-			local fBuffer = CreateFrame("Button", bufferName, BuffaloSyncFrameBuff, "GroupBuffTemplate");
+			local fBuffer = CreateFrame("Button", bufferName, BuffaloConfigFrameRaid, "GroupBuffTemplate");
 			fBuffer:SetPoint("TOPLEFT", posX, posY);
 			_G[bufferName.."Text"]:SetTextColor(BUFFALO_COLOR_UNUSED[1], BUFFALO_COLOR_UNUSED[2], BUFFALO_COLOR_UNUSED[3]);
 			_G[bufferName.."Text"]:SetText(BUFFALO_SYNC_UNUSED);
 			fBuffer:Show();
 
-			posX = posX + width;
+			posX = posX + UISettings.Width;
 		end;
-		posY = posY - height;
+		posY = posY - UISettings.Height;
 	end;
-
-
-	local width = 220;
-	local posX = 35;
-
-	for _, raidmode in next, Buffalo_RaidModes do
-		local buttonName = string.format("raidmode_%s", raidmode["RAIDMODE"]);
-		local fButton = CreateFrame("Button", buttonName, BuffaloSyncFrame, "BuffaloBuffButtonTemplate");
-		fButton:SetPoint("TOPLEFT", posX,-30);
-		fButton:SetNormalTexture(raidmode["ICON"]);
-		fButton:SetPushedTexture(raidmode["ICON"]);
-		if raidmode["RAIDMODE"] == Buffalo_CurrentRaidMode then
-			fButton:SetAlpha(BUFFALO_ALPHA_ENABLED);
-		else
-			fButton:SetAlpha(BUFFALO_ALPHA_DISABLED);
-		end;
-
-		local fLabel = fButton:CreateFontString(nil, "ARTWORK", "GameFontNormal");
-		fLabel:SetText(raidmode["CAPTION"]);
-		fLabel:SetPoint("LEFT", 40, 0);
-		fButton:SetScript("OnClick", Buffalo_RaidModeOnClick);
-		fButton:Show();
-
-		posX = posX + width;
-	end;
-
-	BuffaloSyncFrame:SetHeight(frameHeight);
-	BuffaloSyncFrameBuff:SetHeight(frameHeight-50);
-end;
-
-function Buffalo_UpdateBuffSync()
-	if not Buffalo_OrderedBuffGroups then return; end;
-
-	for buffIndex = 1, table.getn(Buffalo_OrderedBuffGroups), 1 do
-
-		for groupIndex = 1, 8, 1 do
-			local bufferName = string.format("buffgroup_%s_%s", buffIndex, groupIndex);
-			local fBuffer = _G[bufferName];
-
-			local buffInfo = CONFIG_SynchronizedBuffs[buffIndex][groupIndex];
-			if buffInfo["PLAYER"] then
-				_G[bufferName.."Text"]:SetTextColor(BUFFALO_COLOR_BUFFER[1], BUFFALO_COLOR_BUFFER[2], BUFFALO_COLOR_BUFFER[3]);
-				_G[bufferName.."Text"]:SetText(buffInfo["PLAYER"]);
-			else
-				_G[bufferName.."Text"]:SetTextColor(BUFFALO_COLOR_UNUSED[1], BUFFALO_COLOR_UNUSED[2], BUFFALO_COLOR_UNUSED[3]);
-				_G[bufferName.."Text"]:SetText(BUFFALO_SYNC_UNUSED);
-			end;
-		end;
-	end;
-
-	for _, raidmode in next, Buffalo_RaidModes do
-		local fButton = _G[string.format("raidmode_%s", raidmode["RAIDMODE"])];
-		if raidmode["RAIDMODE"] == Buffalo_CurrentRaidMode then
-			fButton:SetAlpha(BUFFALO_ALPHA_ENABLED);
-		else
-			fButton:SetAlpha(BUFFALO_ALPHA_DISABLED);
-		end;
-	end;
-
-	Buffalo_UpdateAssignedRaidGroups();
 end;
 
 --	Switch raidmode:
@@ -1762,6 +1709,8 @@ function Buffalo_RaidModeOnClick(sender)
 		local unitIsPromoted = Buffalo_UnitIsPromoted("player");
 
 		--	Raidmode 1 and 2 may reqire promotions, so check both current and new mode:
+		--	Scenario 1: We switch to raid mode 1 (raidmode=OPEN), or
+		--	Scenario 2: We swithc FROM raid mode 1 (currentRM=OPEN):
 		if raidmode == BUFFALO_RAIDMODE_OPEN or Buffalo_CurrentRaidMode == BUFFALO_RAIDMODE_OPEN then
 			if BUFFALO_RaidMode1RequiresPromotion and not unitIsPromoted then
 				Buffalo_Echo("You cannot change raid mode unless you are promoted.");
@@ -1785,7 +1734,7 @@ function Buffalo_RaidModeOnClick(sender)
 		Buffalo_SetRaidMode(raidmode, true);
 	end;
 
-	Buffalo_UpdateBuffSync();
+	Buffalo_UpdateGroupBuffUI();
 end;
 
 --	Change raidmode:
@@ -1798,7 +1747,6 @@ function Buffalo_SetRaidMode(raidmode, AnnounceRaidModeChange)
 		Buffalo_SendAddonMessage(string.format("TX_RAIDMODE#%s#%s", raidmode, Buffalo_PlayerClass));
 	end;
 
-	Buffalo_UpdateBuffSync();
 	Buffalo_UpdateGroupBuffUI();
 end;
 
@@ -1850,16 +1798,15 @@ function Buffalo_HandleTXRdUpdate(message, sender)
 		buffInfo["PLAYER"] = playername;
 	end;
 
-	Buffalo_UpdateBuffSync();
 	Buffalo_UpdateGroupBuffUI();
 end;
 
 --	TX_QRYRAIDMODE:
 --	If player is promoted, answer current raidmode back.
 function Buffalo_HandleTXQueryRaidMode(message, sender)
-	if Buffalo_UnitIsPromoted("player") then
+--	if Buffalo_UnitIsPromoted("player") then
 		Buffalo_SendAddonMessage(string.format("RX_QRYRAIDMODE#%s/%s#%s", Buffalo_CurrentRaidMode, Buffalo_RaidModeLockedBy, sender));
-	end;
+--	end;
 end;
 
 --	RX_QRYRAIDMODE:
@@ -1881,7 +1828,6 @@ function Buffalo_HandleRXQueryRaidMode(message, sender)
 			Buffalo_SendAddonMessage(string.format("TX_QRYRAIDASSIGNMENTS##%s", sender));
 		end;
 
-		Buffalo_UpdateBuffSync();
 		Buffalo_UpdateGroupBuffUI();
 	end;
 end;
@@ -2033,7 +1979,7 @@ function Buffalo_SyncBuffGroupDropdownMenu_OnClick(sender, playerInfo)
 	local payload = string.format("%s/%s/%s", Buffalo_SyncBuff, Buffalo_SyncGroup, syncBuff["PLAYER"] or "");
 	Buffalo_SendAddonMessage(string.format("TX_RDUPDATE#%s#%s", payload, Buffalo_PlayerClass));
 
-	Buffalo_UpdateBuffSync();
+	Buffalo_UpdateGroupBuffUI();
 end;
 
 function Buffalo_GetPlayersInRoster(classMask)
@@ -2098,17 +2044,89 @@ function Buffalo_GetPlayersInRoster(classMask)
 	return players;
 end;
 
+function Buffalo_OnGroupRosterUpdate()
+	if not isInRaid then
+		Buffalo_SetRaidMode(BUFFALO_RAIDMODE_PERSONAL);
+	else
+		Buffalo_UpdateRaidModeButtons();
+	end;
+end;
 
---[[
-	Set the alpha value on each icon, depending on the current buff's status
---]]
+--	Update Buffing UI (main entry)
+--	This will update PERSONAL or RAID buffs, depending on raid mode.
 function Buffalo_UpdateGroupBuffUI()
 	if not Buffalo_InitializationComplete then
 		return;
 	end;
 
-	Buffalo_UpdateConfigHeadline();
+	local frame = nil;
+	local height = 0;
+	if Buffalo_CurrentRaidMode == BUFFALO_RAIDMODE_PERSONAL then
+		BuffaloConfigFrameCaption:SetText("Assign buffs for specific groups by left/right clicking the icons.");
 
+		BuffaloConfigFrameRaid:Hide();
+		frame = BuffaloConfigFramePersonal;
+		height = personalBuffFrameHeight;
+
+		Buffalo_UpdatePersonalBuffUI();
+	else
+		if Buffalo_CurrentRaidMode == BUFFALO_RAIDMODE_OPEN then
+			BuffaloConfigFrameCaption:SetText(string.format("Raid assignments are enabled by [%s]", Buffalo_RaidModeLockedBy));
+		else -- BUFFALO_RAIDMODE_CLOSED
+			BuffaloConfigFrameCaption:SetText(string.format("Raid assignments are locked by [%s]", Buffalo_RaidModeLockedBy));
+		end;
+
+		BuffaloConfigFramePersonal:Hide();
+		frame = BuffaloConfigFrameRaid;
+		height = raidBuffFrameHeight;
+
+		Buffalo_UpdateRaidBuffUI();
+	end;
+
+	frame:SetHeight(height);
+	BuffaloConfigFrame:SetHeight(frame:GetHeight() + 230);
+	frame:Show();
+
+	Buffalo_UpdateRaidModeButtons();
+
+	--	SELF buffs:
+	--	Iterate over all rows and render icons.
+	local buttonName, entry;
+	local buffMask = CONFIG_AssignedBuffSelf;
+
+	buffCount = table.getn(Buffalo_SelfBuffProperties);
+	for rowNumber = 1, buffCount, 1 do
+		buttonName = string.format("buffalo_personal_buff_%d_0", rowNumber);
+		entry = _G[buttonName];
+
+		if (bit.band(buffMask, Buffalo_SelfBuffProperties[rowNumber][3]) > 0) then
+			entry:SetAlpha(BUFFALO_ALPHA_ENABLED);
+		else
+			entry:SetAlpha(BUFFALO_ALPHA_DISABLED);
+		end;
+	end;
+end;
+
+function Buffalo_UpdateRaidModeButtons()
+	--	Generate Raid mode buttons:
+	--	They are only visible when in a Raid:
+	local isInRaid = IsInRaid();
+	for _, raidmode in next, Buffalo_RaidModes do
+		local fButton = _G[string.format("raidmode_%s", raidmode["RAIDMODE"])];
+		if isInRaid then
+			if raidmode["RAIDMODE"] == Buffalo_CurrentRaidMode then
+				fButton:SetAlpha(BUFFALO_ALPHA_ENABLED);
+			else
+				fButton:SetAlpha(BUFFALO_ALPHA_DISABLED);
+			end;
+			fButton:Show();
+		else
+			fButton:Hide();
+		end;
+	end;
+end;
+
+function Buffalo_UpdatePersonalBuffUI()
 	local buffCount = table.getn(Buffalo_GroupBuffProperties);
 
 	local assignedGroups = CONFIG_AssignedBuffGroups;
@@ -2116,15 +2134,14 @@ function Buffalo_UpdateGroupBuffUI()
 		assignedGroups = CONFIG_AssignedRaidGroups;
 	end;
 
-	--	RAID buffs:
+	--	PERSONAL raid buffs:
 	--	Iterate over all groups and render icons.
-	local buttonName;
 	for groupNumber = 1, 8, 1 do
 		--local buffMask = CONFIG_AssignedBuffGroups[groupNumber];
 		local buffMask = assignedGroups[groupNumber];
 
 		for rowNumber = 1, buffCount, 1 do
-			buttonName = string.format("BuffaloConfigFrameGroupsBuffRow%dCol%d", rowNumber, groupNumber);
+			local buttonName = string.format("buffalo_personal_buff_%d_%d", rowNumber, groupNumber);
 			local entry = _G[buttonName];
 
 			local alpha = BUFFALO_ALPHA_DISABLED;
@@ -2141,23 +2158,29 @@ function Buffalo_UpdateGroupBuffUI()
 			entry:SetAlpha(alpha);
 		end;
 	end;
+end;
 
-	--	SELF buffs:
-	--	Iterate over all rows and render icons.
-	local buttonName, entry;
-	local buffMask = CONFIG_AssignedBuffSelf;
+function Buffalo_UpdateRaidBuffUI()
+	if not Buffalo_OrderedBuffGroups then return; end;
 
-	buffCount = table.getn(Buffalo_SelfBuffProperties);
-	for rowNumber = 1, buffCount, 1 do
-		buttonName = string.format("BuffaloConfigFrameSelf%dCol0", rowNumber);
-		entry = _G[buttonName];
+	for buffIndex = 1, table.getn(Buffalo_OrderedBuffGroups), 1 do
 
-		if (bit.band(buffMask, Buffalo_SelfBuffProperties[rowNumber][3]) > 0) then
-			entry:SetAlpha(BUFFALO_ALPHA_ENABLED);
-		else
-			entry:SetAlpha(BUFFALO_ALPHA_DISABLED);
+		for groupIndex = 1, 8, 1 do
+			local bufferName = string.format("buffgroup_%s_%s", buffIndex, groupIndex);
+			local fBuffer = _G[bufferName];
+
+			local buffInfo = CONFIG_SynchronizedBuffs[buffIndex][groupIndex];
+			if buffInfo["PLAYER"] then
+				_G[bufferName.."Text"]:SetTextColor(BUFFALO_COLOR_BUFFER[1], BUFFALO_COLOR_BUFFER[2], BUFFALO_COLOR_BUFFER[3]);
+				_G[bufferName.."Text"]:SetText(buffInfo["PLAYER"]);
+			else
+				_G[bufferName.."Text"]:SetTextColor(BUFFALO_COLOR_UNUSED[1], BUFFALO_COLOR_UNUSED[2], BUFFALO_COLOR_UNUSED[3]);
+				_G[bufferName.."Text"]:SetText(BUFFALO_SYNC_UNUSED);
+			end;
 		end;
 	end;
+
+	Buffalo_UpdateAssignedRaidGroups();
 end;
 
 function Buffalo_RefreshGeneralSettingsUI()
@@ -2202,21 +2225,11 @@ function Buffalo_RefreshClassSettingsUI()
 	end;
 end;
 
-function Buffalo_UpdateConfigHeadline()
-	if Buffalo_CurrentRaidMode == BUFFALO_RAIDMODE_PERSONAL then
-		BuffaloConfigFrameCaption:SetText("Assign buffs for specific groups by left/right clicking the icons.");
-	elseif Buffalo_CurrentRaidMode == BUFFALO_RAIDMODE_OPEN then
-		BuffaloConfigFrameCaption:SetText(string.format("Raid assignments are enabled by [%s]", Buffalo_RaidModeLockedBy));
-	elseif Buffalo_CurrentRaidMode == BUFFALO_RAIDMODE_CLOSED then
-		BuffaloConfigFrameCaption:SetText(string.format("Raid assignments are locked by [%s]", Buffalo_RaidModeLockedBy));
-	end;
-end;
-
 function Buffalo_ConfigurationBuffOnClick(self, ...)
 	local buttonName = self:GetName();
 	local buttonType = GetMouseButtonClicked();
 
-	local _, _, row, col = string.find(buttonName, "[a-zA-Z]*(%d)[a-zA-Z]*(%d)");
+	local _, _, row, col = string.find(buttonName, "buffalo_personal_buff_(%d)_(%d)");
 
 	row = 1 * row;
 	col = 1 * col;	-- Col=0: self buff, col 1-8: raid buff
@@ -2440,6 +2453,9 @@ function Buffalo_OnEvent(self, event, ...)
 	elseif (event == "CHAT_MSG_ADDON") then
 		Buffalo_OnChatMsgAddon(event, ...)
 
+	elseif (event == "GROUP_ROSTER_UPDATE") then
+		Buffalo_OnGroupRosterUpdate(event, ...)
+
 	elseif(event == "UNIT_SPELLCAST_STOP") then
 		local caster = ...;
 		if caster == "player" then
@@ -2503,6 +2519,7 @@ function Buffalo_OnLoad()
 
     BuffaloEventFrame:RegisterEvent("ADDON_LOADED");
     BuffaloEventFrame:RegisterEvent("CHAT_MSG_ADDON");
+    BuffaloEventFrame:RegisterEvent("GROUP_ROSTER_UPDATE");
     BuffaloEventFrame:RegisterEvent("UNIT_SPELLCAST_STOP");
     BuffaloEventFrame:RegisterEvent("UNIT_SPELLCAST_FAILED");
     BuffaloEventFrame:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED");
@@ -2510,7 +2527,6 @@ function Buffalo_OnLoad()
 	BuffaloConfigFrame:SetBackdrop(BUFFALO_BACKDROP_FRAME);
 	BuffaloGeneralConfigFrame:SetBackdrop(BUFFALO_BACKDROP_FRAME);
 	BuffaloClassConfigFrame:SetBackdrop(BUFFALO_BACKDROP_FRAME);
-	BuffaloSyncFrame:SetBackdrop(BUFFALO_BACKDROP_FRAME);
 
 	BuffaloConfigFramePrayerThreshold:SetBackdrop(BUFFALO_BACKDROP_SLIDER);
 	BuffaloConfigFrameRenewOverlap:SetBackdrop(BUFFALO_BACKDROP_SLIDER);
