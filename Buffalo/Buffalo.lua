@@ -21,8 +21,8 @@ local BUFFALO_COLOUR_MISSING					= BUFFALO_COLOUR_BEGINMARK.."F05000"
 local BUFFALO_ICON_PASSIVE						= 136112;
 local BUFFALO_ICON_COMBAT						= "Interface\\Icons\\Ability_dualwield";
 local BUFFALO_ICON_PLAYERDEAD					= "Interface\\Icons\\Ability_rogue_feigndeath";
-local BUFFALO_ALPHA_DISABLED					= 0.3;
-local BUFFALO_ALPHA_ENABLED						= 1.0;
+local BUFFALO_ALPHA_DISABLED					= 0.42;
+local BUFFALO_ALPHA_ENABLED						= 1.00;
 local BUFFALO_COLOR_GROUPLABELS					= { 1.0, 0.7, 0.0 };
 local BUFFALO_COLOR_BUFFER						= { 1.0, 1.0, 1.0 };
 local BUFFALO_COLOR_UNUSED						= { 0.4, 0.4, 0.4 };
@@ -31,13 +31,58 @@ local BUFFALO_ICON_RAID_NONE					= 134121;	-- Raid mode 0: white
 local BUFFALO_ICON_RAID_OPEN					= 134125;	-- Raid mode 1: green
 local BUFFALO_ICON_RAID_CLOSED					= 134124;	-- Raid mode 2: red
 
-local BUFFALO_BACKDROP_FRAME = {
-	bgFile = "Interface\\CharacterFrame\\UI-Party-Background",
+local BUFFALO_BACKDROP_CLASSES_FRAME = {
+	bgFile = "Interface\\TalentFrame\\WarriorProtection-Topleft",
 	edgeFile = "Interface\\AchievementFrame\\UI-Achievement-WoodBorder",
 	edgeSize = 64,
 	tileEdge = true,
 };
-
+local BUFFALO_BACKDROP_GENEREL_FRAME = {
+	bgFile = "Interface\\TalentFrame\\RogueCombat-Topleft",
+	edgeFile = "Interface\\AchievementFrame\\UI-Achievement-WoodBorder",
+	edgeSize = 64,
+	tileEdge = true,
+};
+local BUFFALO_BACKDROP_RAIDMODE0_PRIEST_FRAME = {
+	bgFile = "Interface\\TalentFrame\\PriestDiscipline-Topleft",
+	edgeFile = "Interface\\AchievementFrame\\UI-Achievement-WoodBorder",
+	edgeSize = 64,
+	tileEdge = true,
+	tile = 0,
+	tileSize = 768,
+};
+local BUFFALO_BACKDROP_RAIDMODE0_MAGE_FRAME = {
+	bgFile = "Interface\\TalentFrame\\MageFrost-Topleft",
+	edgeFile = "Interface\\AchievementFrame\\UI-Achievement-WoodBorder",
+	edgeSize = 64,
+	tileEdge = true,
+	tile = 0,
+	tileSize = 768,
+};
+local BUFFALO_BACKDROP_RAIDMODE0_FRAME = {
+	bgFile = "Interface\\TalentFrame\\ShamanRestoration-Topleft",
+	edgeFile = "Interface\\AchievementFrame\\UI-Achievement-WoodBorder",
+	edgeSize = 64,
+	tileEdge = true,
+	tile = 0,
+	tileSize = 768,
+};
+local BUFFALO_BACKDROP_RAIDMODE1_FRAME = {
+	bgFile = "Interface\\TalentFrame\\PriestDiscipline-Topleft",
+	edgeFile = "Interface\\AchievementFrame\\UI-Achievement-WoodBorder",
+	edgeSize = 64,
+	tileEdge = true,
+	tile = 0,
+	tileSize = 768,
+};
+local BUFFALO_BACKDROP_RAIDMODE2_FRAME = {
+	bgFile = "Interface\\TalentFrame\\WarriorFury-Topleft",
+	edgeFile = "Interface\\AchievementFrame\\UI-Achievement-WoodBorder",
+	edgeSize = 64,
+	tileEdge = true,
+	tile = 0,
+	tileSize = 768,
+};
 local BUFFALO_BACKDROP_SLIDER = {
 	edgeFile = "Interface\\DialogFrame\\UI-DialogBox-TestWatermark-Border",
 	tileEdge = true,
@@ -2064,6 +2109,15 @@ function Buffalo_UpdateGroupBuffUI()
 	if Buffalo_CurrentRaidMode == BUFFALO_RAIDMODE_PERSONAL then
 		BuffaloConfigFrameCaption:SetText("Assign buffs for specific groups by left/right clicking the icons.");
 
+		local _, classname = UnitClass("player");
+		local backdrops = {
+			["DRUID"] = BUFFALO_BACKDROP_RAIDMODE0_DRUID_FRAME,
+			["MAGE"] = BUFFALO_BACKDROP_RAIDMODE0_MAGE_FRAME,
+			["PRIEST"] = BUFFALO_BACKDROP_RAIDMODE0_PRIEST_FRAME,
+		};
+
+		BuffaloConfigFrame:SetBackdrop(backdrops[classname]);
+
 		BuffaloConfigFrameRaid:Hide();
 		frame = BuffaloConfigFramePersonal;
 		height = personalBuffFrameHeight;
@@ -2072,8 +2126,10 @@ function Buffalo_UpdateGroupBuffUI()
 	else
 		if Buffalo_CurrentRaidMode == BUFFALO_RAIDMODE_OPEN then
 			BuffaloConfigFrameCaption:SetText(string.format("Raid assignments are enabled by [%s]", Buffalo_RaidModeLockedBy));
+			BuffaloConfigFrame:SetBackdrop(BUFFALO_BACKDROP_RAIDMODE1_FRAME);
 		else -- BUFFALO_RAIDMODE_CLOSED
 			BuffaloConfigFrameCaption:SetText(string.format("Raid assignments are locked by [%s]", Buffalo_RaidModeLockedBy));
+			BuffaloConfigFrame:SetBackdrop(BUFFALO_BACKDROP_RAIDMODE2_FRAME);
 		end;
 
 		BuffaloConfigFramePersonal:Hide();
@@ -2524,9 +2580,10 @@ function Buffalo_OnLoad()
     BuffaloEventFrame:RegisterEvent("UNIT_SPELLCAST_FAILED");
     BuffaloEventFrame:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED");
 
-	BuffaloConfigFrame:SetBackdrop(BUFFALO_BACKDROP_FRAME);
-	BuffaloGeneralConfigFrame:SetBackdrop(BUFFALO_BACKDROP_FRAME);
-	BuffaloClassConfigFrame:SetBackdrop(BUFFALO_BACKDROP_FRAME);
+--	BuffaloConfigFrame:SetBackdrop(BUFFALO_BACKDROP_FRAME);
+
+	BuffaloClassConfigFrame:SetBackdrop(BUFFALO_BACKDROP_CLASSES_FRAME);
+	BuffaloGeneralConfigFrame:SetBackdrop(BUFFALO_BACKDROP_GENEREL_FRAME);
 
 	BuffaloConfigFramePrayerThreshold:SetBackdrop(BUFFALO_BACKDROP_SLIDER);
 	BuffaloConfigFrameRenewOverlap:SetBackdrop(BUFFALO_BACKDROP_SLIDER);

@@ -101,7 +101,7 @@
 			<Frame name="$parentPersonal" hidden="false">
 				<Size x="900" y="450" />
 				<Anchors>
-					<Anchor point="TOPLEFT" x="0" y="-80" relativeTo="BuffaloConfigFrame" />
+					<Anchor point="TOPLEFT" x="25" y="-80" relativeTo="BuffaloConfigFrame" />
 				</Anchors>
 			</Frame>
 
@@ -111,7 +111,6 @@
 					<Anchor point="TOPLEFT" x="0" y="-80" relativeTo="BuffaloConfigFrame" />
 				</Anchors>
 			</Frame>
-
 
 			<!-- Self buff row is inserted here. All controls below are positioned relative tho this. -->
 			<Frame name="$parentSelf" hidden="false">
