@@ -79,6 +79,11 @@ Priest		PowerWordFortitude			53
 
 Version history
 ---------------
+Version 0.5.0-beta1
+* Added Raidmode 1 + 2
+* Refactoring of UI to handle different buff modes.
+
+
 Version 0.4.1
 * Bugfix: Failed buffs (out of LOS e.g.) are no longer announced in chat.
 

@@ -6,18 +6,19 @@
 --	Desc:	Core functionality: addon framework, event handling etc.
 --]]
 
---	Misc. constants:
-local BUFFALO_CURRENT_VERSION					= 0;
-local BUFFALO_NAME								= "Buffalo"
-local BUFFALO_MESSAGE_PREFIX					= "BuffaloV1"
+local addonMetadata = {
+	["ADDONNAME"]		= "Buffalo",
+	["SHORTNAME"]		= "BUFFALO",
+	["PREFIX"]			= "BuffaloV1",
+	["NORMALCHATCOLOR"]	= "E0C020",
+	["HOTCHATCOLOR"]	= "F8F8F8",
+};
+local A = DigamAddonLib:new(addonMetadata);
+
 
 --	Design/UI constants
-local BUFFALO_CHAT_END							= "|r"
-local BUFFALO_COLOUR_BEGINMARK					= "|c80"
-local BUFFALO_COLOUR_CHAT						= BUFFALO_COLOUR_BEGINMARK.."E0C020"
-local BUFFALO_COLOUR_INTRO						= BUFFALO_COLOUR_BEGINMARK.."F8F8F8"
-local BUFFALO_COLOUR_EXPIRING					= BUFFALO_COLOUR_BEGINMARK.."F0F000"
-local BUFFALO_COLOUR_MISSING					= BUFFALO_COLOUR_BEGINMARK.."F05000"
+local BUFFALO_COLOUR_EXPIRING					= "|c80F0F000"
+local BUFFALO_COLOUR_MISSING					= "|c80F05000"
 local BUFFALO_ICON_PASSIVE						= 136112;
 local BUFFALO_ICON_COMBAT						= "Interface\\Icons\\Ability_dualwield";
 local BUFFALO_ICON_PLAYERDEAD					= "Interface\\Icons\\Ability_rogue_feigndeath";
@@ -43,13 +44,13 @@ local BUFFALO_BACKDROP_GENEREL_FRAME = {
 	edgeSize = 64,
 	tileEdge = true,
 };
-local BUFFALO_BACKDROP_RAIDMODE0_PRIEST_FRAME = {
-	bgFile = "Interface\\TalentFrame\\PriestDiscipline-Topleft",
+local BUFFALO_BACKDROP_RAIDMODE0_DRUID_FRAME = {
+	bgFile = "Interface\\TalentFrame\\ShamanRestoration-Topleft",
 	edgeFile = "Interface\\AchievementFrame\\UI-Achievement-WoodBorder",
 	edgeSize = 64,
 	tileEdge = true,
 	tile = 0,
-	tileSize = 768,
+	tileSize = 900,
 };
 local BUFFALO_BACKDROP_RAIDMODE0_MAGE_FRAME = {
 	bgFile = "Interface\\TalentFrame\\MageFrost-Topleft",
@@ -57,23 +58,23 @@ local BUFFALO_BACKDROP_RAIDMODE0_MAGE_FRAME = {
 	edgeSize = 64,
 	tileEdge = true,
 	tile = 0,
-	tileSize = 768,
+	tileSize = 900,
 };
-local BUFFALO_BACKDROP_RAIDMODE0_FRAME = {
-	bgFile = "Interface\\TalentFrame\\ShamanRestoration-Topleft",
-	edgeFile = "Interface\\AchievementFrame\\UI-Achievement-WoodBorder",
-	edgeSize = 64,
-	tileEdge = true,
-	tile = 0,
-	tileSize = 768,
-};
-local BUFFALO_BACKDROP_RAIDMODE1_FRAME = {
+local BUFFALO_BACKDROP_RAIDMODE0_PRIEST_FRAME = {
 	bgFile = "Interface\\TalentFrame\\PriestDiscipline-Topleft",
 	edgeFile = "Interface\\AchievementFrame\\UI-Achievement-WoodBorder",
 	edgeSize = 64,
 	tileEdge = true,
 	tile = 0,
-	tileSize = 768,
+	tileSize = 900,
+};
+local BUFFALO_BACKDROP_RAIDMODE1_FRAME = {
+	bgFile = "Interface\\TalentFrame\\PaladinCombat-Topleft",
+	edgeFile = "Interface\\AchievementFrame\\UI-Achievement-WoodBorder",
+	edgeSize = 64,
+	tileEdge = true,
+	tile = 0,
+	tileSize = 900,
 };
 local BUFFALO_BACKDROP_RAIDMODE2_FRAME = {
 	bgFile = "Interface\\TalentFrame\\WarriorFury-Topleft",
@@ -81,7 +82,7 @@ local BUFFALO_BACKDROP_RAIDMODE2_FRAME = {
 	edgeSize = 64,
 	tileEdge = true,
 	tile = 0,
-	tileSize = 768,
+	tileSize = 900,
 };
 local BUFFALO_BACKDROP_SLIDER = {
 	edgeFile = "Interface\\DialogFrame\\UI-DialogBox-TestWatermark-Border",
@@ -118,7 +119,6 @@ local Buffalo_RaidModeQueryDone					= false;
 
 --	Internal variables
 local IsBuffer									= false;
-local Buffalo_ExpansionLevel					= 0;
 local Buffalo_PlayerNameAndRealm				= "";
 local Buffalo_PlayerClass						= "";
 local Buffalo_InitializationComplete			= false;
@@ -209,70 +209,6 @@ UIDropDownMenu_Initialize(Buffalo_SyncBuffGroupDropdownMenu, function(self, leve
 end);
 
 
-
-
-
---[[
-	Echo functions
---]]
-
---	Echo a message for the local user only.
-local function echo(msg)
-	if msg then
-		DEFAULT_CHAT_FRAME:AddMessage(BUFFALO_COLOUR_CHAT .. msg .. BUFFALO_CHAT_END)
-	end
-end
-
---	Echo in raid chat (if in raid) or party chat (if not)
-local function partyEcho(msg)
-	if IsInRaid() then
-		SendChatMessage(msg, RAID_CHANNEL)
-	elseif Buffalo_IsInParty() then
-		SendChatMessage(msg, PARTY_CHANNEL)
-	end
-end
-
---	Echo a message for the local user only, including Buffalo "logo"
-local function Buffalo_Echo(msg)
-	echo("-["..BUFFALO_COLOUR_INTRO.."BUFFALO"..BUFFALO_COLOUR_CHAT.."]- "..msg);
-end
-
-local function Buffalo_PrintAll(object, name, level)
-	if not name then name = ""; end;
-	if not level then level = 0; end;
-
-	local indent = "";
-	for n= 1, level, 1 do
-		indent = indent .."  ";
-	end;
-
-	if type(object) == "string" then
-		print(string.format("%s%s => %s", indent, name, object));
-	elseif type(object) == "number" then
-		print(string.format("%s%s => %s", indent, name, object));
-	elseif type(object) == "boolean" then
-		if object then
-			print(string.format("%s%s => %s", indent, name, "true"));
-		else
-			print(string.format("%s%s => %s", indent, name, "false"));
-		end;
-	elseif type(object) == "function" then
-		print(string.format("%s%s => %s", indent, name, "FUNCTION"));
-	elseif type(object) == "nil" then
-		print(string.format("%s%s => %s", indent, name, "NIL"));
-	elseif type(object) == "table" then
-		print(string.format("%s%s => {", indent, name));
-
-		for key, value in next, object do
-			Buffalo_PrintAll(value, key, level + 1);
-		end;
-
-		print(string.format("%s}", indent));
-	end;
-end;
-
-
-
 --[[
 	Slash commands
 
@@ -310,7 +246,7 @@ SlashCmdList["BUFFALO_BUFFALO"] = function(msg)
 	elseif option == "VERSION" then
 		SlashCmdList["BUFFALO_VERSION"]();
 	else
-		Buffalo_Echo(string.format("Unknown command: %s", option));
+		A:echo(string.format("Unknown command: %s", option));
 	end
 end
 
@@ -364,7 +300,7 @@ SlashCmdList["BUFFALO_ANNOUNCE"] = function(msg)
 	lastBuffStatus = "";
 	Buffalo_SetOption(CONFIG_KEY_AnnounceMissingBuff, CONFIG_AnnounceMissingBuff);
 	Buffalo_SetOption(CONFIG_KEY_AnnounceCompletedBuff, CONFIG_AnnounceCompletedBuff);
-	Buffalo_Echo("Buff announcements are now ON.");
+	A:echo("Buff announcements are now ON.");
 end
 
 --[[
@@ -379,7 +315,7 @@ SlashCmdList["BUFFALO_STOPANNOUNCE"] = function(msg)
 	CONFIG_AnnounceCompletedBuff = false;
 	Buffalo_SetOption(CONFIG_KEY_AnnounceMissingBuff, CONFIG_AnnounceMissingBuff);
 	Buffalo_SetOption(CONFIG_KEY_AnnounceCompletedBuff, CONFIG_AnnounceCompletedBuff);
-	Buffalo_Echo("Buff announcements are now OFF.");
+	A:echo("Buff announcements are now OFF.");
 end
 
 --[[
@@ -391,9 +327,9 @@ end
 SLASH_BUFFALO_VERSION1 = "/buffaloversion"
 SlashCmdList["BUFFALO_VERSION"] = function(msg)
 	if IsInRaid() or Buffalo_IsInParty() then
-		Buffalo_SendAddonMessage("TX_VERSION##");
+		A:sendAddonMessage("TX_VERSION##");
 	else
-		Buffalo_Echo(string.format("%s is using Buffalo version %s", GetUnitName("player", true), GetAddOnMetadata(BUFFALO_NAME, "Version")));
+		A:echo(string.format("%s is using Buffalo version %s", GetUnitName("player", true), A.addonVersion));
 	end
 end
 
@@ -435,40 +371,21 @@ end
 ]]
 SLASH_BUFFALO_HELP1 = "/buffalohelp"
 SlashCmdList["BUFFALO_HELP"] = function(msg)
-	Buffalo_Echo(string.format("buffalo version %s options:", GetAddOnMetadata(BUFFALO_NAME, "Version")));
-	Buffalo_Echo("Syntax:");
-	Buffalo_Echo("    /buffalo [command]");
-	Buffalo_Echo("Where commands can be:");
-	Buffalo_Echo("    Config       (default) Open the configuration dialogue. Same as right-clicking buff button.");
-	Buffalo_Echo("    Show         Shows the buff button.");
-	Buffalo_Echo("    Hide         Hides the buff button.");
-	Buffalo_Echo("    Announce     Announce when a buff is missing.");
-	Buffalo_Echo("    stopannounce Stop announcing missing buffs.");
-	Buffalo_Echo("    Version      Request version info from all clients.");
-	Buffalo_Echo("    Help         This help.");
+	A:echo(string.format("buffalo version %s options:", A.addonVersion));
+	A:echo("Syntax:");
+	A:echo("    /buffalo [command]");
+	A:echo("Where commands can be:");
+	A:echo("    Config       (default) Open the configuration dialogue. Same as right-clicking buff button.");
+	A:echo("    Show         Shows the buff button.");
+	A:echo("    Hide         Hides the buff button.");
+	A:echo("    Announce     Announce when a buff is missing.");
+	A:echo("    stopannounce Stop announcing missing buffs.");
+	A:echo("    Version      Request version info from all clients.");
+	A:echo("    Help         This help.");
 end
 
 
 
-
-
---[[
---
---	Internal Communication Functions
---
---]]
-function Buffalo_SendAddonMessage(message)
-	local memberCount = GetNumGroupMembers();
-	if memberCount > 0 then
-		local channel = nil;
-		if IsInRaid() then
-			channel = "RAID";
-		elseif Buffalo_IsInParty() then
-			channel = "PARTY";
-		end;
-		C_ChatInfo.SendAddonMessage(BUFFALO_MESSAGE_PREFIX, message, channel);
-	end;
-end
 
 
 --[[
@@ -481,8 +398,7 @@ end
 	Buffalo:<sender (which is actually the receiver!)>:<version number>
 ]]
 local function Buffalo_HandleTXVersion(message, sender)
-	local response = GetAddOnMetadata(BUFFALO_NAME, "Version");
-	Buffalo_SendAddonMessage("RX_VERSION#"..response.."#"..sender)
+	A:sendAddonMessage("RX_VERSION#".. A.addonVersion .."#"..sender)
 end
 
 --[[
@@ -490,7 +406,7 @@ end
 	The version information is displayed locally.
 ]]
 local function Buffalo_HandleRXVersion(message, sender)
-	Buffalo_Echo(string.format("[%s] is using Buffalo version %s", sender, message))
+	A:echo(string.format("[%s] is using Buffalo version %s", sender, message))
 end
 
 local function Buffalo_HandleTXVerCheck(message, sender)
@@ -527,9 +443,11 @@ end
 local function Buffalo_HandleAddonMessage(msg, sender)
 	local _, _, cmd, message, recipient = string.find(msg, "([^#]*)#([^#]*)#([^#]*)");	
 
-	--	Ignore messages sent from myself:
+	--	Ignore messages sent from myself, unless it is a Version check (*sigh*)
 	if sender == Buffalo_PlayerNameAndRealm then
-		return;
+		if cmd ~= "TX_VERSION" and cmd ~= "RX_VERSION" then
+			return;
+		end;
 	end;
 
 	--	Ignore message if it is not for me. 
@@ -574,7 +492,7 @@ end
 local function Buffalo_OnChatMsgAddon(event, ...)
 	local prefix, msg, channel, sender = ...;
 
-	if prefix == BUFFALO_MESSAGE_PREFIX then
+	if prefix == A.addonPrefix then
 		Buffalo_HandleAddonMessage(msg, sender);
 	end
 end
@@ -620,8 +538,8 @@ local function Buffalo_CheckIsNewVersion(versionstring)
 		if incomingVersion > BUFFALO_CURRENT_VERSION then
 			if not Buffalo_UpdateMessageShown then
 				Buffalo_UpdateMessageShown = true;
-				Buffalo_Echo(string.format("NOTE: A newer version of ".. COLOUR_INTRO .."BUFFALO"..COLOUR_CHAT.."! is available (version %s)!", versionstring));
-				Buffalo_Echo("You can download latest version from https://www.curseforge.com/ or https://github.com/Sentilix/buffalo.");
+				A:echo(string.format("NOTE: A newer version of ".. A.charColorHot .."BUFFALO".. A.chatColorNormal .."! is available (version %s)!", versionstring));
+				A:echo("You can download latest version from https://www.curseforge.com/ or https://github.com/Sentilix/buffalo.");
 			end
 		end	
 	end
@@ -837,7 +755,7 @@ local function Buffalo_InitializeClassMatrix()
 	end;
 
 	for className, classInfo in next, BUFFALO_CLASS_MATRIX_MASTER do
-		if not classInfo[expacKey] or classInfo[expacKey] <= Buffalo_ExpansionLevel then
+		if not classInfo[expacKey] or classInfo[expacKey] <= A.addonExpansionLevel then
 			CLASS_MATRIX[className] = classInfo;
 			CLASS_MASK_ALL = bit.bor(CLASS_MASK_ALL, classInfo["MASK"]);
 		end;
@@ -880,8 +798,6 @@ local function Buffalo_MainInitialization(reloaded)
 	Buffalo_CurrentRaidMode = BUFFALO_RAIDMODE_PERSONAL;
 	Buffalo_InitializeConfigSettings();
 
-	Buffalo_ExpansionLevel = 1 * GetAddOnMetadata(BUFFALO_NAME, "X-Expansion-Level");
-
 	--	This sets the buffs up for MY class:
 	BUFF_MATRIX = Buffalo_InitializeBuffMatrix();
 
@@ -909,8 +825,6 @@ local function Buffalo_MainInitialization(reloaded)
 
 	Buffalo_InitializeBuffSettingsUI();
 
-	--Buffalo_InitializeBuffSync();
-
 	--	Note: setting defaults should be part of the config, but at that time
 	--	the Buffalo_InitializeBuffSync() has not yet been called.
 	if table.getn(CONFIG_SynchronizedBuffs) == 0 then
@@ -932,7 +846,7 @@ local function Buffalo_MainInitialization(reloaded)
 
 	--	Expansion-specific settings.
 	IsBuffer = false;
-	if Buffalo_ExpansionLevel == 1 or Buffalo_ExpansionLevel == 2 then
+	if A.addonExpansionLevel == 1 or A.addonExpansionLevel == 2 then
 		--	Check if the current class can cast buffs.
 		--	Note: herbing/mining is excluded via the 0x00ff mask:
 		for buffName, buffInfo in next, BUFF_MATRIX do
@@ -952,7 +866,7 @@ local function Buffalo_MainInitialization(reloaded)
 	Buffalo_InitializationComplete = true;
 
 	if CONFIG_AnnounceMissingBuff and IsBuffer then
-		Buffalo_Echo("Buff data loaded, Buffalo is ready.");
+		A:echo("Buff data loaded, Buffalo is ready.");
 	end;
 end;
 
@@ -1008,9 +922,7 @@ local function Buffalo_ScanRaid()
 	local currentUnitid = "player";
 	if grouptype == "solo" then
 		unitid = "player"
-		local _, classname = UnitClass(unitid);
-		local classUpper = string.upper(classname);
-		roster[unitid] = { ["Group"]=1, ["IsOnline"]=true, ["IsDead"]=nil, ["BuffMask"]=0, ["Class"]=classUpper, ["ClassMask"]=CLASS_MASK_ALL };
+		roster[unitid] = { ["Group"]=1, ["IsOnline"]=true, ["IsDead"]=nil, ["BuffMask"]=0, ["Class"]=Buffalo_PlayerClass, ["ClassMask"]=CLASS_MASK_ALL };
 
 	elseif grouptype == "party" then
 		unitid = "player";
@@ -1130,7 +1042,7 @@ local function Buffalo_ScanRaid()
 
 			--	Add tracking icons ("Find Herbs", "Find Minerals" ...).
 			--	Methods differs between classic and tbc:
-			if Buffalo_ExpansionLevel == 1 then
+			if A.addonExpansionLevel == 1 then
 				--	Classic:
 				--	Possible problem: Documentation does not state wether the returned name is localized or not.
 				--	All examples shows English names, so going for that until I know better ...
@@ -1141,7 +1053,7 @@ local function Buffalo_ScanRaid()
 						buffMask = bit.bor(buffMask, buffInfo["BITMASK"]);
 					end;
 				end;
-			elseif Buffalo_ExpansionLevel == 2 then
+			elseif A.addonExpansionLevel == 2 then
 				--	TBC:
 				for n=1, GetNumTrackingTypes() do
 					local buffName, spellID, active = GetTrackingInfo(n);
@@ -1353,15 +1265,15 @@ local function Buffalo_ScanRaid()
 					local minutes = math.floor(seconds / 60);
 					seconds = seconds - minutes * 60;
 
-					Buffalo_Echo(string.format("%s's %s%s%s will expire in %02d:%02d.", targetPlayer, BUFFALO_COLOUR_EXPIRING, buffName, BUFFALO_COLOUR_CHAT, minutes, seconds));
+					A:echo(string.format("%s's %s%s%s will expire in %02d:%02d.", targetPlayer, BUFFALO_COLOUR_EXPIRING, buffName, A.chatColorNormal, minutes, seconds));
 				else
-					Buffalo_Echo(string.format("%s is missing %s%s%s.", targetPlayer, BUFFALO_COLOUR_MISSING, buffName, BUFFALO_COLOUR_CHAT));
+					A:echo(string.format("%s is missing %s%s%s.", targetPlayer, BUFFALO_COLOUR_MISSING, buffName, A.chatColorNormal));
 				end;
 			end;
 		end;
 
 		if debug then
-			Buffalo_Echo(string.format("DEBUG: Buffing unit=%s(%s), Buff=%s, Icon=%s", unitid, targetPlayer, buffName, missingBuff[3]));
+			A:echo(string.format("DEBUG: Buffing unit=%s(%s), Buff=%s, Icon=%s", unitid, targetPlayer, buffName, missingBuff[3]));
 		end;
 
 		Buffalo_UpdateBuffButton(unitid, buffName, missingBuff[3]);
@@ -1370,7 +1282,7 @@ local function Buffalo_ScanRaid()
 
 		if CONFIG_AnnounceMissingBuff then
 			if lastBuffTarget ~= "" then
-				Buffalo_Echo("No pending buffs.");
+				A:echo("No pending buffs.");
 				lastBuffTarget = "";
 				lastBuffStatus = "";
 			end;
@@ -1758,14 +1670,14 @@ function Buffalo_RaidModeOnClick(sender)
 		--	Scenario 2: We swithc FROM raid mode 1 (currentRM=OPEN):
 		if raidmode == BUFFALO_RAIDMODE_OPEN or Buffalo_CurrentRaidMode == BUFFALO_RAIDMODE_OPEN then
 			if BUFFALO_RaidMode1RequiresPromotion and not unitIsPromoted then
-				Buffalo_Echo("You cannot change raid mode unless you are promoted.");
+				A:echo("You cannot change raid mode unless you are promoted.");
 				return;
 			end;
 		end;
 
 		if raidmode == BUFFALO_RAIDMODE_CLOSED or Buffalo_CurrentRaidMode == BUFFALO_RAIDMODE_CLOSED then
 			if BUFFALO_RaidMode2RequiresPromotion and not unitIsPromoted then
-				Buffalo_Echo("You cannot change raid mode unless you are promoted.");
+				A:echo("You cannot change raid mode unless you are promoted.");
 				return;
 			end;
 		end;
@@ -1789,7 +1701,7 @@ function Buffalo_SetRaidMode(raidmode, AnnounceRaidModeChange)
 	Buffalo_CurrentRaidMode = tonumber(raidmode);
 
 	if AnnounceRaidModeChange then
-		Buffalo_SendAddonMessage(string.format("TX_RAIDMODE#%s#%s", raidmode, Buffalo_PlayerClass));
+		A:sendAddonMessage(string.format("TX_RAIDMODE#%s#%s", raidmode, Buffalo_PlayerClass));
 	end;
 
 	Buffalo_UpdateGroupBuffUI();
@@ -1819,14 +1731,14 @@ function Buffalo_HandleTXRaidMode(message, sender)
 
 	for _, rmInfo in next, Buffalo_RaidModes do
 		if rmInfo["RAIDMODE"] == raidmode then
-			Buffalo_Echo(string.format("[%s] changed raid mode to [%s].", sender, rmInfo["CAPTION"]));
+			A:echo(string.format("[%s] changed raid mode to [%s].", sender, rmInfo["CAPTION"]));
 			return;
 		end;
 	end;
 
 	--	Oops, someone changed raid mode to a mode this client does not know!
 	--	Can happen if a RaidMode3 is implemented, and the user does not upgrade!!
-	Buffalo_Echo(string.format("[%s] changed raid mode.", sender));
+	A:echo(string.format("[%s] changed raid mode.", sender));
 end;
 
 --	TX_RDUPDATE: Called when another client updates the raid assignments.
@@ -1849,9 +1761,7 @@ end;
 --	TX_QRYRAIDMODE:
 --	If player is promoted, answer current raidmode back.
 function Buffalo_HandleTXQueryRaidMode(message, sender)
---	if Buffalo_UnitIsPromoted("player") then
-		Buffalo_SendAddonMessage(string.format("RX_QRYRAIDMODE#%s/%s#%s", Buffalo_CurrentRaidMode, Buffalo_RaidModeLockedBy, sender));
---	end;
+	A:sendAddonMessage(string.format("RX_QRYRAIDMODE#%s/%s#%s", Buffalo_CurrentRaidMode, Buffalo_RaidModeLockedBy, sender));
 end;
 
 --	RX_QRYRAIDMODE:
@@ -1870,7 +1780,7 @@ function Buffalo_HandleRXQueryRaidMode(message, sender)
 		--	of them, only the first one. 
 		if not Buffalo_RaidModeQueryDone then
 			Buffalo_RaidModeQueryDone = true;
-			Buffalo_SendAddonMessage(string.format("TX_QRYRAIDASSIGNMENTS##%s", sender));
+			A:sendAddonMessage(string.format("TX_QRYRAIDASSIGNMENTS##%s", sender));
 		end;
 
 		Buffalo_UpdateGroupBuffUI();
@@ -1882,7 +1792,7 @@ function Buffalo_RequestRaidModeUpdate()
 		Buffalo_RaidModeQueryDone = false;
 		Buffalo_ResetRaidAssignments();
 
-		Buffalo_SendAddonMessage(string.format("TX_QRYRAIDMODE##%s", Buffalo_PlayerClass));
+		A:sendAddonMessage(string.format("TX_QRYRAIDMODE##%s", Buffalo_PlayerClass));
 	end;
 end;
 
@@ -1903,7 +1813,7 @@ function Buffalo_HandleTXQueryRaidAssignments(message, sender)
 
 		--	A message per group:
 		--	RX_QRYRAIDASSIGNMENTS#<groupnum>/<buffer 2>/<buffer 2>/<buffer 3>#sender
-		Buffalo_SendAddonMessage(string.format("RX_QRYRAIDASSIGNMENTS#%s#%s", payload, sender));			
+		A:sendAddonMessage(string.format("RX_QRYRAIDASSIGNMENTS#%s#%s", payload, sender));			
 	end;
 end;
 
@@ -2022,7 +1932,7 @@ function Buffalo_SyncBuffGroupDropdownMenu_OnClick(sender, playerInfo)
 
 	--	Send a message to clients of same class that buff assignments was updated.
 	local payload = string.format("%s/%s/%s", Buffalo_SyncBuff, Buffalo_SyncGroup, syncBuff["PLAYER"] or "");
-	Buffalo_SendAddonMessage(string.format("TX_RDUPDATE#%s#%s", payload, Buffalo_PlayerClass));
+	A:sendAddonMessage(string.format("TX_RDUPDATE#%s#%s", payload, Buffalo_PlayerClass));
 
 	Buffalo_UpdateGroupBuffUI();
 end;
@@ -2109,14 +2019,13 @@ function Buffalo_UpdateGroupBuffUI()
 	if Buffalo_CurrentRaidMode == BUFFALO_RAIDMODE_PERSONAL then
 		BuffaloConfigFrameCaption:SetText("Assign buffs for specific groups by left/right clicking the icons.");
 
-		local _, classname = UnitClass("player");
 		local backdrops = {
 			["DRUID"] = BUFFALO_BACKDROP_RAIDMODE0_DRUID_FRAME,
 			["MAGE"] = BUFFALO_BACKDROP_RAIDMODE0_MAGE_FRAME,
 			["PRIEST"] = BUFFALO_BACKDROP_RAIDMODE0_PRIEST_FRAME,
 		};
 
-		BuffaloConfigFrame:SetBackdrop(backdrops[classname]);
+		BuffaloConfigFrame:SetBackdrop(backdrops[Buffalo_PlayerClass]);
 
 		BuffaloConfigFrameRaid:Hide();
 		frame = BuffaloConfigFramePersonal;
@@ -2432,10 +2341,10 @@ function Buffalo_HandleCheckbox(checkbox)
 	if checkboxname == "BuffaloConfigFrameOptionAnnounceMissing" then
 		if BuffaloConfigFrameOptionAnnounceMissing:GetChecked() then
 			CONFIG_AnnounceMissingBuff = true;
-			Buffalo_Echo("Missing Buff announcements are now ON.");
+			A:echo("Missing Buff announcements are now ON.");
 		else
 			CONFIG_AnnounceMissingBuff = false;
-			Buffalo_Echo("Missing Buff announcements are now OFF.");
+			A:echo("Missing Buff announcements are now OFF.");
 		end;
 		Buffalo_SetOption(CONFIG_KEY_AnnounceMissingBuff, CONFIG_AnnounceMissingBuff);
 	end;
@@ -2443,10 +2352,10 @@ function Buffalo_HandleCheckbox(checkbox)
 	if checkboxname == "BuffaloConfigFrameOptionAnnounceComplete" then
 		if BuffaloConfigFrameOptionAnnounceComplete:GetChecked() then
 			CONFIG_AnnounceCompletedBuff = true;
-			Buffalo_Echo("Completed Buff announcements are now ON.");
+			A:echo("Completed Buff announcements are now ON.");
 		else
 			CONFIG_AnnounceCompletedBuff = false;
-			Buffalo_Echo("Completed Buff announcements are now OFF.");
+			A:echo("Completed Buff announcements are now OFF.");
 		end;
 		Buffalo_SetOption(CONFIG_KEY_AnnounceCompletedBuff, CONFIG_AnnounceCompletedBuff);
 	end;
@@ -2500,7 +2409,7 @@ function Buffalo_OnEvent(self, event, ...)
 
 	if (event == "ADDON_LOADED") then
 		local addonname = ...;
-		if addonname == BUFFALO_NAME then
+		if addonname == A.addonName then
 			Buffalo_MainInitialization();
 			Buffalo_RepositionateButton(BuffButton);
 			Buffalo_HideBuffButton();
@@ -2534,7 +2443,7 @@ function Buffalo_OnEvent(self, event, ...)
 				if CONFIG_AnnounceCompletedBuff and not UnitAffectingCombat("player") then
 					local unitid = BuffButton:GetAttribute("unit");
 					if unitid then
-						Buffalo_Echo(string.format("%s was buffed with %s.", Buffalo_GetPlayerAndRealm(unitid) or "nil", buffName));
+						A:echo(string.format("%s was buffed with %s.", Buffalo_GetPlayerAndRealm(unitid) or "nil", buffName));
 					end;
 				end;
 			end;
@@ -2563,15 +2472,14 @@ end
 
 function Buffalo_OnLoad()
 	local _, classname = UnitClass("player");
-	Buffalo_PlayerNameAndRealm = Buffalo_GetPlayerAndRealm("player");
 	Buffalo_PlayerClass = classname;
+	Buffalo_PlayerNameAndRealm = Buffalo_GetPlayerAndRealm("player");
 
-	BUFFALO_CURRENT_VERSION = Buffalo_CalculateVersion(GetAddOnMetadata(BUFFALO_NAME, "Version") );
+	BUFFALO_CURRENT_VERSION = A:calculateVersion();
 
-	Buffalo_Echo(string.format("Version %s by %s", GetAddOnMetadata(BUFFALO_NAME, "Version"), GetAddOnMetadata(BUFFALO_NAME, "Author")));
-	Buffalo_Echo(string.format("Type %s/buffalo%s to configure the addon.", BUFFALO_COLOUR_INTRO, BUFFALO_COLOUR_CHAT));
+	A:echo(string.format("Type %s/buffalo%s to configure the addon.", A.chatColorHot, A.chatColorNormal));
 
-	_G["BuffaloVersionString"]:SetText(string.format("Buffalo version %s by %s", GetAddOnMetadata(BUFFALO_NAME, "Version"), GetAddOnMetadata(BUFFALO_NAME, "Author")));
+	_G["BuffaloVersionString"]:SetText(string.format("Buffalo version %s by %s", A.addonVersion, A.addonAuthor));
 
     BuffaloEventFrame:RegisterEvent("ADDON_LOADED");
     BuffaloEventFrame:RegisterEvent("CHAT_MSG_ADDON");
@@ -2580,8 +2488,6 @@ function Buffalo_OnLoad()
     BuffaloEventFrame:RegisterEvent("UNIT_SPELLCAST_FAILED");
     BuffaloEventFrame:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED");
 
---	BuffaloConfigFrame:SetBackdrop(BUFFALO_BACKDROP_FRAME);
-
 	BuffaloClassConfigFrame:SetBackdrop(BUFFALO_BACKDROP_CLASSES_FRAME);
 	BuffaloGeneralConfigFrame:SetBackdrop(BUFFALO_BACKDROP_GENEREL_FRAME);
 
@@ -2589,7 +2495,7 @@ function Buffalo_OnLoad()
 	BuffaloConfigFrameRenewOverlap:SetBackdrop(BUFFALO_BACKDROP_SLIDER);
 	BuffaloConfigFrameScanFrequency:SetBackdrop(BUFFALO_BACKDROP_SLIDER);
 
-	C_ChatInfo.RegisterAddonMessagePrefix(BUFFALO_MESSAGE_PREFIX);
+	C_ChatInfo.RegisterAddonMessagePrefix(A.addonPrefix);
 end
 
 function Buffalo_OnTimer(elapsed)
@@ -2605,5 +2511,3 @@ function Buffalo_OnTimer(elapsed)
 	end;
 
 end
-
-

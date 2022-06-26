@@ -55,7 +55,8 @@
 			</OnLoad>
 		</Scripts>
 		<NormalTexture name="$parentBG">
-			<Color r="0.0" g="0.0" b="0.5" a="0.5"/>
+			<!--<Color r="0.3" g="0.3" b="0.3" a="0.6"/>-->
+			<Color r="0.8" g="0.7" b="0.2" a="0.4"/>
 		</NormalTexture>
 	</Button>
 	
@@ -101,7 +102,7 @@
 			<Frame name="$parentPersonal" hidden="false">
 				<Size x="900" y="450" />
 				<Anchors>
-					<Anchor point="TOPLEFT" x="25" y="-80" relativeTo="BuffaloConfigFrame" />
+					<Anchor point="TOPLEFT" x="0" y="-80" relativeTo="BuffaloConfigFrame" />
 				</Anchors>
 			</Frame>
 
