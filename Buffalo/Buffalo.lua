@@ -239,6 +239,8 @@ SlashCmdList["BUFFALO_BUFFALO"] = function(msg)
 		SlashCmdList["BUFFALO_SHOW"]();
 	elseif option == "HIDE" then
 		SlashCmdList["BUFFALO_HIDE"]();
+	elseif option == "RESETBUTTON" then
+		SlashCmdList["BUFFALO_RESETBUTTON"]();
 	elseif option == "ANNOUNCE" then
 		SlashCmdList["BUFFALO_ANNOUNCE"]();
 	elseif option == "STOPANNOUNCE" then
@@ -284,6 +286,28 @@ SLASH_BUFFALO_HIDE1 = "/buffalohide"
 SlashCmdList["BUFFALO_HIDE"] = function(msg)
 	BuffButton:Hide();
 	Buffalo_SetOption(CONFIG_KEY_BuffButtonVisible,false);
+end
+
+--[[
+	Reset the buff button to screen center.
+	Syntax: /buffalo resetbutton
+	Added in: 5.0.0
+]]
+SLASH_BUFFALO_RESETBUTTON1 = "/buffaloresetbutton"
+SlashCmdList["BUFFALO_RESETBUTTON"] = function(msg)
+
+	BuffButton:ClearAllPoints();
+	BuffButton:SetPoint("CENTER", "UIParent", "CENTER", 0, 0);
+	BuffButton:SetSize(CONFIG_BuffButtonSize, CONFIG_BuffButtonSize);
+
+	if CONFIG_BuffButtonVisible then
+		BuffButton:Show();
+	end;
+
+	Buffalo_SetOption(CONFIG_KEY_BuffButtonPosX, 0);
+	Buffalo_SetOption(CONFIG_KEY_BuffButtonPosY, 0);
+
+	A:echo("The Buffalo button has been reset.");
 end
 
 --[[
@@ -846,7 +870,7 @@ local function Buffalo_MainInitialization(reloaded)
 
 	--	Expansion-specific settings.
 	IsBuffer = false;
-	if A.addonExpansionLevel == 1 or A.addonExpansionLevel == 2 then
+	if A.addonExpansionLevel == 1 or A.addonExpansionLevel == 2 or A.addonExpansionLevel == 3 then
 		--	Check if the current class can cast buffs.
 		--	Note: herbing/mining is excluded via the 0x00ff mask:
 		for buffName, buffInfo in next, BUFF_MATRIX do
@@ -1358,8 +1382,10 @@ function Buffalo_RepositionateButton(self)
 	BuffButton:SetSize(CONFIG_BuffButtonSize, CONFIG_BuffButtonSize);
 
 	if IsBuffer then
+		print("Showing");
 		BuffButton:Show();
 	else
+		print("Hiding");
 		BuffButton:Hide();
 	end;
 end

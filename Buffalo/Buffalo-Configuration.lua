@@ -163,7 +163,7 @@ function Buffalo_InitializeBuffMatrix()
 
 		local Druid_GiftOfTheWild = {
 			["BITMASK"]		= 0x0001,
-			["ICONID"]		= 136038,
+			["ICONID"]		= 136078,
 			["SPELLID"]		= Buffalo_GetSpellID(SpellName_Druid_GiftOfTheWild),
 			["CLASSES"]		= BUFFALO_CLASS_ALL,
 			["PRIORITY"]	= 52,

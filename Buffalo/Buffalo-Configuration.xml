@@ -167,80 +167,6 @@
 		
 		<Layers>
 			<Layer level="ARTWORK">
-				<!--<FontString inherits="GameFontNormal" text="Grp 1">
-					<Anchors>
-						<Anchor point="TOPLEFT">
-							<Offset x="30" y="-30"/>
-						</Anchor>
-					</Anchors>
-					<Color r="1" g="1" b="1" a="1.0"/>
-				</FontString>
-				<FontString inherits="GameFontNormal" text="Grp 2">
-					<Anchors>
-						<Anchor point="TOPLEFT">
-							<Offset x="80" y="-30"/>
-						</Anchor>
-					</Anchors>
-					<Color r="1" g="1" b="1" a="1.0"/>
-				</FontString>
-				<FontString inherits="GameFontNormal" text="Grp 3">
-					<Anchors>
-						<Anchor point="TOPLEFT">
-							<Offset x="130" y="-30"/>
-						</Anchor>
-					</Anchors>
-					<Color r="1" g="1" b="1" a="1.0"/>
-				</FontString>
-				<FontString inherits="GameFontNormal" text="Grp 4">
-					<Anchors>
-						<Anchor point="TOPLEFT">
-							<Offset x="180" y="-30"/>
-						</Anchor>
-					</Anchors>
-					<Color r="1" g="1" b="1" a="1.0"/>
-				</FontString>
-				<FontString inherits="GameFontNormal" text="Grp 5">
-					<Anchors>
-						<Anchor point="TOPLEFT">
-							<Offset x="230" y="-30"/>
-						</Anchor>
-					</Anchors>
-					<Color r="1" g="1" b="1" a="1.0"/>
-				</FontString>
-				<FontString inherits="GameFontNormal" text="Grp 6">
-					<Anchors>
-						<Anchor point="TOPLEFT">
-							<Offset x="280" y="-30"/>
-						</Anchor>
-					</Anchors>
-					<Color r="1" g="1" b="1" a="1.0"/>
-				</FontString>
-				<FontString inherits="GameFontNormal" text="Grp 7">
-					<Anchors>
-						<Anchor point="TOPLEFT">
-							<Offset x="330" y="-30"/>
-						</Anchor>
-					</Anchors>
-					<Color r="1" g="1" b="1" a="1.0"/>
-				</FontString>
-				<FontString inherits="GameFontNormal" text="Grp 8">
-					<Anchors>
-						<Anchor point="TOPLEFT">
-							<Offset x="380" y="-30"/>
-						</Anchor>
-					</Anchors>
-					<Color r="1" g="1" b="1" a="1.0"/>
-				</FontString>-->
-
-				<!--<FontString inherits="GameFontNormal" text="Self buffs:">
-					<Anchors>
-						<Anchor point="TOPLEFT" relativeTo="$parentSelf">
-							<Offset x="0" y="30"/>
-						</Anchor>
-					</Anchors>
-					<Color r="1" g="1" b="1" a="1.0"/>
-				</FontString>-->
-
 				<FontString name="BuffaloVersionString" inherits="GameFontNormal" text="Buffalo x - by y">
 					<Anchors>
 						<Anchor point="BOTTOM">
@@ -251,7 +177,6 @@
 					</Anchors>
 					<Color r="0.4" g="0.3" b="0.1" a="1.0"/>
 				</FontString>
-
 			</Layer>
 		</Layers>
 		
