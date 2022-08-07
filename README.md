@@ -1,48 +1,54 @@
-# Buffalo - Raid buff addon
-Buffalo adds a new button for your UI, which will lit up with an icon when someone in your group or raid needs a new buff from you. The assigned groups can be configured, so you can set up which groups you will monitor and what buffs you will do.
+# Buffalo version 0.5.0-beta1
+_- for Classic Era/SoM and TBC._
 
-You can move the button by pressing Shift while dragging the icon to a desired position.
+## Buffalo v0.5: Introducing Raid Buffing
+Version 0.5 of Buffalo enters the realms of the Paladins with an option to centralize buffing assignments. Therefore Buffalo is now running in one of three modes:
 
-Buffalo works for WoW Classic and TBC.
-
-Buff configuration as seen as a holy priest with herbalism:<br/>
-<img src="https://github.com/Sentilix/buffalo/blob/6c5cf96f0ba16257972d2df24f7bc06ac66ece56/Images/buffalo-configuration-priest.jpg?raw=true" />
-
-Class configration: chose which buffs goes to what classes:<br/>
-<img src="https://github.com/Sentilix/buffalo/blob/002abc5f4a8a794d8dcd2deb1d2b6c597af14384/Images/buffalo-classconfig-priest.jpg?raw=true" />
-
-Misc. configuration options to control the addon:<br/>
-<img src="https://github.com/Sentilix/buffalo/blob/6c5cf96f0ba16257972d2df24f7bc06ac66ece56/Images/buffalo-configuration-general.jpg?raw=true" />
+**NOTE: THIS IS A BETA AND THERE MIGHT BE BUGS.**
+In that case, please let me know, together with what expac you used (Classic Era, SOM or TBC), which class you had problems with and eventual error messages you receive.
 
 
-## Slash Commands
-Buffalo does not need much setup, so there are only a few commands available:
+## Raid mode 0: Personal buffing mode.
+This is the default mode when you are playing Solo or in a 5-man party., and is the same mode used in previous versions of Buffalo as standard.
 
-* `/buffalo config` - opens the Group/Buff configuration screen. This can also be done by right-clicking the buff button.
-* `/buffalo hide` - hides the Buff button
-* `/buffalo show` - shows the Buff button again (yay!)
-* `/buffalo version` - shows the current version of Buffalo.
+In personal mode you and you alone decide which groups to buff by simply left-click to enable a buff and right-click ro disable a buff.
 
+<img src="https://github.com/Sentilix/buffalo/blob/buffalo-0.5.0-sync/Images/buffalo-0.5.0-personal-mage.jpg?raw=true"/> 
 
-## Note:
-Should you find a bug, feel free to report it below, together with relevant information, such as:
-* What class did you play
-* What buff failed
-* What realm type (Classic Era, Tbc, WoTLK ...)
-* Did you get any errors?
+When you are in a raid, a promoted character (of same class as you) can switch the addon into Raid Mode. There are two raid modes available: Open Raid Assignments and Closed Raid Assignments.
 
 
-## Not yet implemented:
-* Paladin buffs are not yet implemented. I hope to make addon 100% compatible with PallyPower, thus exchanging buffs.
-* Addon communication to other instances of Buffalo are not implemented.
-* TBC / WotLK
+## Raid mode 1: Raid with Open assignments
+In Open Raid Assignments mode the screen changes so you for each group and buff combination can put in a name - the name of the person who is responsible for buffing.
+
+<img src="https://github.com/Sentilix/buffalo/blob/buffalo-0.5.0-sync/Images/buffalo-0.5.0-open-mage.jpg?raw=true" />
+
+You can still change the buff assignments while in Open Raid mode, and even assign other mages. Changes you make are shared with other mages in the raid (with the addon) and vice versa.
 
 
-## Hey, that addon reminds me of SmartBuff
-It sure does! I have been using SmartBuff for many years, and loved it. But now it seems there isn't a working SmartBuff addon out there.
+## Raid mode 2: Raid with Closed assignments
+This works same way as Open assignments, except that only promoted persons of the same class can change the assignments.
+ 
+<img src="https://github.com/Sentilix/buffalo/blob/buffalo-0.5.0-sync/Images/buffalo-0.5.0-closedraid-mage.jpg?raw=true" />
 
-This addon is not a SmartBuff clone!
+The exception here is the Self buffs: you can still enable / disable your selfie buffs, regardless of raid mode.
 
-Buffalo works differently, and have a stronger focus on party/raid buffing, where SmartBuff worked for everyone - including your Warrior for that Find Herbs buff. Buffalo does not support buffing in combat. This is a limitation implemented by Blizzard, which didn't exist back in the SmartBuff days.
 
- 
+## Class configuration
+The class configuration screen works independent of raid mode: here you can modify which buffs apply to which classes:
+
+<img src="https://github.com/Sentilix/buffalo/blob/buffalo-0.5.0-sync/Images/buffalo-0.5.0-classconfig.jpg?raw=true" />
+
+
+## Generel configuration
+The generel configuration option is also independent of raid mode. here you can set:
+* The number of people in a group (online, in range and eligible for the buff) before Buffalo will a group buff instead of Single buffing.
+* Number of seconds before a warning is written in the local chat (0-120 seconds).
+* Scan frequency: faster scans = snappier addon, slower scans = less CPU resources used.
+* Display missing buffs in Local Chat (Yes/No)
+* Display buffed targers in Local Chat (Yes/No)
+
+You can tick the last two options OFF if the addon messages is too spammy for you.
+
+<img src="https://github.com/Sentilix/buffalo/blob/buffalo-0.5.0-sync/Images/buffalo-0.5.0-generalconfig.jpg?raw=true" />
+
