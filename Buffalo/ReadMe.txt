@@ -80,9 +80,13 @@ Priest		PowerWordFortitude			53
 
 Version history
 ---------------
+Version 0.5.0
+* Fixed local text settings not being persisted.
+* Added support for Wrath of the Lich King Classic. Note: Buffalo still works in "one, buff, one group" mode.
+
+
 Version 0.5.0-beta2
 * Added command to reset the Buff button position: "/buffalo resetbutton".
-* Added support for Wrath of the Lich King Classic. Note: Buffalo still works in "one, buff, one group" mode.
 * Fixed icon for Gift of the Wild for Druids.
 
 

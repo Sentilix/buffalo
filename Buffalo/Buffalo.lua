@@ -159,8 +159,8 @@ local CONFIG_KEY_RenewOverlap					= "RenewOverlap";
 local CONFIG_KEY_ScanFrequency					= "ScanFrequency";
 local CONFIG_KEY_SynchronizedBuffs				= "SynchronizedBuffGroups";
 
-local CONFIG_DEFAULT_AnnounceCompletedBuff		= true;		-- Announce when a buff has being cast.
-local CONFIG_DEFAULT_AnnounceMissingBuff		= true;		-- Announce next buff being cast.
+local CONFIG_DEFAULT_AnnounceCompletedBuff		= false;	-- Announce when a buff has being cast.
+local CONFIG_DEFAULT_AnnounceMissingBuff		= false;	-- Announce next buff being cast.
 local CONFIG_DEFAULT_AssignedBuffSelf			= 0x0000;	-- Default is no selfbuffs assigned.
 local CONFIG_DEFAULT_AssignedClasses			= { };		-- Classes with buff assignments: CONFIG_AssignedClasses[classname] = [bitmask]. Set runtime.
 local CONFIG_DEFAULT_BuffButtonVisible			= true;

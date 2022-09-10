@@ -2,9 +2,9 @@
 ## Notes: Smart addon to buff party / raid members
 ## Version: 0.5.0
 ## Author: Mimma @ <EU-Pyrewood Village>
-## Interface: 11403
+## Interface: 30400
 ## SavedVariables: Buffalo_Options
-## X-Expansion-Level: 1
+## X-Expansion-Level: 3
 ## X-Curse-Project-ID: 623031
 ## X-WoWI-ID: 26305
 

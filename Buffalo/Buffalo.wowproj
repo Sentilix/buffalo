@@ -48,6 +48,9 @@
     <Content Include="Buffalo-TBC.toc">
       <SubType>TableOfContents</SubType>
     </Content>
+    <Content Include="Buffalo-Wrath.toc">
+      <SubType>TableOfContents</SubType>
+    </Content>
     <Content Include="DigamAddonLib.lua">
       <SubType>Code</SubType>
     </Content>
