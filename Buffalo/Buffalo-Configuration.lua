@@ -278,7 +278,9 @@ function Buffalo_InitializeBuffMatrix()
 		matrix[SpellName_Mage_ArcaneIntellect]			= Mage_ArcaneIntellect;
 		matrix[SpellName_Mage_AmplifyMagic]				= Mage_AmplifyMagic;
 		matrix[SpellName_Mage_DampenMagic]				= Mage_DampenMagic;
-		matrix[SpellName_Mage_MoltenArmor]				= Mage_MoltenArmor;
+		if SpellName_Mage_MoltenArmor then
+			matrix[SpellName_Mage_MoltenArmor]			= Mage_MoltenArmor;
+		end;
 		matrix[SpellName_Mage_MageArmor]				= Mage_MageArmor;
 		matrix[SpellName_Mage_IceArmor]					= Mage_IceArmor;
 		matrix[SpellName_Mage_IceBarrier]				= Mage_IceBarrier;

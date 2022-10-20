@@ -81,6 +81,10 @@ Priest		PowerWordFortitude			53
 
 Version history
 ---------------
+Version 0.5.2
+* Bugfix: Molten Armor (mage) buff caused Classic Era version to fail.
+
+
 Version 0.5.1
 * Added Molten Armor (mage) buff.
 * Bugfix: Find Herbs / Minerals was not detected correct in WotLK.
