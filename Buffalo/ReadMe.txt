@@ -80,6 +80,12 @@ Priest		PowerWordFortitude			53
 
 Version history
 ---------------
+Version 0.5.1
+* Added Molten Armor (mage) buff.
+* Bugfix: Find Herbs / Minerals was not detected correct in WotLK.
+* Removed TBC TOC file.
+
+
 Version 0.5.0
 * Fixed local text settings not being persisted.
 * Added support for Wrath of the Lich King Classic. Note: Buffalo still works in "one, buff, one group" mode.

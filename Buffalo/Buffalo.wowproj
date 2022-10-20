@@ -32,7 +32,7 @@
     <Content Include="Buffalo-GeneralConfig.xml">
       <SubType>Frame</SubType>
     </Content>
-    <Content Include="Buffalo.toc">
+    <Content Include="Buffalo-Wrath.toc">
       <SubType>TableOfContents</SubType>
     </Content>
     <Content Include="Buffalo.xml">
@@ -43,12 +43,6 @@
       <DependentUpon>Buffalo.xml</DependentUpon>
     </Content>
     <Content Include="Buffalo-Classic.toc">
-      <SubType>TableOfContents</SubType>
-    </Content>
-    <Content Include="Buffalo-TBC.toc">
-      <SubType>TableOfContents</SubType>
-    </Content>
-    <Content Include="Buffalo-Wrath.toc">
       <SubType>TableOfContents</SubType>
     </Content>
     <Content Include="DigamAddonLib.lua">
