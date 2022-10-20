@@ -62,6 +62,7 @@ Druid		MarkOfTheWild				52
 Mage		IceBarrier					11
 Mage		IceArmor					12
 Mage		MageArmor					13
+Mage		MoltenArmor					14 (WotLK)
 Mage		DampenMagic					51
 Mage		AmplifyMagic				52
 Mage		ArcaneBrilliance			53
