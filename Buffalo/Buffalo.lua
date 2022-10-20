@@ -1009,7 +1009,6 @@ local function Buffalo_ScanRaid()
 		local scanPlayerBuffs = true;
 		local rosterInfo = roster[unitid];
 		if rosterInfo then
-			--local groupMask = CONFIG_AssignedBuffGroups[rosterInfo["Group"]];
 			local groupMask = assignedGroups[rosterInfo["Group"]];
 			groupMask = bit.bor(groupMask, CONFIG_AssignedBuffSelf);
 
@@ -1077,8 +1076,8 @@ local function Buffalo_ScanRaid()
 						buffMask = bit.bor(buffMask, buffInfo["BITMASK"]);
 					end;
 				end;
-			elseif A.addonExpansionLevel == 2 then
-				--	TBC:
+			elseif A.addonExpansionLevel > 1 then
+				--	TBC / WOTLK:
 				for n=1, GetNumTrackingTypes() do
 					local buffName, spellID, active = GetTrackingInfo(n);
 					if active then

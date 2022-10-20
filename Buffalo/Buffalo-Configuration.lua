@@ -189,6 +189,7 @@ function Buffalo_InitializeBuffMatrix()
 		local SpellName_Mage_ArcaneBrilliance = Buffalo_GetSpellName(23028);  
 		local SpellName_Mage_AmplifyMagic = Buffalo_GetSpellName(10170);
 		local SpellName_Mage_DampenMagic = Buffalo_GetSpellName(10174);
+		local SpellName_Mage_MoltenArmor = Buffalo_GetSpellName(30482);
 		local SpellName_Mage_MageArmor = Buffalo_GetSpellName(22783);
 		local SpellName_Mage_IceArmor = Buffalo_GetSpellName(10220);
 		local SpellName_Mage_IceBarrier = Buffalo_GetSpellName(13033);
@@ -233,6 +234,16 @@ function Buffalo_InitializeBuffMatrix()
 			["FAMILY"]		= "AmplifyDampen"
 		};
 
+		local Mage_MoltenArmor = {
+			["BITMASK"]		= 0x0800,
+			["ICONID"]		= 132221,
+			["SPELLID"]		= Buffalo_GetSpellID(SpellName_Mage_MoltenArmor),
+			["CLASSES"]		= BUFFALO_CLASS_MAGE,
+			["PRIORITY"]	= 14,
+			["GROUP"]		= false,
+			["FAMILY"]		= "Armor"
+		};
+
 		local Mage_MageArmor = {
 			["BITMASK"]		= 0x0100,
 			["ICONID"]		= 135991,
@@ -267,6 +278,7 @@ function Buffalo_InitializeBuffMatrix()
 		matrix[SpellName_Mage_ArcaneIntellect]			= Mage_ArcaneIntellect;
 		matrix[SpellName_Mage_AmplifyMagic]				= Mage_AmplifyMagic;
 		matrix[SpellName_Mage_DampenMagic]				= Mage_DampenMagic;
+		matrix[SpellName_Mage_MoltenArmor]				= Mage_MoltenArmor;
 		matrix[SpellName_Mage_MageArmor]				= Mage_MageArmor;
 		matrix[SpellName_Mage_IceArmor]					= Mage_IceArmor;
 		matrix[SpellName_Mage_IceBarrier]				= Mage_IceBarrier;
