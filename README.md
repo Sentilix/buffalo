@@ -1,5 +1,5 @@
 # Buffalo version 0.5.0-beta1
-_- for Classic Era/SoM and TBC._
+_- for Classic Era/SoM and Wrath of the Lich King Classic._
 
 ## Buffalo v0.5: Introducing Raid Buffing
 Version 0.5 of Buffalo enters the realms of the Paladins with an option to centralize buffing assignments. Therefore Buffalo is now running in one of three modes:
