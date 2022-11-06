@@ -81,6 +81,10 @@ Priest		PowerWordFortitude			53
 
 Version history
 ---------------
+Version 0.5.3
+* Bugfix: Repeating LUA errors when a parent group buff had not been learned yet.
+ 
+
 Version 0.5.2
 * Bugfix: Molten Armor (mage) buff caused Classic Era version to fail.
 

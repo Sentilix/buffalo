@@ -1186,10 +1186,12 @@ local function Buffalo_ScanRaid()
 				--	If this is a group buff, and enough people are missing it, use the big one instead!
 				if buffInfo["PARENT"] and buffMissingCounter >= CONFIG_GroupBuffThreshold then
 					local parentBuffInfo = BUFF_MATRIX[buffInfo["PARENT"]];
-					local bufferUnitid = MissingBuffsInGroup[1][1];
-					missingBuffIndex = missingBuffIndex + 1;
-					local priority = parentBuffInfo["PRIORITY"] + (buffMissingCounter / groupMemberCounter * 5) + groupMemberCounter;
-					MissingBuffs[missingBuffIndex] = { bufferUnitid, buffInfo["PARENT"], parentBuffInfo["ICONID"], priority, 0 };
+					if parentBuffInfo then
+						local bufferUnitid = MissingBuffsInGroup[1][1];
+						missingBuffIndex = missingBuffIndex + 1;
+						local priority = parentBuffInfo["PRIORITY"] + (buffMissingCounter / groupMemberCounter * 5) + groupMemberCounter;
+						MissingBuffs[missingBuffIndex] = { bufferUnitid, buffInfo["PARENT"], parentBuffInfo["ICONID"], priority, 0 };
+					end;
 				else
 					-- Use single target buffing:
 					for missingIndex = 1, buffMissingCounter, 1 do
