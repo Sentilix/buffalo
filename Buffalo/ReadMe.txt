@@ -81,6 +81,11 @@ Priest		PowerWordFortitude			53
 
 Version history
 ---------------
+Version 0.5.4
+* Bumped Wrath client version to 3.4.2
+* Bumped Classic client version to 1.14.4
+
+
 Version 0.5.3
 * Bugfix: Repeating LUA errors when a parent group buff had not been learned yet.
  
