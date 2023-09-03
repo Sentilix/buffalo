@@ -1072,7 +1072,7 @@ local function Buffalo_ScanRaid()
 				local trackingIcon = GetTrackingTexture();
 				for buffName, buffInfo in next, BUFF_MATRIX do
 					if buffInfo["ICONID"] == trackingIcon then
-						--echo(string.format("<CLASSIC> Adding TrackingIcon buff:%s, mask:%s", buffName, buffInfo["BITMASK"]));
+						--A.echo(string.format("<CLASSIC> Adding TrackingIcon buff:%s, mask:%s", buffName, buffInfo["BITMASK"]));
 						buffMask = bit.bor(buffMask, buffInfo["BITMASK"]);
 					end;
 				end;
@@ -1383,10 +1383,8 @@ function Buffalo_RepositionateButton(self)
 	BuffButton:SetSize(CONFIG_BuffButtonSize, CONFIG_BuffButtonSize);
 
 	if IsBuffer then
-		print("Showing");
 		BuffButton:Show();
 	else
-		print("Hiding");
 		BuffButton:Hide();
 	end;
 end
@@ -1446,7 +1444,7 @@ function Buffalo_GetGroupBuffProperties(includeSelfBuffs)
 	local includeMask = 0x00ff;
 	local selfiePrio = 0;
 	--	This includes Self buffs, but not Find Herbs/Minerals
-	local selfiePrioMask = 0x0f00;
+	local selfiePrioMask = 0x03f00;
 	if includeSelfBuffs then
 		includeMask = 0x0ffff;
 		selfiePrio = 50;
@@ -2293,7 +2291,7 @@ function Buffalo_ClassConfigOnClick(self, ...)
 		classMask = bit.bor(classMask, buffMask);
 	else
 		--	Right button: REMOVE the buff
-		classMask = bit.band(classMask, 0x0fff - buffMask);
+		classMask = bit.band(classMask, 0x03fff - buffMask);
 	end;
 
 	CONFIG_AssignedClasses[className] = classMask;
