@@ -83,6 +83,7 @@ Version history
 ---------------
 Version 0.5.6
 * Bumped Classic client version to 1.15.0
+* Bumped Wrath client version to 3.4.3
 
 
 Version 0.5.5
