@@ -81,6 +81,10 @@ Priest		PowerWordFortitude			53
 
 Version history
 ---------------
+Version 0.5.6
+* Bumped Classic client version to 1.15.0
+
+
 Version 0.5.5
 * Added Frost Armor (Mage) to buff list
 * Removed two debug messages.
