@@ -68,7 +68,8 @@ Mage		AmplifyMagic				52
 Mage		ArcaneBrilliance			53
 Mage		ArcaneIntellect				53
 
-Priest		InnerFire					11
+Priest		ShadowForm					11
+Priest		InnerFire					12
 Priest		PrayerOfShadowProtection	51
 Priest		ShadowProtection			51
 Priest		PrayerOfSpirit				52
@@ -81,6 +82,9 @@ Priest		PowerWordFortitude			53
 
 Version history
 ---------------
+Version 0.5.7
+* Added Priest Shadowform to list of Buffs.
+
 Version 0.5.6
 * Bumped Classic client version to 1.15.0
 * Bumped Wrath client version to 3.4.3

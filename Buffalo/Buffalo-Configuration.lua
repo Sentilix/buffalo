@@ -305,6 +305,7 @@ function Buffalo_InitializeBuffMatrix()
 		local SpellName_Priest_ShadowProtection = Buffalo_GetSpellName(10958);
 		local SpellName_Priest_PrayerOfShadowProtection = Buffalo_GetSpellName(27683);
 		local SpellName_Priest_InnerFire = Buffalo_GetSpellName(10952);
+		local SpellName_Priest_ShadowForm = Buffalo_GetSpellName(15473);
 
 		local Priest_PowerWordFortitude = { 
 			["BITMASK"]		= 0x000001, 
@@ -366,12 +367,21 @@ function Buffalo_InitializeBuffMatrix()
 			["SINGLE"]		= SpellName_Priest_ShadowProtection
 		};
 
+		local Priest_ShadowForm = {
+			["BITMASK"]		= 0x000200, 
+			["ICONID"]		= 136200, 
+			["SPELLID"]		= Buffalo_GetSpellID(SpellName_Priest_ShadowForm),
+			["CLASSES"]		= BUFFALO_CLASS_PRIEST,
+			["PRIORITY"]	= 11, 
+			["GROUP"]		= false 
+		};
+
 		local Priest_InnerFire = {
 			["BITMASK"]		= 0x000100, 
 			["ICONID"]		= 135926, 
 			["SPELLID"]		= Buffalo_GetSpellID(SpellName_Priest_InnerFire),
 			["CLASSES"]		= BUFFALO_CLASS_PRIEST,
-			["PRIORITY"]	= 11, 
+			["PRIORITY"]	= 12, 
 			["GROUP"]		= false 
 		};
 
@@ -381,7 +391,8 @@ function Buffalo_InitializeBuffMatrix()
 		matrix[SpellName_Priest_PrayerOfSpirit]			= Priest_PrayerOfSpirit;
 		matrix[SpellName_Priest_ShadowProtection]		= Priest_ShadowProtection;
 		matrix[SpellName_Priest_PrayerOfShadowProtection]= Priest_PrayerOfShadowProtection;
-		matrix[SpellName_Priest_InnerFire]				= Priest_InnerFire
+		matrix[SpellName_Priest_InnerFire]				= Priest_InnerFire;
+		matrix[SpellName_Priest_ShadowForm]				= Priest_ShadowForm;
 	end;
 
 	--	Filter out spells we havent learned (SpellID is nil)
