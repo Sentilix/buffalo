@@ -82,8 +82,13 @@ Priest		PowerWordFortitude			53
 
 Version history
 ---------------
+Version 0.5.8
+* Bumped Classic client version to 1.15.1
+
+
 Version 0.5.7
 * Added Priest Shadowform to list of Buffs.
+
 
 Version 0.5.6
 * Bumped Classic client version to 1.15.0
