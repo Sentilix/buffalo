@@ -924,17 +924,17 @@ local function Buffalo_ScanRaid()
 	local startNum, endNum, groupType, unitid, groupCount;
 
 	if Buffalo_IsInParty() then
-		grouptype = "party";
+		groupType = "party";
 		groupCount = 1;
 		startNum = 0;
 		endNum = GetNumGroupMembers() - 1;
 	elseif IsInRaid() then
-		grouptype = "raid";
+		groupType = "raid";
 		groupCount = 8;
 		startNum = 1;
 		endNum = GetNumGroupMembers();
 	else
-		grouptype = "solo";
+		groupType = "solo";
 		groupCount = 1;
 		startNum = 0;
 		endNum = 0
@@ -944,15 +944,15 @@ local function Buffalo_ScanRaid()
 	--	This generate a roster{} array based on unitid to find group, buffmask etc:
 	local playername = UnitName("player");
 	local currentUnitid = "player";
-	if grouptype == "solo" then
+	if groupType == "solo" then
 		unitid = "player"
 		roster[unitid] = { ["Group"]=1, ["IsOnline"]=true, ["IsDead"]=nil, ["BuffMask"]=0, ["Class"]=Buffalo_PlayerClass, ["ClassMask"]=CLASS_MASK_ALL };
 
-	elseif grouptype == "party" then
+	elseif groupType == "party" then
 		unitid = "player";
 		for raidIndex = startNum, endNum, 1 do
 			if raidIndex > 0 then
-				unitid = grouptype..raidIndex;
+				unitid = groupType..raidIndex;
 			end;
 			
 			local isOnline = 0 and UnitIsConnected(unitid) and 1;
@@ -971,7 +971,7 @@ local function Buffalo_ScanRaid()
 				local isOnline = 0 and online and 1;
 				local isDead   = 0 and dead   and 1;
 
-				unitid = grouptype..raidIndex;
+				unitid = groupType..raidIndex;
 				
 				--	Find unitid on current player:
 				if name == playername then
@@ -1003,7 +1003,7 @@ local function Buffalo_ScanRaid()
 	for groupIndex = startNum, endNum, 1 do
 		buffMask = 0;
 		unitid = "player"
-		if groupIndex > 0 then unitid = grouptype..groupIndex; end;
+		if groupIndex > 0 then unitid = groupType..groupIndex; end;
 
 		--	This skips scanning for dead, offliners and people not in my group:
 		local scanPlayerBuffs = true;
@@ -1134,7 +1134,7 @@ local function Buffalo_ScanRaid()
 						--	Iterate over Party / Raid
 						for raidIndex = startNum, endNum, 1 do
 							unitid = "player";
-							if raidIndex > 0 then unitid = grouptype .. raidIndex; end;
+							if raidIndex > 0 then unitid = groupType .. raidIndex; end;
 							unitname = Buffalo_GetPlayerAndRealm(unitid);
 
 							local rosterInfo = roster[unitid];
