@@ -894,6 +894,17 @@ local function Buffalo_MainInitialization(reloaded)
 	end;
 end;
 
+local function Buffalo_FilterTable(input, filterFunction)
+	local output = {};
+
+	for key, value in pairs(input) do
+		if filterFunction(value) then
+			output[key] = value;
+		end
+	end
+
+	return output;
+end;
 
 
 --[[
@@ -918,7 +929,7 @@ local function Buffalo_ScanRaid()
 		return;
 	end;
 
-	
+
 	--	Generate a party/raid/solo roster with meta info per character:
 	local roster = { };
 	local startNum, endNum, groupType, unitid, groupCount;
@@ -926,8 +937,8 @@ local function Buffalo_ScanRaid()
 	if Buffalo_IsInParty() then
 		groupType = "party";
 		groupCount = 1;
-		startNum = 0;
-		endNum = GetNumGroupMembers() - 1;
+		startNum = 1;
+		endNum = GetNumGroupMembers();
 	elseif IsInRaid() then
 		groupType = "raid";
 		groupCount = 8;
@@ -946,21 +957,21 @@ local function Buffalo_ScanRaid()
 	local currentUnitid = "player";
 	if groupType == "solo" then
 		unitid = "player"
-		roster[unitid] = { ["Group"]=1, ["IsOnline"]=true, ["IsDead"]=nil, ["BuffMask"]=0, ["Class"]=Buffalo_PlayerClass, ["ClassMask"]=CLASS_MASK_ALL };
+		roster[unitid] = Buffalo_GetUnitRosterEntry(unitid, 1);
 
 	elseif groupType == "party" then
+		-- Get Players and pets in party
 		unitid = "player";
+		roster[unitid] = Buffalo_GetUnitRosterEntry(unitid, 1);
+
 		for raidIndex = startNum, endNum, 1 do
-			if raidIndex > 0 then
-				unitid = groupType..raidIndex;
-			end;
-			
-			local isOnline = 0 and UnitIsConnected(unitid) and 1;
-			local isDead   = 0 and UnitIsDead(unitid) and 1;
-			local _, classname = UnitClass(unitid);
-			if classname then
-				local classUpper = string.upper(classname);
-				roster[unitid] = { ["Group"]=1, ["IsOnline"]=isOnline, ["IsDead"]=isDead, ["BuffMask"]=0, ["Class"]=classUpper, ["ClassMask"]=CLASS_MATRIX[classname]["MASK"] };
+			unitid = groupType..raidIndex;
+			roster[unitid] = Buffalo_GetUnitRosterEntry(unitid, 1);
+
+			-- No need to check pet for non-existing player
+			if roster[unitid] then
+				unitid = groupType .. "pet" .. raidIndex;
+				roster[unitid] = Buffalo_GetUnitRosterEntry(unitid, 1);
 			end;
 		end;
 
@@ -968,22 +979,19 @@ local function Buffalo_ScanRaid()
 		for raidIndex = 1, 40, 1 do
 			local name, rank, subgroup, level, _, filename, zone, online, dead, role, isML = GetRaidRosterInfo(raidIndex);
 			if name then
-				local isOnline = 0 and online and 1;
-				local isDead   = 0 and dead   and 1;
-
 				unitid = groupType..raidIndex;
-				
-				--	Find unitid on current player:
+				roster[unitid] = Buffalo_GetUnitRosterEntry(unitid, subgroup, online, dead);
+
+				-- No need to check pet for non-existing player
+				if roster[unitid] then
+					unitid = groupType .. "pet" .. raidIndex;
+					roster[unitid] = Buffalo_GetUnitRosterEntry(unitid, subgroup);
+				end;
+
+				-- Find unitid on current player:
 				if name == playername then
 					currentUnitid = unitid;
 				end;
-
-				-- GetRaidRosterInfo delivers the localized class name.
-				-- We need the english class name:
-				local _, classname = UnitClass(unitid);
-				local classUpper = string.upper(classname);
-
-				roster[unitid] = { ["Group"]=subgroup, ["IsOnline"]=isOnline, ["IsDead"]=isDead, ["BuffMask"]=0, ["Class"]=classUpper, ["ClassMask"]=CLASS_MATRIX[classname]["MASK"] };
 			end;
 		end;
 	end;
@@ -1000,27 +1008,21 @@ local function Buffalo_ScanRaid()
 	--	This iterate over all players in party/raid and set the bitmapped buff mask on each
 	--	applicable (i.e. not dead, not disconnected) player.
 	local binValue;	
-	for groupIndex = startNum, endNum, 1 do
-		buffMask = 0;
-		unitid = "player"
-		if groupIndex > 0 then unitid = groupType..groupIndex; end;
+	for unitid, rosterInfo in next, roster do
+		local buffMask = 0;
 
 		--	This skips scanning for dead, offliners and people not in my group:
 		local scanPlayerBuffs = true;
-		local rosterInfo = roster[unitid];
-		if rosterInfo then
-			local groupMask = assignedGroups[rosterInfo["Group"]];
-			groupMask = bit.bor(groupMask, CONFIG_AssignedBuffSelf);
+		local groupMask = bit.bor(assignedGroups[rosterInfo["Group"]], CONFIG_AssignedBuffSelf);
 
-			if groupMask == 0 then					-- No buffs assigned: skip this group!
-				scanPlayerBuffs = false;
-			elseif not rosterInfo["IsOnline"] then
-				scanPlayerBuffs = false;
-			elseif rosterInfo["IsDead"] then
-				scanPlayerBuffs = false;
-			end;
+		if groupMask == 0 then					-- No buffs assigned: skip this group!
+			scanPlayerBuffs = false;
+		elseif not rosterInfo["IsOnline"] then
+			scanPlayerBuffs = false;
+		elseif rosterInfo["IsDead"] then
+			scanPlayerBuffs = false;
 		end;
-			
+		
 		if scanPlayerBuffs then
 			for buffIndex = 1, 40, 1 do
 				local buffName, iconID, _, _, duration, expirationTime = UnitBuff(unitid, buffIndex, "CANCELABLE");
@@ -1113,7 +1115,10 @@ local function Buffalo_ScanRaid()
 	--	Raid buffs:
 	for groupIndex = 1, groupCount, 1 do	-- Iterate over all available groups
 		local groupMask = assignedGroups[groupIndex] or 0;
-
+		local filterFunction = function(entry)
+			return entry["Group"] == groupIndex
+		end;
+		
 		--	If groupMask is 0 then this group does not have any buffs to apply.
 		if groupMask > 0 then
 			--	Search through the buffs, and count each buff per group and unit combo:
@@ -1121,7 +1126,7 @@ local function Buffalo_ScanRaid()
 				local buffMissingCounter = 0;		-- No buffs detected so far.
 				local groupMemberCounter = 0;		-- Total # of units in group.
 				local MissingBuffsInGroup = { };	-- No units missing buffs in group (yet).
-
+				
 				--	Skip buffs which we haven't committed to do. That includes GREATER/PRAYER buffs:
 				if(bit.band(buffInfo["BITMASK"], groupMask) > 0) and not buffInfo["GROUP"] then
 					--echo(string.format("Buff=%s, bmask=%d, group=%d, gmask=%d", buffName, bitMask, groupIndex, groupMask));
@@ -1131,50 +1136,49 @@ local function Buffalo_ScanRaid()
 						waitForCooldown = (start > 3);
 					end;
 					if not waitForCooldown then
-						--	Iterate over Party / Raid
-						for raidIndex = startNum, endNum, 1 do
-							unitid = "player";
-							if raidIndex > 0 then unitid = groupType .. raidIndex; end;
+						--	Iterate over Party
+						for unitid, rosterInfo in pairs(Buffalo_FilterTable(roster, filterFunction)) do
+							-- Get player name (for debugging only)
 							unitname = Buffalo_GetPlayerAndRealm(unitid);
-
-							local rosterInfo = roster[unitid];
-
+							
 							--	Check 1: Target must be online and alive:
 							if rosterInfo and rosterInfo["IsOnline"] and not rosterInfo["IsDead"] then
 								--echo(string.format("Checking %s (%s) in group %s", unitname, unitid, groupIndex));
-								--	Check 2: Target must be in the current group:
-								if rosterInfo["Group"] == groupIndex then
-									groupMemberCounter = groupMemberCounter + 1;
-									--echo(string.format("Found target %s (%s) in group %s", unitname, unitid, groupIndex));
-
-									-- Check 3: Target class must be eligible for buff:
-									local classMask = CONFIG_AssignedClasses[rosterInfo["Class"]];
-
-									if (bit.band(classMask, buffInfo["BITMASK"]) > 0)	then
-										--echo(string.format("Class is eligible for buff, Buff=%s, Unit=%s", buffName, unitname));
-										--	Check 4: Target must be in range:
-										if IsSpellInRange(buffName, unitid) == 1 then 
-											--echo(string.format("Spell in range, Buff=%s, Unit=%s, BuffClass=%d, ClassMask=%d", buffName, unitname, buffInfo["CLASSES"], rosterInfo["ClassMask"]));
-
-											--	Check 5: There's a person alive in this group. Do he needs this specific buff?
-											if (bit.band(rosterInfo["BuffMask"], buffInfo["BITMASK"]) == 0) then
-												--echo(string.format("Found missing buff, unit=%s, group=%d, buff=%s", UnitName(unitid), groupIndex, buffName));
-
-												--	Check 6: Missing buff detected! "Selfie" buffs are only available by current player, e.g. "Inner Fire":
-												if	(bit.band(groupMask, buffInfo["BITMASK"]) > 0) then							-- Raid buff
-													buffMissingCounter = buffMissingCounter + 1;
-													local priority = buffInfo["PRIORITY"];
-													--echo(string.format("Adding: unit=%s, group=%d, buff=%s", unitname, groupIndex, buffName));
-
-													local expirationTime = roster[unitid][buffName];
-													if expirationTime then
-														--	Set priority so first expiring buffs are selected first.
-														local seconds = math.floor(expirationTime - currentTime);
-														priority = priority - (50 + seconds);
-													end;
-													MissingBuffsInGroup[buffMissingCounter] = { unitid, buffName, buffInfo["ICONID"], priority, expirationTime };
+								groupMemberCounter = groupMemberCounter + 1;
+									
+								-- Check 2: Target class must be eligible for buff:
+								local classMask = CONFIG_AssignedClasses[rosterInfo["Class"]];
+								
+								if (bit.band(classMask, buffInfo["BITMASK"]) > 0)	then
+									--echo(string.format("Class is eligible for buff, Buff=%s, Unit=%s", buffName, unitname));
+									
+									--	Check 3: Target must be in range:
+									if IsSpellInRange(buffName, unitid) == 1 then 
+										--echo(string.format("Spell in range, Buff=%s, Unit=%s, BuffClass=%d, ClassMask=%d", buffName, unitname, buffInfo["CLASSES"], rosterInfo["ClassMask"]));
+										
+										--	Check 4: There's a person alive in this group. Do he needs this specific buff?
+										if (bit.band(rosterInfo["BuffMask"], buffInfo["BITMASK"]) == 0) then
+											--echo(string.format("Found missing buff, unit=%s, group=%d, buff=%s", UnitName(unitid), groupIndex, buffName));
+											
+											--	Check 5: Missing buff detected! "Selfie" buffs are only available by current player, e.g. "Inner Fire":
+											if	(bit.band(groupMask, buffInfo["BITMASK"]) > 0) then							-- Raid buff
+												buffMissingCounter = buffMissingCounter + 1;
+												local priority = buffInfo["PRIORITY"];
+												--echo(string.format("Adding: unit=%s, group=%d, buff=%s", unitname, groupIndex, buffName));
+												
+												local expirationTime = roster[unitid][buffName];
+												if expirationTime then
+													--	Set priority so first expiring buffs are selected first.
+													local seconds = math.floor(expirationTime - currentTime);
+													priority = priority - (50 + seconds);
 												end;
-											end;											
+												MissingBuffsInGroup[buffMissingCounter] = { unitid, buffName, buffInfo["ICONID"], priority, expirationTime };
+												--print("-----");
+												--print(buffName);
+												--print(unitname);
+												--print(priority);
+												--print("-----");
+											end;
 										end;
 									end;
 								end;
@@ -1243,7 +1247,7 @@ local function Buffalo_ScanRaid()
 										priority = priority + CONFIG_PlayerBuffPriority;
 									end;
 
-									local expirationTime = roster[unitid][buffName];
+									local expirationTime = rosterInfo[buffName];
 									if expirationTime then
 										--	Set priority so first expiring buffs are selected first.
 										local seconds = math.floor(expirationTime - currentTime);
@@ -1266,6 +1270,10 @@ local function Buffalo_ScanRaid()
 	if table.getn(MissingBuffs) > 0 then
 		--	Sort by Priority (descending order):
 		table.sort(MissingBuffs, Buffalo_ComparePriority);
+		--print("num: "..#MissingBuffs);
+		for i, missingBuff in ipairs(MissingBuffs) do
+			--print(i..": "..missingBuff[2].."("..missingBuff[4]..") on: "..missingBuff[1]);
+		end
 
 		--	Now pick first buff from list and set icon:
 		local missingBuff = MissingBuffs[1];
@@ -1960,6 +1968,32 @@ function Buffalo_SyncBuffGroupDropdownMenu_OnClick(sender, playerInfo)
 	A:sendAddonMessage(string.format("TX_RDUPDATE#%s#%s", payload, Buffalo_PlayerClass));
 
 	Buffalo_UpdateGroupBuffUI();
+end;
+
+function Buffalo_GetUnitRosterEntry(unitid, group, isOnline, isDead)
+	if string.find(unitid, "pet") then
+		local group = group or 1;
+		local isOnline = isOnline or (0 and UnitIsConnected(unitid) and 1);
+		local isDead   = isDead or (0 and UnitIsDead(unitid) and 1);
+		local classname = "PET"
+
+		if isOnline then
+			return { ["Group"]=group, ["IsOnline"]=isOnline, ["IsDead"]=isDead, ["BuffMask"]=0, ["Class"]=classname, ["ClassMask"]=CLASS_MATRIX[classname]["MASK"] };
+		end;
+	elseif unitid == "player" and group == 1 then
+		return { ["Group"]=1, ["IsOnline"]=true, ["IsDead"]=nil, ["BuffMask"]=0, ["Class"]=Buffalo_PlayerClass, ["ClassMask"]=CLASS_MASK_ALL };
+	else
+		local isOnline = 0 and UnitIsConnected(unitid) and 1;
+		local isDead   = 0 and UnitIsDead(unitid) and 1;
+		local _, classname = UnitClass(unitid);
+	
+		if classname then
+			local classUpper = string.upper(classname);
+			return { ["Group"]=group, ["IsOnline"]=isOnline, ["IsDead"]=isDead, ["BuffMask"]=0, ["Class"]=classUpper, ["ClassMask"]=CLASS_MATRIX[classname]["MASK"] };
+		end;
+	end;
+
+	return nil;
 end;
 
 function Buffalo_GetPlayersInRoster(classMask)
