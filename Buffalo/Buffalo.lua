@@ -1173,11 +1173,6 @@ local function Buffalo_ScanRaid()
 													priority = priority - (50 + seconds);
 												end;
 												MissingBuffsInGroup[buffMissingCounter] = { unitid, buffName, buffInfo["ICONID"], priority, expirationTime };
-												--print("-----");
-												--print(buffName);
-												--print(unitname);
-												--print(priority);
-												--print("-----");
 											end;
 										end;
 									end;
@@ -1270,9 +1265,9 @@ local function Buffalo_ScanRaid()
 	if table.getn(MissingBuffs) > 0 then
 		--	Sort by Priority (descending order):
 		table.sort(MissingBuffs, Buffalo_ComparePriority);
-		--print("num: "..#MissingBuffs);
+		--A:echo("num: "..#MissingBuffs);
 		for i, missingBuff in ipairs(MissingBuffs) do
-			--print(i..": "..missingBuff[2].."("..missingBuff[4]..") on: "..missingBuff[1]);
+			--A:echo(i..": "..missingBuff[2].."("..missingBuff[4]..") on: "..missingBuff[1]);
 		end
 
 		--	Now pick first buff from list and set icon:
@@ -1316,6 +1311,9 @@ local function Buffalo_ScanRaid()
 		if CONFIG_AnnounceMissingBuff then
 			if lastBuffTarget ~= "" then
 				A:echo("No pending buffs.");
+				for unitid, rosterInfo in next, roster do
+					print(unitid)
+				end
 				lastBuffTarget = "";
 				lastBuffStatus = "";
 			end;
