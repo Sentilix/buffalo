@@ -1311,9 +1311,7 @@ local function Buffalo_ScanRaid()
 		if CONFIG_AnnounceMissingBuff then
 			if lastBuffTarget ~= "" then
 				A:echo("No pending buffs.");
-				for unitid, rosterInfo in next, roster do
-					print(unitid)
-				end
+				
 				lastBuffTarget = "";
 				lastBuffStatus = "";
 			end;
