@@ -82,6 +82,10 @@ Priest		PowerWordFortitude			53
 
 Version history
 ---------------
+Version 0.5.9
+* Bumped Classic client version to 1.15.2
+
+
 Version 0.5.8
 * Bumped Classic client version to 1.15.1
 
