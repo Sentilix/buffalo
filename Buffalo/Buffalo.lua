@@ -1143,28 +1143,29 @@ local function Buffalo_ScanRaid()
 							
 							--	Check 1: Target must be online and alive:
 							if rosterInfo and rosterInfo["IsOnline"] and not rosterInfo["IsDead"] then
-								--echo(string.format("Checking %s (%s) in group %s", unitname, unitid, groupIndex));
+								-- A:echo(string.format("Checking %s (%s) in group %s", unitname, unitid, groupIndex));
 								groupMemberCounter = groupMemberCounter + 1;
 									
 								-- Check 2: Target class must be eligible for buff:
 								local classMask = CONFIG_AssignedClasses[rosterInfo["Class"]];
 								
 								if (bit.band(classMask, buffInfo["BITMASK"]) > 0)	then
-									--echo(string.format("Class is eligible for buff, Buff=%s, Unit=%s", buffName, unitname));
+									-- A:echo(string.format("Class is eligible for buff, Buff=%s, Unit=%s", buffName, unitname));
 									
 									--	Check 3: Target must be in range:
-									if IsSpellInRange(buffName, unitid) == 1 then 
-										--echo(string.format("Spell in range, Buff=%s, Unit=%s, BuffClass=%d, ClassMask=%d", buffName, unitname, buffInfo["CLASSES"], rosterInfo["ClassMask"]));
-										
+									if IsSpellInRange(buffName, unitid) == 1 then
+										-- A:echo(string.format("Spell in range, Buff=%s, Unit=%s, BuffClass=%d, ClassMask=%d", buffName, unitname, buffInfo["CLASSES"], rosterInfo["ClassMask"]));
+										-- A:echo(string.format("%s - %s -> %s", rosterInfo["BuffMask"], buffInfo["BITMASK"], bit.band(rosterInfo["BuffMask"], buffInfo["BITMASK"])));
 										--	Check 4: There's a person alive in this group. Do he needs this specific buff?
 										if (bit.band(rosterInfo["BuffMask"], buffInfo["BITMASK"]) == 0) then
-											--echo(string.format("Found missing buff, unit=%s, group=%d, buff=%s", UnitName(unitid), groupIndex, buffName));
+											-- A:echo(string.format("Found missing buff, unit=%s, group=%d, buff=%s", UnitName(unitid), groupIndex, buffName));
+											-- A:echo(string.format("%s - %s -> %s", groupMask, buffInfo["BITMASK"], bit.band(groupMask, buffInfo["BITMASK"])));
 											
 											--	Check 5: Missing buff detected! "Selfie" buffs are only available by current player, e.g. "Inner Fire":
 											if	(bit.band(groupMask, buffInfo["BITMASK"]) > 0) then							-- Raid buff
 												buffMissingCounter = buffMissingCounter + 1;
 												local priority = buffInfo["PRIORITY"];
-												--echo(string.format("Adding: unit=%s, group=%d, buff=%s", unitname, groupIndex, buffName));
+												-- A:echo(string.format("Adding: unit=%s, group=%d, buff=%s", unitname, groupIndex, buffName));
 												
 												local expirationTime = roster[unitid][buffName];
 												if expirationTime then
@@ -1196,6 +1197,7 @@ local function Buffalo_ScanRaid()
 					for missingIndex = 1, buffMissingCounter, 1 do
 						missingBuffIndex = missingBuffIndex + 1;
 						MissingBuffs[missingBuffIndex] = MissingBuffsInGroup[missingIndex];
+						-- A:echo(string.format("%d - %s(%s) | buff: %s", missingIndex, MissingBuffs[missingBuffIndex][1], Buffalo_GetPlayerAndRealm(MissingBuffs[missingBuffIndex][1]), MissingBuffs[missingBuffIndex][2]));
 					end;
 				end;
 			end;	-- end iterate buff matrix
@@ -1225,7 +1227,7 @@ local function Buffalo_ScanRaid()
 						--echo(string.format("Checking %s (%s)", GetUnitName(currentUnitid, true), currentUnitid));
 
 						--	Check 4: Target must be in range (and know the spell)
-						if IsSpellInRange(buffName, currentUnitid) ~= 0 then 
+						if IsSpellInRange(buffName, currentUnitid) ~= 0 then
 							--echo(string.format("Spell in range, Buff=%s, Unit=%s, BuffClass=%d, ClassMask=%d", buffName, currentUnitid, buffInfo["CLASSES"], rosterInfo["ClassMask"]));
 
 							--	Check 5: Do I needs this specific buff?
