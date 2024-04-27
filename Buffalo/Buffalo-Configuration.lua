@@ -87,6 +87,8 @@ local CONFIG_DEFAULT_Druid_GroupMask = 1;
 local CONFIG_DEFAULT_Mage_GroupMask = 1;
 --	Priests default: 0x0003 = Fort + Spirit on all groups
 local CONFIG_DEFAULT_Priest_GroupMask = 3;
+--	Warlock default: 0x0000 = no default
+local CONFIG_DEFAULT_Warlock_GroupMask = 0;
 
 
 
@@ -393,6 +395,146 @@ function Buffalo_InitializeBuffMatrix()
 		matrix[SpellName_Priest_PrayerOfShadowProtection]= Priest_PrayerOfShadowProtection;
 		matrix[SpellName_Priest_InnerFire]				= Priest_InnerFire;
 		matrix[SpellName_Priest_ShadowForm]				= Priest_ShadowForm;
+
+	elseif englishClassname == "WARLOCK" then
+		local SpellName_Warlock_DemonSkin = Buffalo_GetSpellName(696);
+		local SpellName_Warlock_DemonArmor = Buffalo_GetSpellName(11735);
+		local SpellName_Warlock_FireShield = Buffalo_GetSpellName(11771);
+		local SpellName_Warlock_UnendingBreath = Buffalo_GetSpellName(5697);
+		local SpellName_Warlock_DetectLesserInvisibility = Buffalo_GetSpellName(132);
+		local SpellName_Warlock_DetectInvisibility = Buffalo_GetSpellName(2970);
+		local SpellName_Warlock_DetectGreaterInvisibility = Buffalo_GetSpellName(11743);
+		local SpellName_Warlock_Imp = Buffalo_GetSpellName(688);
+		local SpellName_Warlock_Voidwalker = Buffalo_GetSpellName(697);
+		local SpellName_Warlock_Felhunter = Buffalo_GetSpellName(691);
+		local SpellName_Warlock_Succubus = Buffalo_GetSpellName(712);
+		local SpellName_Warlock_Incubus = Buffalo_GetSpellName(713);
+
+		--	Pick the highest learned Invisibility rank:
+		if Buffalo_GetSpellID(SpellName_Warlock_DetectGreaterInvisibility) then
+			matrix[SpellName_Warlock_DetectGreaterInvisibility] = { 
+				["BITMASK"]		= 0x000001,
+				["ICONID"]		= 136152,
+				["SPELLID"]		= Buffalo_GetSpellID(SpellName_Warlock_DetectGreaterInvisibility),
+				["CLASSES"]		= BUFFALO_CLASS_ALL,
+				["PRIORITY"]	= 21,
+				["GROUP"]		= false, 
+			};
+		elseif Buffalo_GetSpellID(SpellName_Warlock_DetectInvisibility) then
+			matrix[SpellName_Warlock_DetectInvisibility] = { 
+				["BITMASK"]		= 0x000001,
+				["ICONID"]		= 136152,
+				["SPELLID"]		= Buffalo_GetSpellID(SpellName_Warlock_DetectInvisibility),
+				["CLASSES"]		= BUFFALO_CLASS_ALL,
+				["PRIORITY"]	= 21,
+				["GROUP"]		= false, 
+			};
+		else
+			matrix[SpellName_Warlock_DetectLesserInvisibility] = { 
+				["BITMASK"]		= 0x000001,
+				["ICONID"]		= 136153,
+				["SPELLID"]		= Buffalo_GetSpellID(SpellName_Warlock_DetectLesserInvisibility),
+				["CLASSES"]		= BUFFALO_CLASS_ALL,
+				["PRIORITY"]	= 21,
+				["GROUP"]		= false, 
+			};
+		end
+
+		local Warlock_UnendingBreath = { 
+			["BITMASK"]		= 0x000002,
+			["ICONID"]		= 136148,
+			["SPELLID"]		= Buffalo_GetSpellID(SpellName_Warlock_UnendingBreath),
+			["CLASSES"]		= BUFFALO_CLASS_ALL,
+			["PRIORITY"]	= 22,
+			["GROUP"]		= false, 
+		};
+
+		local Warlock_FireShield = { 
+			["BITMASK"]		= 0x000004,
+			["ICONID"]		= 135806,
+			["SPELLID"]		= Buffalo_GetSpellID(SpellName_Warlock_FireShield),
+			["CLASSES"]		= BUFFALO_CLASS_ALL,
+			["PRIORITY"]	= 23,
+			["GROUP"]		= false, 
+			["IGNORERANGECHECK"] = true,
+		};
+
+		--	Only use Armor if learned, otherwise pick Skin:
+		if Buffalo_GetSpellID(SpellName_Warlock_DemonArmor) then
+			matrix[SpellName_Warlock_DemonArmor]	= { 
+				["BITMASK"]		= 0x000100,
+				["ICONID"]		= 136185,
+				["SPELLID"]		= Buffalo_GetSpellID(SpellName_Warlock_DemonArmor),
+				["CLASSES"]		= BUFFALO_CLASS_WARLOCK,
+				["PRIORITY"]	= 11,
+				["GROUP"]		= false, 
+			};
+		else
+			matrix[SpellName_Warlock_DemonSkin]	= { 
+				["BITMASK"]		= 0x000100,
+				["ICONID"]		= 136185,
+				["SPELLID"]		= Buffalo_GetSpellID(SpellName_Warlock_DemonSkin),
+				["CLASSES"]		= BUFFALO_CLASS_WARLOCK,
+				["PRIORITY"]	= 11,
+				["GROUP"]		= false, 
+			};
+		end;
+
+		local Warlock_SummonImp = { 
+			["BITMASK"]		= 0x000400,
+			["ICONID"]		= 136218,
+			["SPELLID"]		= Buffalo_GetSpellID(SpellName_Warlock_Imp),
+			["CLASSES"]		= BUFFALO_CLASS_WARLOCK,
+			["PRIORITY"]	= 39,
+			["GROUP"]		= false, 
+			["FAMILY"]		= "Demon",
+		};
+
+		local Warlock_SummonVoidwalker = { 
+			["BITMASK"]		= 0x000800,
+			["ICONID"]		= 136221,
+			["SPELLID"]		= Buffalo_GetSpellID(SpellName_Warlock_Voidwalker),
+			["CLASSES"]		= BUFFALO_CLASS_WARLOCK,
+			["PRIORITY"]	= 38,
+			["GROUP"]		= false, 
+			["FAMILY"]		= "Demon",
+		};
+
+		local Warlock_SummonFelhunter = { 
+			["BITMASK"]		= 0x001000,
+			["ICONID"]		= 136217,
+			["SPELLID"]		= Buffalo_GetSpellID(SpellName_Warlock_Felhunter),
+			["CLASSES"]		= BUFFALO_CLASS_WARLOCK,
+			["PRIORITY"]	= 37,
+			["GROUP"]		= false, 
+			["FAMILY"]		= "Demon",
+		};
+
+		--	Use Succubus as default; Incobus will have am invaoid bitmask:
+		matrix[SpellName_Warlock_Succubus] = { 
+			["BITMASK"]		= 0x002000,
+			["ICONID"]		= 136220,
+			["SPELLID"]		= Buffalo_GetSpellID(SpellName_Warlock_Succubus),
+			["CLASSES"]		= BUFFALO_CLASS_WARLOCK,
+			["PRIORITY"]	= 36,
+			["GROUP"]		= false, 
+			["FAMILY"]		= "Demon",
+		};
+
+		matrix[SpellName_Warlock_Incubus] = { 
+			["BITMASK"]		= 0x000000,
+			["ICONID"]		= 4352492,
+			["SPELLID"]		= Buffalo_GetSpellID(SpellName_Warlock_Incubus),
+			["CLASSES"]		= BUFFALO_CLASS_WARLOCK,
+			["PRIORITY"]	= 36,
+			["GROUP"]		= false, 
+			["FAMILY"]		= "Demon",
+		};
+
+		matrix[SpellName_Warlock_FireShield]				= Warlock_FireShield;
+		matrix[SpellName_Warlock_UnendingBreath]			= Warlock_UnendingBreath;
+		matrix[SpellName_Warlock_Imp]						= Warlock_SummonImp;
+		matrix[SpellName_Warlock_Voidwalker]				= Warlock_SummonVoidwalker;
 	end;
 
 	--	Filter out spells we havent learned (SpellID is nil)
@@ -418,6 +560,8 @@ function Buffalo_InitializeAssignedGroupDefaults()
 		groupMask = CONFIG_DEFAULT_Mage_GroupMask;
 	elseif englishClassname == "PRIEST" then
 		groupMask = CONFIG_DEFAULT_Priest_GroupMask;
+	elseif englishClassname == "WARLOCK" then
+		groupMask = CONFIG_DEFAULT_Warlock_GroupMask;
 	end
 
 	for groupNum = 1, 8, 1 do

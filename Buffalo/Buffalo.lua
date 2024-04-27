@@ -68,6 +68,19 @@ local BUFFALO_BACKDROP_RAIDMODE0_PRIEST_FRAME = {
 	tile = 0,
 	tileSize = 900,
 };
+local BUFFALO_BACKDROP_RAIDMODE0_WARLOCK_FRAME = {
+	bgFile = "Interface\\TalentFrame\\WarlockCurses-Topleft",
+--	bgFile = "Interface\\TalentFrame\\WarlockDestruction-Topleft",
+--	bgFile = "Interface\\TalentFrame\\WarlockSummoning-Topleft",
+--	bgFile = "Interface\\TalentFrame\\WarlockCurses-Bottomleft",
+--	bgFile = "Interface\\TalentFrame\\WarlockDestruction-Bottomleft",
+--	bgFile = "Interface\\TalentFrame\\WarlockSummoning-Bottomleft",
+	edgeFile = "Interface\\AchievementFrame\\UI-Achievement-WoodBorder",
+	edgeSize = 64,
+	tileEdge = true,
+	tile = 0,
+	tileSize = 900,
+};
 local BUFFALO_BACKDROP_RAIDMODE1_FRAME = {
 	bgFile = "Interface\\TalentFrame\\PaladinCombat-Topleft",
 	edgeFile = "Interface\\AchievementFrame\\UI-Achievement-WoodBorder",
@@ -131,8 +144,8 @@ local lastBuffStatus							= "";
 local lastBuffFired								= nil;
 
 local Buffalo_OrderedBuffGroups					= { };		-- [buff index] = { 1=PRIORITY, 2=NAME, 3=MASK, 4=ICONID } 
-local Buffalo_GroupBuffProperties				= { };		--	Array of buff properties for the group UI: { buffname, iconid, bitmask, priority }
-local Buffalo_SelfBuffProperties				= { };
+local groupBuffProps							= { };
+local selfBuffProps								= { };
 local BUFF_MATRIX								= { };		--	[buffname]=<bitmask value>
 local CLASS_MATRIX								= { };		--	[classname<english>]={ ICONID=<icon id>, MASK=<bitmask value> }
 local CLASS_MASK_ALL							= 0x0000;
@@ -148,6 +161,7 @@ Buffalo_Options = { }
 --	Configuration keys:
 local CONFIG_KEY_AnnounceCompletedBuff			= "AnnounceCompletedBuff";
 local CONFIG_KEY_AnnounceMissingBuff			= "AnnounceMissingBuff";
+local CONFIG_KEY_UseIncubus						= "UseIncubus";
 local CONFIG_KEY_AssignedBuffGroups				= "AssignedBuffGroups";
 local CONFIG_KEY_AssignedBuffSelf				= "AssignedBuffSelf";
 local CONFIG_KEY_AssignedClasses				= "AssignedClasses";
@@ -161,6 +175,7 @@ local CONFIG_KEY_SynchronizedBuffs				= "SynchronizedBuffGroups";
 
 local CONFIG_DEFAULT_AnnounceCompletedBuff		= false;	-- Announce when a buff has being cast.
 local CONFIG_DEFAULT_AnnounceMissingBuff		= false;	-- Announce next buff being cast.
+local CONFIG_DEFAULT_UseIncubus					= false;	-- Default is to use the Succubus
 local CONFIG_DEFAULT_AssignedBuffSelf			= 0x0000;	-- Default is no selfbuffs assigned.
 local CONFIG_DEFAULT_AssignedClasses			= { };		-- Classes with buff assignments: CONFIG_AssignedClasses[classname] = [bitmask]. Set runtime.
 local CONFIG_DEFAULT_BuffButtonVisible			= true;
@@ -171,6 +186,7 @@ local CONFIG_DEFAULT_ScanFrequency				= 0.3;		-- Scan every <n> second (0.1 - 1.
 --	Configured values (TODO: a few selected are still not configurable)
 local CONFIG_AnnounceCompletedBuff				= CONFIG_DEFAULT_AnnounceCompletedBuff;
 local CONFIG_AnnounceMissingBuff				= CONFIG_DEFAULT_AnnounceMissingBuff;
+local CONFIG_UseIncubus							= CONFIG_DEFAULT_UseIncubus;
 local CONFIG_AssignedBuffGroups					= { };		-- List of groups and their assigned buffs via bitmask. Persisted, but no UI for it. Set runtime.
 local CONFIG_AssignedRaidGroups					= { };		-- Same but for Raid buffing.
 local CONFIG_AssignedBuffSelf					= CONFIG_DEFAULT_AssignedBuffSelf;
@@ -760,6 +776,9 @@ local function Buffalo_InitializeConfigSettings()
 
 	CONFIG_AnnounceCompletedBuff = Buffalo_GetOption(CONFIG_KEY_AnnounceCompletedBuff, CONFIG_DEFAULT_AnnounceCompletedBuff);
 	Buffalo_SetOption(CONFIG_KEY_AnnounceCompletedBuff, CONFIG_AnnounceCompletedBuff);
+
+	CONFIG_UseIncubus = Buffalo_GetOption(CONFIG_KEY_UseIncubus, CONFIG_DEFAULT_UseIncubus);
+	Buffalo_SetOption(CONFIG_KEY_UseIncubus, CONFIG_UseIncubus);
 end
 
 
@@ -839,8 +858,8 @@ local function Buffalo_MainInitialization(reloaded)
 		end;
 	end;
 
-	Buffalo_GroupBuffProperties = Buffalo_GetGroupBuffProperties();
-	Buffalo_SelfBuffProperties = Buffalo_GetGroupBuffProperties(true);
+	groupBuffProps = Buffalo_GetGroupBuffProperties();
+	selfBuffProps = Buffalo_GetGroupBuffProperties(true);
 
 	--	This sets up a matrix with icon+mask for each class, based on expansion level:
 	Buffalo_InitializeClassMatrix();
@@ -852,7 +871,7 @@ local function Buffalo_MainInitialization(reloaded)
 	--	Note: setting defaults should be part of the config, but at that time
 	--	the Buffalo_InitializeBuffSync() has not yet been called.
 	if table.getn(CONFIG_SynchronizedBuffs) == 0 then
-		for buffIndex = 1, table.getn(Buffalo_OrderedBuffGroups), 1 do
+		for buffIndex = 1, #Buffalo_OrderedBuffGroups, 1 do
 			CONFIG_SynchronizedBuffs[buffIndex] = { };
 			for groupIndex = 1, 8, 1 do
 				CONFIG_SynchronizedBuffs[buffIndex][groupIndex] = {   
@@ -1089,7 +1108,18 @@ local function Buffalo_ScanRaid()
 					end;
 				end;
 			end;
- 
+
+			--	Warlock pets:
+			local petType = UnitCreatureFamily('pet');
+			if petType == 'Imp' then
+				buffMask = bit.bor(buffMask, 0x000400);
+			elseif petType == 'Voidwalker' then
+				buffMask = bit.bor(buffMask, 0x000800);
+			elseif petType == 'Felhunter' then
+				buffMask = bit.bor(buffMask, 0x001000);
+			elseif (petType == 'Succubus' or petType == 'Incubus') then
+				buffMask = bit.bor(buffMask, 0x002000);
+			end;
 			
 			--	This may be nil when new people joins while scanning is done:
 			if not roster[unitid] then
@@ -1124,7 +1154,7 @@ local function Buffalo_ScanRaid()
 
 				--	Skip buffs which we haven't committed to do. That includes GREATER/PRAYER buffs:
 				if(bit.band(buffInfo["BITMASK"], groupMask) > 0) and not buffInfo["GROUP"] then
-					--echo(string.format("Buff=%s, bmask=%d, group=%d, gmask=%d", buffName, bitMask, groupIndex, groupMask));
+					--A:echo(string.format("Buff=%s, bmask=%d, group=%d, gmask=%d", buffName, bitMask, groupIndex, groupMask));
 					local waitForCooldown = false;
 					if buffInfo["COOLDOWN"] then
 						local start, duration, enabled = GetSpellCooldown(buffName);
@@ -1141,7 +1171,7 @@ local function Buffalo_ScanRaid()
 
 							--	Check 1: Target must be online and alive:
 							if rosterInfo and rosterInfo["IsOnline"] and not rosterInfo["IsDead"] then
-								--echo(string.format("Checking %s (%s) in group %s", unitname, unitid, groupIndex));
+								--A:echo(string.format("Checking %s (%s) in group %s", unitname, unitid, groupIndex));
 								--	Check 2: Target must be in the current group:
 								if rosterInfo["Group"] == groupIndex then
 									groupMemberCounter = groupMemberCounter + 1;
@@ -1150,11 +1180,12 @@ local function Buffalo_ScanRaid()
 									-- Check 3: Target class must be eligible for buff:
 									local classMask = CONFIG_AssignedClasses[rosterInfo["Class"]];
 
+									--A:echo(string.format("Checking bitmask: Classmask=%s, Mask=%s, unit=%s, buff=%s", classMask, buffInfo.BITMASK, unitname, buffName));
 									if (bit.band(classMask, buffInfo["BITMASK"]) > 0)	then
-										--echo(string.format("Class is eligible for buff, Buff=%s, Unit=%s", buffName, unitname));
+										--A:echo(string.format("Class is eligible for buff, Buff=%s, Unit=%s", buffName, unitname));
 										--	Check 4: Target must be in range:
-										if IsSpellInRange(buffName, unitid) == 1 then 
-											--echo(string.format("Spell in range, Buff=%s, Unit=%s, BuffClass=%d, ClassMask=%d", buffName, unitname, buffInfo["CLASSES"], rosterInfo["ClassMask"]));
+										if (buffInfo["IGNORERANGECHECK"]) or (IsSpellInRange(buffName, unitid) == 1) then 
+											--A:echo(string.format("Spell in range, Buff=%s, Unit=%s, BuffClass=%d, ClassMask=%d", buffName, unitname, buffInfo["CLASSES"], rosterInfo["ClassMask"]));
 
 											--	Check 5: There's a person alive in this group. Do he needs this specific buff?
 											if (bit.band(rosterInfo["BuffMask"], buffInfo["BITMASK"]) == 0) then
@@ -1172,9 +1203,15 @@ local function Buffalo_ScanRaid()
 														local seconds = math.floor(expirationTime - currentTime);
 														priority = priority - (50 + seconds);
 													end;
-													MissingBuffsInGroup[buffMissingCounter] = { unitid, buffName, buffInfo["ICONID"], priority, expirationTime };
+													MissingBuffsInGroup[buffMissingCounter] = {
+														['unitid']		= unitid, 
+														['name']		= buffName, 
+														['iconid']		= buffInfo["ICONID"], 
+														['priority']	= priority, 
+														['expTime']		= expirationTime 
+													};
 												end;
-											end;											
+											end;
 										end;
 									end;
 								end;
@@ -1187,10 +1224,16 @@ local function Buffalo_ScanRaid()
 				if buffInfo["PARENT"] and buffMissingCounter >= CONFIG_GroupBuffThreshold then
 					local parentBuffInfo = BUFF_MATRIX[buffInfo["PARENT"]];
 					if parentBuffInfo then
-						local bufferUnitid = MissingBuffsInGroup[1][1];
+						local bufferUnitid = MissingBuffsInGroup[1].unitid;
 						missingBuffIndex = missingBuffIndex + 1;
 						local priority = parentBuffInfo["PRIORITY"] + (buffMissingCounter / groupMemberCounter * 5) + groupMemberCounter;
-						MissingBuffs[missingBuffIndex] = { bufferUnitid, buffInfo["PARENT"], parentBuffInfo["ICONID"], priority, 0 };
+						MissingBuffs[missingBuffIndex] = {
+							['unitid']		= bufferUnitid, 
+							['name']		= buffInfo["PARENT"], 
+							['iconid']		= parentBuffInfo["ICONID"], 
+							['priority']	= priority, 
+							['expTime']		= 0 
+						};
 					end;
 				else
 					-- Use single target buffing:
@@ -1211,7 +1254,8 @@ local function Buffalo_ScanRaid()
 		for buffName, buffInfo in next, BUFF_MATRIX do
 			--	Skip buffs which we haven't committed to do. That includes GREATER/PRAYER buffs:
 			if(bit.band(buffInfo["BITMASK"], groupMask) > 0) and not buffInfo["GROUP"] then
-				--echo(string.format("Buff=%s, bmask=%d, gmask=%d", buffName, bitMask, groupMask));
+				--A:echo(string.format("Buff=%s, bmask=%d, gmask=%d", buffName, bitMask, groupMask));
+
 				local waitForCooldown = false;
 				if buffInfo["COOLDOWN"] then
 					local start, duration, enabled = GetSpellCooldown(buffName);
@@ -1223,11 +1267,11 @@ local function Buffalo_ScanRaid()
 	
 					--	Check 1: Target must be online and alive:
 					if rosterInfo and not rosterInfo["IsDead"] then
-						--echo(string.format("Checking %s (%s)", GetUnitName(currentUnitid, true), currentUnitid));
+						--A:echo(string.format("Checking %s (%s)", GetUnitName(currentUnitid, true), currentUnitid));
 
 						--	Check 4: Target must be in range (and know the spell)
 						if IsSpellInRange(buffName, currentUnitid) ~= 0 then 
-							--echo(string.format("Spell in range, Buff=%s, Unit=%s, BuffClass=%d, ClassMask=%d", buffName, currentUnitid, buffInfo["CLASSES"], rosterInfo["ClassMask"]));
+							--A:echo(string.format("Spell in range, Buff=%s, Unit=%s, BuffClass=%d, ClassMask=%d", buffName, currentUnitid, buffInfo["CLASSES"], rosterInfo["ClassMask"]));
 
 							--	Check 5: Do I needs this specific buff?
 							if (bit.band(rosterInfo["BuffMask"], buffInfo["BITMASK"]) == 0) then
@@ -1250,7 +1294,13 @@ local function Buffalo_ScanRaid()
 										priority = priority - (50 + seconds);
 									end;
 
-									MissingBuffs[missingBuffIndex] = { currentUnitid, buffName, buffInfo["ICONID"], priority, expirationTime};
+									MissingBuffs[missingBuffIndex] = { 
+										['unitid']		= currentUnitid, 
+										['name']		= buffName, 
+										['iconid']		= buffInfo["ICONID"], 
+										['priority']	= priority, 
+										['expTime']		= expirationTime
+									};
 								end;
 							end;											
 						end;
@@ -1263,19 +1313,20 @@ local function Buffalo_ScanRaid()
 
 	--	Part 4: Pick a buff to .. buff!
 	--	Sort by priority and use first buff on list.
-	if table.getn(MissingBuffs) > 0 then
+	if #MissingBuffs > 0 then
 		--	Sort by Priority (descending order):
-		table.sort(MissingBuffs, Buffalo_ComparePriority);
+		table.sort(MissingBuffs, function (a, b) return a.priority > b.priority; end);
 
 		--	Now pick first buff from list and set icon:
 		local missingBuff = MissingBuffs[1];
-		unitid = missingBuff[1];
 
-		local buffName = missingBuff[2];
+		unitid = missingBuff.unitid;
+
+		local buffName = missingBuff.name;
 		if CONFIG_AnnounceMissingBuff then
 			local targetPlayer = Buffalo_GetPlayerAndRealm(unitid);
 			local targetStatus = "MISSING";
-			local expirationTime = missingBuff[5];
+			local expirationTime = missingBuff.expTime;
 
 			if expirationTime and expirationTime > 0 then
 				targetStatus = "RENEW";
@@ -1298,10 +1349,10 @@ local function Buffalo_ScanRaid()
 		end;
 
 		if debug then
-			A:echo(string.format("DEBUG: Buffing unit=%s(%s), Buff=%s, Icon=%s", unitid, targetPlayer, buffName, missingBuff[3]));
+			A:echo(string.format("DEBUG: Buffing unit=%s(%s), Buff=%s, Icon=%s", unitid, targetPlayer, buffName, missingBuff.iconid));
 		end;
 
-		Buffalo_UpdateBuffButton(unitid, buffName, missingBuff[3]);
+		Buffalo_UpdateBuffButton(unitid, buffName, missingBuff.iconid);
 	else
 		Buffalo_UpdateBuffButton();
 
@@ -1313,10 +1364,6 @@ local function Buffalo_ScanRaid()
 			end;
 		end;
 	end;
-end;
-
-function Buffalo_ComparePriority(a, b)
-	return a[4] > b[4];
 end;
 
 
@@ -1458,12 +1505,17 @@ function Buffalo_GetGroupBuffProperties(includeSelfBuffs)
 				priority = priority + selfiePrio;
 			end;
 
-			buffProperties[buffCount] = { buffName, props["ICONID"], props["BITMASK"], priority };
+			buffProperties[buffCount] = { };
+			buffProperties[buffCount].name		= buffName;
+			buffProperties[buffCount].iconId	= props["ICONID"];
+			buffProperties[buffCount].bitmask	= props["BITMASK"];
+			buffProperties[buffCount].priority	= priority;
+			buffProperties[buffCount].nextSpell	= props["NEXTSPELL"];
 		end;
 	end;
 
-	table.sort(buffProperties, Buffalo_ComparePriority);
-
+	table.sort(buffProperties, function (a, b) return a.priority > b.priority; end);
+	
 	return buffProperties;
 end;
 
@@ -1472,8 +1524,8 @@ end;
 --	This function will initiate both, but the Update function
 --	will only show the current active one.
 function Buffalo_InitializeBuffSettingsUI()
-	local buffCount = table.getn(Buffalo_GroupBuffProperties);
-	local selfCount = table.getn(Buffalo_SelfBuffProperties);
+	local buffCount = #groupBuffProps;
+	local selfCount = #selfBuffProps;
 
 	local posX, posY;
 	local UISettings = {
@@ -1542,12 +1594,32 @@ function Buffalo_InitializeBuffSettingsUI()
 		local entry = CreateFrame("Button", buttonName, BuffaloConfigFrameSelf, "BuffaloGroupButtonTemplate");
 		entry:SetAlpha(BUFFALO_ALPHA_DISABLED);
 		entry:SetPoint("TOPLEFT", posX, posY);
-		entry:SetNormalTexture(Buffalo_SelfBuffProperties[rowNumber][2]);
-		entry:SetPushedTexture(Buffalo_SelfBuffProperties[rowNumber][2]);
+		entry:SetNormalTexture(selfBuffProps[rowNumber].iconId);
+		entry:SetPushedTexture(selfBuffProps[rowNumber].iconId);
 
 		posX = posX + UISettings.Width;
 	end;
 
+	local checkBox = CreateFrame("CheckButton", "BuffaloClassConfigFrameUseIncubus", BuffaloConfigFrameSelf, "OptionsCheckButtonTemplate");
+	checkBox:SetPoint("TOPLEFT", UISettings.Left, -56);
+	_G[checkBox:GetName().."Text"]:SetText("Use Incubus");
+	checkBox:SetScript("OnClick", Buffalo_HandleCheckbox);
+	checkboxValue = nil;
+	if CONFIG_UseIncubus then
+		checkboxValue = 1;
+	end;
+	checkBox:SetChecked(checkboxValue);
+
+	local _, className = UnitClass("player");
+	if className == "WARLOCK" then
+		checkBox:Show();
+	else
+		checkBox:Hide();
+	end;
+
+
+	--	Need to check if someone picked Incubus ...
+	Buffalo_UpdateDemon();
 
 	--	Class configuration:
 	local colWidth = 40;				-- Width of each column.
@@ -1574,7 +1646,7 @@ function Buffalo_InitializeBuffSettingsUI()
 	--	Step 2:
 	--	Display buff image for each buff+class combo:
 	posY = 0;
-	buffCount = table.getn(Buffalo_GroupBuffProperties);
+	buffCount = #groupBuffProps;
 	for rowNumber = 1, buffCount, 1 do
 		posX = 0;
 		posY = posY - rowHeight;
@@ -1586,8 +1658,8 @@ function Buffalo_InitializeBuffSettingsUI()
 			local entry = CreateFrame("Button", buttonName, BuffaloClassConfigFrameClass, "BuffaloBuffButtonTemplate");
 			entry:SetAlpha(BUFFALO_ALPHA_DISABLED);
 			entry:SetPoint("TOPLEFT", 4+posX, posY);
-			entry:SetNormalTexture(Buffalo_GroupBuffProperties[rowNumber][2]);
-			entry:SetPushedTexture(Buffalo_GroupBuffProperties[rowNumber][2]);
+			entry:SetNormalTexture(groupBuffProps[rowNumber].iconId);
+			entry:SetPushedTexture(groupBuffProps[rowNumber].iconId);
 
 			posX = posX + colWidth;
 		end;
@@ -1601,7 +1673,7 @@ end;
 
 local personalBuffFrameHeight = 0;
 function Buffalo_InitializePersonalGroupBuffs(UISettings)
-	local buffCount = table.getn(Buffalo_GroupBuffProperties);
+	local buffCount = #groupBuffProps;
 	local posX, posY;
 
 	--	RAID buffs:
@@ -1617,8 +1689,8 @@ function Buffalo_InitializePersonalGroupBuffs(UISettings)
 			local entry = CreateFrame("Button", buttonName, BuffaloConfigFramePersonal, "BuffaloGroupButtonTemplate");
 			entry:SetAlpha(BUFFALO_ALPHA_DISABLED);
 			entry:SetPoint("TOPLEFT", posX, posY);
-			entry:SetNormalTexture(Buffalo_GroupBuffProperties[rowNumber][2]);
-			entry:SetPushedTexture(Buffalo_GroupBuffProperties[rowNumber][2]);
+			entry:SetNormalTexture(groupBuffProps[rowNumber].iconId);
+			entry:SetPushedTexture(groupBuffProps[rowNumber].iconId);
 
 			posY = posY - UISettings.Height;
 		end;
@@ -2048,6 +2120,7 @@ function Buffalo_UpdateGroupBuffUI()
 			["DRUID"] = BUFFALO_BACKDROP_RAIDMODE0_DRUID_FRAME,
 			["MAGE"] = BUFFALO_BACKDROP_RAIDMODE0_MAGE_FRAME,
 			["PRIEST"] = BUFFALO_BACKDROP_RAIDMODE0_PRIEST_FRAME,
+			["WARLOCK"] = BUFFALO_BACKDROP_RAIDMODE0_WARLOCK_FRAME,
 		};
 
 		BuffaloConfigFrame:SetBackdrop(backdrops[Buffalo_PlayerClass]);
@@ -2084,12 +2157,12 @@ function Buffalo_UpdateGroupBuffUI()
 	local buttonName, entry;
 	local buffMask = CONFIG_AssignedBuffSelf;
 
-	buffCount = table.getn(Buffalo_SelfBuffProperties);
+	buffCount = #selfBuffProps;
 	for rowNumber = 1, buffCount, 1 do
 		buttonName = string.format("buffalo_personal_buff_%d_0", rowNumber);
 		entry = _G[buttonName];
 
-		if (bit.band(buffMask, Buffalo_SelfBuffProperties[rowNumber][3]) > 0) then
+		if (bit.band(buffMask, selfBuffProps[rowNumber].bitmask) > 0) then
 			entry:SetAlpha(BUFFALO_ALPHA_ENABLED);
 		else
 			entry:SetAlpha(BUFFALO_ALPHA_DISABLED);
@@ -2117,7 +2190,7 @@ function Buffalo_UpdateRaidModeButtons()
 end;
 
 function Buffalo_UpdatePersonalBuffUI()
-	local buffCount = table.getn(Buffalo_GroupBuffProperties);
+	local buffCount = #groupBuffProps;
 
 	local assignedGroups = CONFIG_AssignedBuffGroups;
 	if Buffalo_CurrentRaidMode ~= BUFFALO_RAIDMODE_PERSONAL then
@@ -2135,7 +2208,7 @@ function Buffalo_UpdatePersonalBuffUI()
 			local entry = _G[buttonName];
 
 			local alpha = BUFFALO_ALPHA_DISABLED;
-			if (bit.band(buffMask, Buffalo_GroupBuffProperties[rowNumber][3]) > 0) then
+			if (bit.band(buffMask, groupBuffProps[rowNumber].bitmask) > 0) then
 				alpha = BUFFALO_ALPHA_ENABLED;
 			end;
 
@@ -2200,13 +2273,13 @@ end;
 
 function Buffalo_RefreshClassSettingsUI()
 	--	Update alpha value on each button so it matches the current settings.
-	buffCount = table.getn(Buffalo_GroupBuffProperties);
+	buffCount = #groupBuffProps;
 	for rowNumber = 1, buffCount, 1 do
 		for className, classInfo in next, CLASS_MATRIX do
 			buttonName = string.format("%s_row%s", className, rowNumber);
 
 			local entry = _G[buttonName];
-			if bit.band(CONFIG_AssignedClasses[className], Buffalo_GroupBuffProperties[rowNumber][3]) > 0 then
+			if bit.band(CONFIG_AssignedClasses[className], groupBuffProps[rowNumber].bitmask) > 0 then
 				entry:SetAlpha(BUFFALO_ALPHA_ENABLED);
 			else
 				entry:SetAlpha(BUFFALO_ALPHA_DISABLED);
@@ -2229,22 +2302,22 @@ function Buffalo_ConfigurationBuffOnClick(self, ...)
 	--	Properties are the name / icon/ mask for the clicked buff.
 	local properties = { };
 	if col == 0 then
-		properties = Buffalo_SelfBuffProperties;
+		properties = selfBuffProps;
 		groupMask = CONFIG_AssignedBuffSelf;
 	else 
-		properties = Buffalo_GroupBuffProperties;
+		properties = groupBuffProps;
 		groupMask = CONFIG_AssignedBuffGroups[col];
 	end;
 
 	--	BuffMask is the clicked buff's bitvalue.
-	local buffMask = properties[row][3];
+	local buffMask = properties[row].bitmask;
 	local maskOut = 0x0ffff - buffMask;		-- preserve all buffs except for the selected one:
 
 	if buttonType == "LeftButton" then
 		--	Left button: ADD the buff
 		--	First disable all other buffs in same family (if any)
 
-		local buffInfo = BUFF_MATRIX[properties[row][1]];
+		local buffInfo = BUFF_MATRIX[properties[row].name];
 
 		local family = buffInfo["FAMILY"];
 		if family then
@@ -2284,7 +2357,7 @@ function Buffalo_ClassConfigOnClick(self, ...)
 	row = 1 * row;
 
 	local classMask = CONFIG_AssignedClasses[className];
-	local buffMask = Buffalo_GroupBuffProperties[row][3];
+	local buffMask = groupBuffProps[row].bitmask;
 
 	if buttonType == "LeftButton" then
 		--	Left button: ADD the buff
@@ -2360,6 +2433,8 @@ function Buffalo_ScanFrequencyChanged(object)
 end;
 
 function Buffalo_HandleCheckbox(checkbox)
+	if not checkbox then return end;
+
 	local checkboxname = checkbox:GetName();
 
 	-- "single" checkboxes (checkboxes with no impact on other checkboxes):
@@ -2384,7 +2459,62 @@ function Buffalo_HandleCheckbox(checkbox)
 		end;
 		Buffalo_SetOption(CONFIG_KEY_AnnounceCompletedBuff, CONFIG_AnnounceCompletedBuff);
 	end;
+
+	if checkboxname == "BuffaloClassConfigFrameUseIncubus" then
+		if BuffaloClassConfigFrameUseIncubus:GetChecked() then
+			CONFIG_UseIncubus = true;
+			A:echo("Incubus selected as favourite demon.");
+		else
+			CONFIG_UseIncubus = false;
+			A:echo("Succubus selected as favourite demon.");
+		end;
+		Buffalo_SetOption(CONFIG_KEY_UseIncubus, CONFIG_UseIncubus);
+	end;
+
+	Buffalo_UpdateDemon();
+end;
+
+function Buffalo_UpdateDemon()
+	local _, className = UnitClass("player");
+	if className ~= "WARLOCK" then
+		return; 
+	end;
+
+	local succubusSpellName = GetSpellInfo(712);
+	local incubusSpellName  = GetSpellInfo(713);
+
+	--	Get spells from the Matrix to see if user actually knows them:
+	if not BUFF_MATRIX[succubusSpellName] or not BUFF_MATRIX[incubusSpellName] then
+		return;
+	end;
+
+
+	local oldBuff, newBuff;
+	if CONFIG_UseIncubus then
+		oldBuff = succubusSpellName;
+		newBuff = incubusSpellName;
+		BUFF_MATRIX[succubusSpellName]["BITMASK"] = 0x000000;
+		BUFF_MATRIX[incubusSpellName]["BITMASK"] = 0x002000;
+	else
+		oldBuff = incubusSpellName;
+		newBuff = succubusSpellName;
+		BUFF_MATRIX[succubusSpellName]["BITMASK"] = 0x002000;
+		BUFF_MATRIX[incubusSpellName]["BITMASK"] = 0x000000;
+	end;
 	
+	for rowNumber = 1, #selfBuffProps, 1 do
+		if selfBuffProps[rowNumber].name == oldBuff then
+			local buffInfo = BUFF_MATRIX[newBuff];
+			local entry = _G[string.format("buffalo_personal_buff_%d_0", rowNumber)];
+
+			selfBuffProps[rowNumber].name = newBuff;
+			selfBuffProps[rowNumber].iconId = buffInfo["ICONID"];
+
+			entry:SetNormalTexture(selfBuffProps[rowNumber].iconId);
+			entry:SetPushedTexture(selfBuffProps[rowNumber].iconId);
+			break;
+		end;
+	end;
 end;
 
 

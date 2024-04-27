@@ -82,6 +82,9 @@ Priest		PowerWordFortitude			53
 
 Version history
 ---------------
+Version 0.6.0:
+* Added Warlock buffs to the addon: Welcome, locks!
+
 Version 0.5.9
 * Bumped Classic client version to 1.15.2
 
