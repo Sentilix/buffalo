@@ -6,104 +6,69 @@
 --	Desc:	Configuration of the buffs
 --]]
 
+Buffalo = select(2, ...)
 
+Buffalo.matrix = { };
+Buffalo.matrix.Buff = { };
+Buffalo.matrix.Class = { };			--	[classname<english>]={ ICONID=<icon id>, MASK=<bitmask value> }
 
-local BUFFALO_CLASS_DRUID			= 0x0001;
-local BUFFALO_CLASS_HUNTER			= 0x0002;
-local BUFFALO_CLASS_MAGE			= 0x0004;
-local BUFFALO_CLASS_PALADIN			= 0x0008;
-local BUFFALO_CLASS_PRIEST			= 0x0010;
-local BUFFALO_CLASS_ROGUE			= 0x0020;
-local BUFFALO_CLASS_SHAMAN			= 0x0040;
-local BUFFALO_CLASS_WARLOCK			= 0x0080;
-local BUFFALO_CLASS_WARRIOR			= 0x0100;
-local BUFFALO_CLASS_DEATHKNIGHT		= 0x0200;
-
-local BUFFALO_CLASS_MANAUSERS		= 0x00df;
-local BUFFALO_CLASS_ALL				= 0x03ff;
-
-
-BUFFALO_CLASS_MATRIX_MASTER = {
+Buffalo.matrix.Master = {
 	["DRUID"] = {
-		["MASK"] = BUFFALO_CLASS_DRUID,
+		["MASK"] = Buffalo.classmasks.Druid,
 		["ICONID"] = 625999,
 	},
 	["HUNTER"] = {
-		["MASK"] = BUFFALO_CLASS_HUNTER,
+		["MASK"] = Buffalo.classmasks.Hunter,
 		["ICONID"] = 626000,
 	},
 	["MAGE"] = {
-		["MASK"] = BUFFALO_CLASS_MAGE,
+		["MASK"] = Buffalo.classmasks.Mage,
 		["ICONID"] = 626001,
 	},
 	["PALADIN"] = {
-		["MASK"] = BUFFALO_CLASS_PALADIN,
+		["MASK"] = Buffalo.classmasks.Paladin,
 		["ICONID"] = 626003,
 		["ALLIANCE-EXPAC"] = 1,
 		["HORDE-EXPAC"] = 2,
 	},
 	["PRIEST"] = {
-		["MASK"] = BUFFALO_CLASS_PRIEST,
+		["MASK"] = Buffalo.classmasks.Priest,
 		["ICONID"] = 626004,
 	},
 	["ROGUE"] = {
-		["MASK"] = BUFFALO_CLASS_ROGUE,
+		["MASK"] = Buffalo.classmasks.Rogue,
 		["ICONID"] = 626005,
 	},
 	["SHAMAN"] = {
-		["MASK"] = BUFFALO_CLASS_SHAMAN,
+		["MASK"] = Buffalo.classmasks.Shaman,
 		["ICONID"] = 626006,
 		["ALLIANCE-EXPAC"] = 2,
 		["HORDE-EXPAC"] = 1,
 	},
 	["WARLOCK"] = {
-		["MASK"] = BUFFALO_CLASS_WARLOCK,
+		["MASK"] = Buffalo.classmasks.Warlock,
 		["ICONID"] = 626007,
 	},
 	["WARRIOR"] = {
-		["MASK"] = BUFFALO_CLASS_WARRIOR,
+		["MASK"] = Buffalo.classmasks.Warrior,
 		["ICONID"] = 626008,
 	},
 	["DEATHKNIGHT"] = {
-		["MASK"] = BUFFALO_CLASS_DEATHKNIGHT,
+		["MASK"] = Buffalo.classmasks.DeathKnight,
 		["ICONID"] = 135771,
 		["ALLIANCE-EXPAC"] = 3,
 		["HORDE-EXPAC"] = 3,
 	},
 };
 
-SpellName_Generel_FindHerbs = "";
-SpellName_Generel_FindMinerals = "";
 
 
-IG_MAINMENU_OPEN			= 850;
-IG_MAINMENU_CLOSE			= 851;
-
-
-
---	Druid default: 0x0001 = Wild on all groups
-local CONFIG_DEFAULT_Druid_GroupMask = 1;
---	Mage default: 0x0001 = Intellect on all groups
-local CONFIG_DEFAULT_Mage_GroupMask = 1;
---	Priests default: 0x0003 = Fort + Spirit on all groups
-local CONFIG_DEFAULT_Priest_GroupMask = 3;
---	Warlock default: 0x0000 = no default
-local CONFIG_DEFAULT_Warlock_GroupMask = 0;
-
-
-
-local function echo(msg)
-	if msg then
-		DEFAULT_CHAT_FRAME:AddMessage(msg)
-	end
-end
-
-function Buffalo_GetSpellID(spellname)
+function Buffalo:getSpellID(spellname)
 	local _, _, _, _, _, _, spellID = GetSpellInfo(spellname);
 	return spellID;
 end;
 
-function Buffalo_GetSpellName(spellID)
+function Buffalo:getSpellName(spellID)
 	return GetSpellInfo(spellID);
 end;
 
@@ -117,424 +82,395 @@ end;
 --	  both EN/US, DE and FR clients.
 --	* Lower levels or unlearned spells: The highest leared spellID is set, or
 --	  nil in case the player does not know that spell at all.
-function Buffalo_InitializeBuffMatrix()
+function Buffalo:initializeBuffMatrix()
 
 	local localClassname, englishClassname = UnitClass("player");
 	local matrix = { };
 
 	--	General spells:
-	SpellName_Generel_FindHerbs = Buffalo_GetSpellName(2383); 
-	SpellName_Generel_FindMinerals = Buffalo_GetSpellName(2580); 
+	Buffalo.spellnames.general.FindHerbs = Buffalo:getSpellName(2383); 
+	Buffalo.spellnames.general.FindMinerals = Buffalo:getSpellName(2580); 
 
-	local Generel_FindHerbs = {
+	matrix[Buffalo.spellnames.general.FindHerbs]	= {
 		["BITMASK"]		= 0x04000,
 		["ICONID"]		= 133939,
-		["SPELLID"]		= Buffalo_GetSpellID(SpellName_Generel_FindHerbs),
-		["CLASSES"]		= BUFFALO_CLASS_ALL,
+		["SPELLID"]		= Buffalo:getSpellID(Buffalo.spellnames.general.FindHerbs),
+		["CLASSES"]		= Buffalo.classmasks.ALL,
 		["PRIORITY"]	= 10,
 		["GROUP"]		= false
 	};
 
-	local Generel_FindMinerals = {
+	matrix[Buffalo.spellnames.general.FindMinerals] = {
 		["BITMASK"]		= 0x08000,
 		["ICONID"]		= 136025,
-		["SPELLID"]		= Buffalo_GetSpellID(SpellName_Generel_FindMinerals),
-		["CLASSES"]		= BUFFALO_CLASS_ALL,
+		["SPELLID"]		= Buffalo:getSpellID(Buffalo.spellnames.general.FindMinerals),
+		["CLASSES"]		= Buffalo.classmasks.ALL,
 		["PRIORITY"]	= 10,
 		["GROUP"]		= false
 	};
 
-	matrix[SpellName_Generel_FindMinerals]	= Generel_FindMinerals;
-	matrix[SpellName_Generel_FindHerbs]		= Generel_FindHerbs;
 
 
 	if englishClassname == "DRUID" then
-		local SpellName_Druid_MarkOfTheWild = Buffalo_GetSpellName(9885);
-		local SpellName_Druid_GiftOfTheWild = Buffalo_GetSpellName(21850); 
-		local SpellName_Druid_Thorns = Buffalo_GetSpellName(9910); 
+		Buffalo.spellnames.druid.MarkOfTheWild = Buffalo:getSpellName(9885);
+		Buffalo.spellnames.druid.GiftOfTheWild = Buffalo:getSpellName(21850); 
+		Buffalo.spellnames.druid.Thorns = Buffalo:getSpellName(9910); 
 
-		local Druid_MarkOfTheWild = {
+		matrix[Buffalo.spellnames.druid.MarkOfTheWild] = {
 			["BITMASK"]		= 0x000001,
 			["ICONID"]		= 136078,
-			["SPELLID"]		= Buffalo_GetSpellID(SpellName_Druid_MarkOfTheWild),
-			["CLASSES"]		= BUFFALO_CLASS_ALL,
+			["SPELLID"]		= Buffalo:getSpellID(Buffalo.spellnames.druid.MarkOfTheWild),
+			["CLASSES"]		= Buffalo.classmasks.ALL,
 			["PRIORITY"]	= 52,
 			["GROUP"]		= false,
-			["PARENT"]		= SpellName_Druid_GiftOfTheWild
+			["PARENT"]		= Buffalo.spellnames.druid.GiftOfTheWild
 		};
 
-		local Druid_GiftOfTheWild = {
+		matrix[Buffalo.spellnames.druid.GiftOfTheWild] = {
 			["BITMASK"]		= 0x000001,
 			["ICONID"]		= 136078,
-			["SPELLID"]		= Buffalo_GetSpellID(SpellName_Druid_GiftOfTheWild),
-			["CLASSES"]		= BUFFALO_CLASS_ALL,
+			["SPELLID"]		= Buffalo:getSpellID(Buffalo.spellnames.druid.GiftOfTheWild),
+			["CLASSES"]		= Buffalo.classmasks.ALL,
 			["PRIORITY"]	= 52,
 			["GROUP"]		= true,
-			["SINGLE"]		= SpellName_Druid_MarkOfTheWild
+			["SINGLE"]		= Buffalo.spellnames.druid.MarkOfTheWild
 		};
 
-		local Druid_Thorns = {
+		matrix[Buffalo.spellnames.druid.Thorns] = {
 			["BITMASK"]		= 0x000002,
 			["ICONID"]		= 136104,
-			["SPELLID"]		= Buffalo_GetSpellID(SpellName_Druid_Thorns),
-			["CLASSES"]		= BUFFALO_CLASS_WARRIOR + BUFFALO_CLASS_DRUID,
+			["SPELLID"]		= Buffalo:getSpellID(Buffalo.spellnames.druid.Thorns),
+			["CLASSES"]		= Buffalo.classmasks.Warrior + Buffalo.classmasks.Druid,
 			["PRIORITY"]	= 51,
 			["GROUP"]		= false
 		};
 
-		matrix[SpellName_Druid_MarkOfTheWild]	= Druid_MarkOfTheWild;
-		matrix[SpellName_Druid_GiftOfTheWild]	= Druid_GiftOfTheWild;
-		matrix[SpellName_Druid_Thorns]			= Druid_Thorns;
 
 	elseif englishClassname == "MAGE" then	
-		local SpellName_Mage_ArcaneIntellect = Buffalo_GetSpellName(10157);  
-		local SpellName_Mage_ArcaneBrilliance = Buffalo_GetSpellName(23028);  
-		local SpellName_Mage_AmplifyMagic = Buffalo_GetSpellName(10170);
-		local SpellName_Mage_DampenMagic = Buffalo_GetSpellName(10174);
-		local SpellName_Mage_MoltenArmor = Buffalo_GetSpellName(30482);
-		local SpellName_Mage_MageArmor = Buffalo_GetSpellName(22783);
-		local SpellName_Mage_FrostArmor = Buffalo_GetSpellName(12544);
-		local SpellName_Mage_IceArmor = Buffalo_GetSpellName(10220);
-		local SpellName_Mage_IceBarrier = Buffalo_GetSpellName(13033);
+		Buffalo.spellnames.mage.ArcaneIntellect		= Buffalo:getSpellName(10157);  
+		Buffalo.spellnames.mage.ArcaneBrilliance	= Buffalo:getSpellName(23028);  
+		Buffalo.spellnames.mage.AmplifyMagic		= Buffalo:getSpellName(10170);
+		Buffalo.spellnames.mage.DampenMagic			= Buffalo:getSpellName(10174);
+		Buffalo.spellnames.mage.MoltenArmor			= Buffalo:getSpellName(30482);
+		Buffalo.spellnames.mage.MageArmor			= Buffalo:getSpellName(22783);
+		Buffalo.spellnames.mage.FrostArmor			= Buffalo:getSpellName(12544);
+		Buffalo.spellnames.mage.IceArmor			= Buffalo:getSpellName(10220);
+		Buffalo.spellnames.mage.IceBarrier			= Buffalo:getSpellName(13033);
 
-		local Mage_ArcaneIntellect = {
+		matrix[Buffalo.spellnames.mage.ArcaneIntellect] = {
 			["BITMASK"]		= 0x000001,
 			["ICONID"]		= 135932,
-			["SPELLID"]		= Buffalo_GetSpellID(SpellName_Mage_ArcaneIntellect),
-			["CLASSES"]		= BUFFALO_CLASS_MANAUSERS,
+			["SPELLID"]		= Buffalo:getSpellID(Buffalo.spellnames.mage.ArcaneIntellect),
+			["CLASSES"]		= Buffalo.classmasks.MANAUSERS,
 			["PRIORITY"]	= 53,
 			["GROUP"]		= false,
-			["PARENT"]		= SpellName_Mage_ArcaneBrilliance
+			["PARENT"]		= Buffalo.spellnames.mage.ArcaneBrilliance
 		};
 
-		local Mage_ArcaneBrilliance = {
+		matrix[Buffalo.spellnames.mage.ArcaneBrilliance] = {
 			["BITMASK"]		= 0x000001,
 			["ICONID"]		= 135869,
-			["SPELLID"]		= Buffalo_GetSpellID(SpellName_Mage_ArcaneBrilliance),
-			["CLASSES"]		= BUFFALO_CLASS_MANAUSERS,
+			["SPELLID"]		= Buffalo:getSpellID(Buffalo.spellnames.mage.ArcaneBrilliance),
+			["CLASSES"]		= Buffalo.classmasks.MANAUSERS,
 			["PRIORITY"]	= 53,
 			["GROUP"]		= true,
-			["SINGLE"]		= SpellName_Mage_ArcaneIntellect
+			["SINGLE"]		= Buffalo.spellnames.mage.ArcaneIntellect
 		};
 
-		local Mage_AmplifyMagic = {
+		matrix[Buffalo.spellnames.mage.AmplifyMagic] = {
 			["BITMASK"]		= 0x000002,
 			["ICONID"]		= 135907,
-			["SPELLID"]		= Buffalo_GetSpellID(SpellName_Mage_AmplifyMagic),
-			["CLASSES"]		= BUFFALO_CLASS_ALL,
+			["SPELLID"]		= Buffalo:getSpellID(Buffalo.spellnames.mage.AmplifyMagic),
+			["CLASSES"]		= Buffalo.classmasks.ALL,
 			["PRIORITY"]	= 52,
 			["GROUP"]		= false,
 			["FAMILY"]		= "AmplifyDampen"
 		};
 
-		local Mage_DampenMagic = {
+		matrix[Buffalo.spellnames.mage.DampenMagic] = {
 			["BITMASK"]		= 0x000004,
 			["ICONID"]		= 136006,
-			["SPELLID"]		= Buffalo_GetSpellID(SpellName_Mage_DampenMagic),
-			["CLASSES"]		= BUFFALO_CLASS_ALL,
+			["SPELLID"]		= Buffalo:getSpellID(Buffalo.spellnames.mage.DampenMagic),
+			["CLASSES"]		= Buffalo.classmasks.ALL,
 			["PRIORITY"]	= 51,
 			["GROUP"]		= false,
 			["FAMILY"]		= "AmplifyDampen"
 		};
 
-		local Mage_FrostArmor = {
+		matrix[Buffalo.spellnames.mage.FrostArmor] = {
 			["BITMASK"]		= 0x001000,
 			["ICONID"]		= 135843,
-			["SPELLID"]		= Buffalo_GetSpellID(SpellName_Mage_FrostArmor),
-			["CLASSES"]		= BUFFALO_CLASS_MAGE,
+			["SPELLID"]		= Buffalo:getSpellID(Buffalo.spellnames.mage.FrostArmor),
+			["CLASSES"]		= Buffalo.classmasks.Mage,
 			["PRIORITY"]	= 15,
 			["GROUP"]		= false,
 			["FAMILY"]		= "Armor"
 		};
 
-		local Mage_MoltenArmor = {
+		matrix[Buffalo.spellnames.mage.MoltenArmor] = {
 			["BITMASK"]		= 0x000800,
 			["ICONID"]		= 132221,
-			["SPELLID"]		= Buffalo_GetSpellID(SpellName_Mage_MoltenArmor),
-			["CLASSES"]		= BUFFALO_CLASS_MAGE,
+			["SPELLID"]		= Buffalo:getSpellID(Buffalo.spellnames.mage.MoltenArmor),
+			["CLASSES"]		= Buffalo.classmasks.Mage,
 			["PRIORITY"]	= 14,
 			["GROUP"]		= false,
 			["FAMILY"]		= "Armor"
 		};
 
-		local Mage_MageArmor = {
+		matrix[Buffalo.spellnames.mage.MageArmor] = {
 			["BITMASK"]		= 0x000100,
 			["ICONID"]		= 135991,
-			["SPELLID"]		= Buffalo_GetSpellID(SpellName_Mage_MageArmor),
-			["CLASSES"]		= BUFFALO_CLASS_MAGE,
+			["SPELLID"]		= Buffalo:getSpellID(Buffalo.spellnames.mage.MageArmor),
+			["CLASSES"]		= Buffalo.classmasks.Mage,
 			["PRIORITY"]	= 13,
 			["GROUP"]		= false,
 			["FAMILY"]		= "Armor"
 		};
 
-		local Mage_IceArmor = {
+		matrix[Buffalo.spellnames.mage.IceArmor] = {
 			["BITMASK"]		= 0x000200,
 			["ICONID"]		= 135843,
-			["SPELLID"]		= Buffalo_GetSpellID(SpellName_Mage_IceArmor),
-			["CLASSES"]		= BUFFALO_CLASS_MAGE,
+			["SPELLID"]		= Buffalo:getSpellID(Buffalo.spellnames.mage.IceArmor),
+			["CLASSES"]		= Buffalo.classmasks.Mage,
 			["PRIORITY"]	= 12,
 			["GROUP"]		= false,
 			["FAMILY"]		= "Armor"
 		};
 
-		local Mage_IceBarrier = {
+		matrix[Buffalo.spellnames.mage.IceBarrier] = {
 			["BITMASK"]		= 0x000400,
 			["ICONID"]		= 135988,
-			["SPELLID"]		= Buffalo_GetSpellID(SpellName_Mage_IceBarrier),
+			["SPELLID"]		= Buffalo:getSpellID(Buffalo.spellnames.mage.IceBarrier),
 			["COOLDOWN"]	= 30,
-			["CLASSES"]		= BUFFALO_CLASS_MAGE,
+			["CLASSES"]		= Buffalo.classmasks.Mage,
 			["PRIORITY"]	= 11,
 			["GROUP"]		= false
 		};
 
-		matrix[SpellName_Mage_ArcaneBrilliance]			= Mage_ArcaneBrilliance;
-		matrix[SpellName_Mage_ArcaneIntellect]			= Mage_ArcaneIntellect;
-		matrix[SpellName_Mage_AmplifyMagic]				= Mage_AmplifyMagic;
-		matrix[SpellName_Mage_DampenMagic]				= Mage_DampenMagic;
-		matrix[SpellName_Mage_FrostArmor]				= Mage_FrostArmor;
-		if SpellName_Mage_MoltenArmor then
-			matrix[SpellName_Mage_MoltenArmor]			= Mage_MoltenArmor;
-		end;
-		matrix[SpellName_Mage_MageArmor]				= Mage_MageArmor;
-		matrix[SpellName_Mage_IceArmor]					= Mage_IceArmor;
-		matrix[SpellName_Mage_IceBarrier]				= Mage_IceBarrier;
 
 	elseif englishClassname == "PRIEST" then
-		local SpellName_Priest_PowerWordFortitude = Buffalo_GetSpellName(10938);
-		local SpellName_Priest_PrayerOfFortitude = Buffalo_GetSpellName(21564);
-		local SpellName_Priest_DivineSpirit = Buffalo_GetSpellName(27841);
-		local SpellName_Priest_PrayerOfSpirit = Buffalo_GetSpellName(27681);
-		local SpellName_Priest_ShadowProtection = Buffalo_GetSpellName(10958);
-		local SpellName_Priest_PrayerOfShadowProtection = Buffalo_GetSpellName(27683);
-		local SpellName_Priest_InnerFire = Buffalo_GetSpellName(10952);
-		local SpellName_Priest_ShadowForm = Buffalo_GetSpellName(15473);
+		Buffalo.spellnames.priest.PowerWordFortitude		= Buffalo:getSpellName(10938);
+		Buffalo.spellnames.priest.PrayerOfFortitude			= Buffalo:getSpellName(21564);
+		Buffalo.spellnames.priest.DivineSpirit				= Buffalo:getSpellName(27841);
+		Buffalo.spellnames.priest.PrayerOfSpirit			= Buffalo:getSpellName(27681);
+		Buffalo.spellnames.priest.ShadowProtection			= Buffalo:getSpellName(10958);
+		Buffalo.spellnames.priest.PrayerOfShadowProtection	= Buffalo:getSpellName(27683);
+		Buffalo.spellnames.priest.InnerFire					= Buffalo:getSpellName(10952);
+		Buffalo.spellnames.priest.ShadowForm				= Buffalo:getSpellName(15473);
 
-		local Priest_PowerWordFortitude = { 
+		matrix[Buffalo.spellnames.priest.PowerWordFortitude] = { 
 			["BITMASK"]		= 0x000001, 
 			["ICONID"]		= 135987, 
-			["SPELLID"]		= Buffalo_GetSpellID(SpellName_Priest_PowerWordFortitude),
-			["CLASSES"]		= BUFFALO_CLASS_ALL,
+			["SPELLID"]		= Buffalo:getSpellID(Buffalo.spellnames.priest.PowerWordFortitude),
+			["CLASSES"]		= Buffalo.classmasks.ALL,
 			["PRIORITY"]	= 53, 
 			["GROUP"]		= false, 
-			["PARENT"]		= SpellName_Priest_PrayerOfFortitude 
+			["PARENT"]		= Buffalo.spellnames.priest.PrayerOfFortitude 
 		};
 	
-		local Priest_PrayerOfFortitude = {
+		matrix[Buffalo.spellnames.priest.PrayerOfFortitude] = {
 			["BITMASK"]		= 0x000001, 
 			["ICONID"]		= 135941, 
-			["SPELLID"]		= Buffalo_GetSpellID(SpellName_Priest_PrayerOfFortitude),
-			["CLASSES"]		= BUFFALO_CLASS_ALL,
+			["SPELLID"]		= Buffalo:getSpellID(Buffalo.spellnames.priest.PrayerOfFortitude),
+			["CLASSES"]		= Buffalo.classmasks.ALL,
 			["PRIORITY"]	= 53, 
 			["GROUP"]		= true,
-			["SINGLE"]		= SpellName_Priest_PowerWordFortitude
+			["SINGLE"]		= Buffalo.spellnames.priest.PowerWordFortitude
 		};
 
-		local Priest_DivineSpirit = {
+		matrix[Buffalo.spellnames.priest.DivineSpirit] = {
 			["BITMASK"]		= 0x000002, 
 			["ICONID"]		= 135898, 
-			["SPELLID"]		= Buffalo_GetSpellID(SpellName_Priest_DivineSpirit),
-			["CLASSES"]		= BUFFALO_CLASS_MANAUSERS,
+			["SPELLID"]		= Buffalo:getSpellID(Buffalo.spellnames.priest.DivineSpirit),
+			["CLASSES"]		= Buffalo.classmasks.MANAUSERS,
 			["PRIORITY"]	= 52, 
 			["GROUP"]		= false, 
-			["PARENT"]		= SpellName_Priest_PrayerOfSpirit
+			["PARENT"]		= Buffalo.spellnames.priest.PrayerOfSpirit
 		};
 
-		local Priest_PrayerOfSpirit = {
+		matrix[Buffalo.spellnames.priest.PrayerOfSpirit] = {
 			["BITMASK"]		= 0x000002, 
 			["ICONID"]		= 135946,
-			["SPELLID"]		= Buffalo_GetSpellID(SpellName_Priest_PrayerOfSpirit),
-			["CLASSES"]		= BUFFALO_CLASS_MANAUSERS,
+			["SPELLID"]		= Buffalo:getSpellID(Buffalo.spellnames.priest.PrayerOfSpirit),
+			["CLASSES"]		= Buffalo.classmasks.MANAUSERS,
 			["PRIORITY"]	= 52,
 			["GROUP"]		= true,
-			["SINGLE"]		= SpellName_Priest_DivineSpirit
+			["SINGLE"]		= Buffalo.spellnames.priest.DivineSpirit
 		};
 
-		local Priest_ShadowProtection = {
+		matrix[Buffalo.spellnames.priest.ShadowProtection] = {
 			["BITMASK"]		= 0x000004,
 			["ICONID"]		= 136121,
-			["SPELLID"]		= Buffalo_GetSpellID(SpellName_Priest_ShadowProtection),
-			["CLASSES"]		= BUFFALO_CLASS_ALL,
+			["SPELLID"]		= Buffalo:getSpellID(Buffalo.spellnames.priest.ShadowProtection),
+			["CLASSES"]		= Buffalo.classmasks.ALL,
 			["PRIORITY"]	= 51,
 			["GROUP"]		= false,
-			["PARENT"]		= SpellName_Priest_PrayerOfShadowProtection 
+			["PARENT"]		= Buffalo.spellnames.priest.PrayerOfShadowProtection 
 		};
 	
-		local Priest_PrayerOfShadowProtection = {
+		matrix[Buffalo.spellnames.priest.PrayerOfShadowProtection] = {
 			["BITMASK"]		= 0x000004, 
 			["ICONID"]		= 135945, 
-			["SPELLID"]		= Buffalo_GetSpellID(SpellName_Priest_PrayerOfShadowProtection),
-			["CLASSES"]		= BUFFALO_CLASS_ALL,
+			["SPELLID"]		= Buffalo:getSpellID(Buffalo.spellnames.priest.PrayerOfShadowProtection),
+			["CLASSES"]		= Buffalo.classmasks.ALL,
 			["PRIORITY"]	= 51, 
 			["GROUP"]		= true,
-			["SINGLE"]		= SpellName_Priest_ShadowProtection
+			["SINGLE"]		= Buffalo.spellnames.priest.ShadowProtection
 		};
 
-		local Priest_ShadowForm = {
+		matrix[Buffalo.spellnames.priest.ShadowForm] = {
 			["BITMASK"]		= 0x000200, 
 			["ICONID"]		= 136200, 
-			["SPELLID"]		= Buffalo_GetSpellID(SpellName_Priest_ShadowForm),
-			["CLASSES"]		= BUFFALO_CLASS_PRIEST,
+			["SPELLID"]		= Buffalo:getSpellID(Buffalo.spellnames.priest.ShadowForm),
+			["CLASSES"]		= Buffalo.classmasks.Priest,
 			["PRIORITY"]	= 11, 
 			["GROUP"]		= false 
 		};
 
-		local Priest_InnerFire = {
+		matrix[Buffalo.spellnames.priest.InnerFire] = {
 			["BITMASK"]		= 0x000100, 
 			["ICONID"]		= 135926, 
-			["SPELLID"]		= Buffalo_GetSpellID(SpellName_Priest_InnerFire),
-			["CLASSES"]		= BUFFALO_CLASS_PRIEST,
+			["SPELLID"]		= Buffalo:getSpellID(Buffalo.spellnames.priest.InnerFire),
+			["CLASSES"]		= Buffalo.classmasks.Priest,
 			["PRIORITY"]	= 12, 
 			["GROUP"]		= false 
 		};
 
-		matrix[SpellName_Priest_PowerWordFortitude]		= Priest_PowerWordFortitude;
-		matrix[SpellName_Priest_PrayerOfFortitude]		= Priest_PrayerOfFortitude;
-		matrix[SpellName_Priest_DivineSpirit]			= Priest_DivineSpirit;
-		matrix[SpellName_Priest_PrayerOfSpirit]			= Priest_PrayerOfSpirit;
-		matrix[SpellName_Priest_ShadowProtection]		= Priest_ShadowProtection;
-		matrix[SpellName_Priest_PrayerOfShadowProtection]= Priest_PrayerOfShadowProtection;
-		matrix[SpellName_Priest_InnerFire]				= Priest_InnerFire;
-		matrix[SpellName_Priest_ShadowForm]				= Priest_ShadowForm;
 
 	elseif englishClassname == "WARLOCK" then
-		local SpellName_Warlock_DemonSkin = Buffalo_GetSpellName(696);
-		local SpellName_Warlock_DemonArmor = Buffalo_GetSpellName(11735);
-		local SpellName_Warlock_FireShield = Buffalo_GetSpellName(11771);
-		local SpellName_Warlock_UnendingBreath = Buffalo_GetSpellName(5697);
-		local SpellName_Warlock_DetectLesserInvisibility = Buffalo_GetSpellName(132);
-		local SpellName_Warlock_DetectInvisibility = Buffalo_GetSpellName(2970);
-		local SpellName_Warlock_DetectGreaterInvisibility = Buffalo_GetSpellName(11743);
-		local SpellName_Warlock_Imp = Buffalo_GetSpellName(688);
-		local SpellName_Warlock_Voidwalker = Buffalo_GetSpellName(697);
-		local SpellName_Warlock_Felhunter = Buffalo_GetSpellName(691);
-		local SpellName_Warlock_Succubus = Buffalo_GetSpellName(712);
-		local SpellName_Warlock_Incubus = Buffalo_GetSpellName(713);
+		Buffalo.spellnames.warlock.DemonSkin = Buffalo:getSpellName(696);
+		Buffalo.spellnames.warlock.DemonArmor = Buffalo:getSpellName(11735);
+		Buffalo.spellnames.warlock.FireShield = Buffalo:getSpellName(11771);
+		Buffalo.spellnames.warlock.UnendingBreath = Buffalo:getSpellName(5697);
+		Buffalo.spellnames.warlock.DetectLesserInvisibility = Buffalo:getSpellName(132);
+		Buffalo.spellnames.warlock.DetectInvisibility = Buffalo:getSpellName(2970);
+		Buffalo.spellnames.warlock.DetectGreaterInvisibility = Buffalo:getSpellName(11743);
+		Buffalo.spellnames.warlock.Imp = Buffalo:getSpellName(688);
+		Buffalo.spellnames.warlock.Voidwalker = Buffalo:getSpellName(697);
+		Buffalo.spellnames.warlock.Felhunter = Buffalo:getSpellName(691);
+		Buffalo.spellnames.warlock.Succubus = Buffalo:getSpellName(712);
+		Buffalo.spellnames.warlock.Incubus = Buffalo:getSpellName(713);
 
 		--	Pick the highest learned Invisibility rank:
-		if Buffalo_GetSpellID(SpellName_Warlock_DetectGreaterInvisibility) then
-			matrix[SpellName_Warlock_DetectGreaterInvisibility] = { 
+		if Buffalo:getSpellID(Buffalo.spellnames.warlock.DetectGreaterInvisibility) then
+			matrix[Buffalo.spellnames.warlock.DetectGreaterInvisibility] = { 
 				["BITMASK"]		= 0x000001,
 				["ICONID"]		= 136152,
-				["SPELLID"]		= Buffalo_GetSpellID(SpellName_Warlock_DetectGreaterInvisibility),
-				["CLASSES"]		= BUFFALO_CLASS_ALL,
+				["SPELLID"]		= Buffalo:getSpellID(Buffalo.spellnames.warlock.DetectGreaterInvisibility),
+				["CLASSES"]		= Buffalo.classmasks.ALL,
 				["PRIORITY"]	= 21,
 				["GROUP"]		= false, 
 			};
-		elseif Buffalo_GetSpellID(SpellName_Warlock_DetectInvisibility) then
-			matrix[SpellName_Warlock_DetectInvisibility] = { 
+		elseif Buffalo:getSpellID(Buffalo.spellnames.warlock.DetectInvisibility) then
+			matrix[Buffalo.spellnames.warlock.DetectInvisibility] = { 
 				["BITMASK"]		= 0x000001,
 				["ICONID"]		= 136152,
-				["SPELLID"]		= Buffalo_GetSpellID(SpellName_Warlock_DetectInvisibility),
-				["CLASSES"]		= BUFFALO_CLASS_ALL,
+				["SPELLID"]		= Buffalo:getSpellID(Buffalo.spellnames.warlock.DetectInvisibility),
+				["CLASSES"]		= Buffalo.classmasks.ALL,
 				["PRIORITY"]	= 21,
 				["GROUP"]		= false, 
 			};
 		else
-			matrix[SpellName_Warlock_DetectLesserInvisibility] = { 
+			matrix[Buffalo.spellnames.warlock.DetectLesserInvisibility] = { 
 				["BITMASK"]		= 0x000001,
 				["ICONID"]		= 136153,
-				["SPELLID"]		= Buffalo_GetSpellID(SpellName_Warlock_DetectLesserInvisibility),
-				["CLASSES"]		= BUFFALO_CLASS_ALL,
+				["SPELLID"]		= Buffalo:getSpellID(Buffalo.spellnames.warlock.DetectLesserInvisibility),
+				["CLASSES"]		= Buffalo.classmasks.ALL,
 				["PRIORITY"]	= 21,
 				["GROUP"]		= false, 
 			};
 		end
 
-		local Warlock_UnendingBreath = { 
+		matrix[Buffalo.spellnames.warlock.UnendingBreath] = { 
 			["BITMASK"]		= 0x000002,
 			["ICONID"]		= 136148,
-			["SPELLID"]		= Buffalo_GetSpellID(SpellName_Warlock_UnendingBreath),
-			["CLASSES"]		= BUFFALO_CLASS_ALL,
+			["SPELLID"]		= Buffalo:getSpellID(Buffalo.spellnames.warlock.UnendingBreath),
+			["CLASSES"]		= Buffalo.classmasks.ALL,
 			["PRIORITY"]	= 22,
 			["GROUP"]		= false, 
 		};
 
-		local Warlock_FireShield = { 
+		matrix[Buffalo.spellnames.warlock.FireShield] = { 
 			["BITMASK"]		= 0x000004,
 			["ICONID"]		= 135806,
-			["SPELLID"]		= Buffalo_GetSpellID(SpellName_Warlock_FireShield),
-			["CLASSES"]		= BUFFALO_CLASS_ALL,
+			["SPELLID"]		= Buffalo:getSpellID(Buffalo.spellnames.warlock.FireShield),
+			["CLASSES"]		= Buffalo.classmasks.ALL,
 			["PRIORITY"]	= 23,
 			["GROUP"]		= false, 
 			["IGNORERANGECHECK"] = true,
 		};
 
 		--	Only use Armor if learned, otherwise pick Skin:
-		if Buffalo_GetSpellID(SpellName_Warlock_DemonArmor) then
-			matrix[SpellName_Warlock_DemonArmor]	= { 
+		if Buffalo:getSpellID(Buffalo.spellnames.warlock.DemonArmor) then
+			matrix[Buffalo.spellnames.warlock.DemonArmor]	= { 
 				["BITMASK"]		= 0x000100,
 				["ICONID"]		= 136185,
-				["SPELLID"]		= Buffalo_GetSpellID(SpellName_Warlock_DemonArmor),
-				["CLASSES"]		= BUFFALO_CLASS_WARLOCK,
+				["SPELLID"]		= Buffalo:getSpellID(Buffalo.spellnames.warlock.DemonArmor),
+				["CLASSES"]		= Buffalo.classmasks.Warlock,
 				["PRIORITY"]	= 11,
 				["GROUP"]		= false, 
 			};
 		else
-			matrix[SpellName_Warlock_DemonSkin]	= { 
+			matrix[Buffalo.spellnames.warlock.DemonSkin]	= { 
 				["BITMASK"]		= 0x000100,
 				["ICONID"]		= 136185,
-				["SPELLID"]		= Buffalo_GetSpellID(SpellName_Warlock_DemonSkin),
-				["CLASSES"]		= BUFFALO_CLASS_WARLOCK,
+				["SPELLID"]		= Buffalo:getSpellID(Buffalo.spellnames.warlock.DemonSkin),
+				["CLASSES"]		= Buffalo.classmasks.Warlock,
 				["PRIORITY"]	= 11,
 				["GROUP"]		= false, 
 			};
 		end;
 
-		local Warlock_SummonImp = { 
+		matrix[Buffalo.spellnames.warlock.Imp] = { 
 			["BITMASK"]		= 0x000400,
 			["ICONID"]		= 136218,
-			["SPELLID"]		= Buffalo_GetSpellID(SpellName_Warlock_Imp),
-			["CLASSES"]		= BUFFALO_CLASS_WARLOCK,
+			["SPELLID"]		= Buffalo:getSpellID(Buffalo.spellnames.warlock.Imp),
+			["CLASSES"]		= Buffalo.classmasks.Warlock,
 			["PRIORITY"]	= 39,
 			["GROUP"]		= false, 
 			["FAMILY"]		= "Demon",
 		};
 
-		local Warlock_SummonVoidwalker = { 
+		matrix[Buffalo.spellnames.warlock.Voidwalker] = { 
 			["BITMASK"]		= 0x000800,
 			["ICONID"]		= 136221,
-			["SPELLID"]		= Buffalo_GetSpellID(SpellName_Warlock_Voidwalker),
-			["CLASSES"]		= BUFFALO_CLASS_WARLOCK,
+			["SPELLID"]		= Buffalo:getSpellID(Buffalo.spellnames.warlock.Voidwalker),
+			["CLASSES"]		= Buffalo.classmasks.Warlock,
 			["PRIORITY"]	= 38,
 			["GROUP"]		= false, 
 			["FAMILY"]		= "Demon",
 		};
 
-		local Warlock_SummonFelhunter = { 
+		matrix[Buffalo.spellnames.warlock.Felhunter] = { 
 			["BITMASK"]		= 0x001000,
 			["ICONID"]		= 136217,
-			["SPELLID"]		= Buffalo_GetSpellID(SpellName_Warlock_Felhunter),
-			["CLASSES"]		= BUFFALO_CLASS_WARLOCK,
+			["SPELLID"]		= Buffalo:getSpellID(Buffalo.spellnames.warlock.Felhunter),
+			["CLASSES"]		= Buffalo.classmasks.Warlock,
 			["PRIORITY"]	= 37,
 			["GROUP"]		= false, 
 			["FAMILY"]		= "Demon",
 		};
 
 		--	Use Succubus as default; Incobus will have am invaoid bitmask:
-		matrix[SpellName_Warlock_Succubus] = { 
+		matrix[Buffalo.spellnames.warlock.Succubus] = { 
 			["BITMASK"]		= 0x002000,
 			["ICONID"]		= 136220,
-			["SPELLID"]		= Buffalo_GetSpellID(SpellName_Warlock_Succubus),
-			["CLASSES"]		= BUFFALO_CLASS_WARLOCK,
+			["SPELLID"]		= Buffalo:getSpellID(Buffalo.spellnames.warlock.Succubus),
+			["CLASSES"]		= Buffalo.classmasks.Warlock,
 			["PRIORITY"]	= 36,
 			["GROUP"]		= false, 
 			["FAMILY"]		= "Demon",
 		};
 
-		matrix[SpellName_Warlock_Incubus] = { 
+		matrix[Buffalo.spellnames.warlock.Incubus] = { 
 			["BITMASK"]		= 0x000000,
 			["ICONID"]		= 4352492,
-			["SPELLID"]		= Buffalo_GetSpellID(SpellName_Warlock_Incubus),
-			["CLASSES"]		= BUFFALO_CLASS_WARLOCK,
+			["SPELLID"]		= Buffalo:getSpellID(Buffalo.spellnames.warlock.Incubus),
+			["CLASSES"]		= Buffalo.classmasks.Warlock,
 			["PRIORITY"]	= 36,
 			["GROUP"]		= false, 
 			["FAMILY"]		= "Demon",
 		};
-
-		matrix[SpellName_Warlock_FireShield]				= Warlock_FireShield;
-		matrix[SpellName_Warlock_UnendingBreath]			= Warlock_UnendingBreath;
-		matrix[SpellName_Warlock_Imp]						= Warlock_SummonImp;
-		matrix[SpellName_Warlock_Voidwalker]				= Warlock_SummonVoidwalker;
 	end;
 
 	--	Filter out spells we havent learned (SpellID is nil)
@@ -548,20 +484,20 @@ function Buffalo_InitializeBuffMatrix()
 end;
 
 
-function Buffalo_InitializeAssignedGroupDefaults()
+function Buffalo:initializeAssignedGroupDefaults()
 	local localClassname, englishClassname = UnitClass("player");
 	local assignedGroupBuffs = { };
 
 	local groupMask = 0;
 
 	if englishClassname == "DRUID" then
-		groupMask = CONFIG_DEFAULT_Druid_GroupMask;
+		groupMask = Buffalo.config.DEFAULT_Druid_GroupMask;
 	elseif englishClassname == "MAGE" then
-		groupMask = CONFIG_DEFAULT_Mage_GroupMask;
+		groupMask = Buffalo.config.DEFAULT_Mage_GroupMask;
 	elseif englishClassname == "PRIEST" then
-		groupMask = CONFIG_DEFAULT_Priest_GroupMask;
+		groupMask = Buffalo.config.DEFAULT_Priest_GroupMask;
 	elseif englishClassname == "WARLOCK" then
-		groupMask = CONFIG_DEFAULT_Warlock_GroupMask;
+		groupMask = Buffalo.config.DEFAULT_Warlock_GroupMask;
 	end
 
 	for groupNum = 1, 8, 1 do

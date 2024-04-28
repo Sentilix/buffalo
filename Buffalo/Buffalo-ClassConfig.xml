@@ -28,7 +28,7 @@
 				self:RegisterForClicks("LeftButtonDown", "RightButtonDown");
 			</OnLoad>
 			<OnClick>
-				Buffalo_ClassConfigOnClick(self);
+				Buffalo:onClassConfigClick(self);
 			</OnClick>
 		</Scripts>
 	</Button>
@@ -65,7 +65,7 @@
 					</Anchor>
 				</Anchors>
 				<Scripts>
-					<OnClick>Buffalo_ClassConfigOnCloseButtonClick();</OnClick>
+					<OnClick>Buffalo:onClassConfigCloseButtonClick();</OnClick>
 				</Scripts>
 			</Button>
 		</Frames>
@@ -101,10 +101,10 @@
 				tinsert(UISpecialFrames, self:GetName());
 			</OnLoad>
 			<OnShow>
-				PlaySound(IG_MAINMENU_OPEN);
+				PlaySound(Buffalo.sounds.IG_MAINMENU_OPEN);
 			</OnShow>
 			<OnHide>
-				PlaySound(IG_MAINMENU_CLOSE);
+				PlaySound(Buffalo.sounds.IG_MAINMENU_CLOSE);
 			</OnHide>
 		</Scripts>
 	</Frame>

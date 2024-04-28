@@ -12,7 +12,7 @@
 				self:RegisterForClicks("LeftButtonDown", "RightButtonDown");
 			</OnLoad>
 			<OnClick>
-				Buffalo_ConfigurationBuffOnClick(self);
+				Buffalo:onConfigurationBuffClick(self);
 			</OnClick>
 		</Scripts>
 	</Button>
@@ -41,7 +41,7 @@
 		<Scripts>
 			<OnClick>
 				PlaySound(882, "Master")
-				Buffalo_SyncBuffGroupOnClick(self)
+				Buffalo:onBuffGroupClick(self)
 			</OnClick>
 			<OnEnter>
 				_G[self:GetName().."BG"]:SetVertexColor(1.0, 1.0, 1.0, 1.0)
@@ -132,7 +132,7 @@
 					</Anchor>
 				</Anchors>
 				<Scripts>
-					<OnClick>Buffalo_OpenClassConfigDialogue();</OnClick>
+					<OnClick>Buffalo:openClassConfigDialogue();</OnClick>
 				</Scripts>
 			</Button>
 			<!-- General config button -->
@@ -146,7 +146,7 @@
 					</Anchor>
 				</Anchors>
 				<Scripts>
-					<OnClick>Buffalo_OpenGeneralConfigDialogue();</OnClick>
+					<OnClick>Buffalo:openGeneralConfigDialogue();</OnClick>
 				</Scripts>
 			</Button>
 			<!-- Close button -->
@@ -160,7 +160,7 @@
 					</Anchor>
 				</Anchors>
 				<Scripts>
-					<OnClick>Buffalo_ConfigurationOnCloseButtonClick();</OnClick>
+					<OnClick>Buffalo:onConfigurationCloseButtonClick();</OnClick>
 				</Scripts>
 			</Button>
 		</Frames>
@@ -188,10 +188,10 @@
 				tinsert(UISpecialFrames, self:GetName());
 			</OnLoad>
 			<OnShow>
-				PlaySound(IG_MAINMENU_OPEN);
+				PlaySound(Buffalo.sounds.IG_MAINMENU_OPEN);
 			</OnShow>
 			<OnHide>
-				PlaySound(IG_MAINMENU_CLOSE);
+				PlaySound(Buffalo.sounds.IG_MAINMENU_CLOSE);
 			</OnHide>
 			<OnDragStart>
 				if not BUFFALO_SubConfigOpen then

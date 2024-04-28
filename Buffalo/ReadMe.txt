@@ -82,7 +82,10 @@ Priest		PowerWordFortitude			53
 
 Version history
 ---------------
-Version 0.6.0:
+Version 0.6.0b2:
+* Refactored large potions of the code
+
+Version 0.6.0b1:
 * Added Warlock buffs to the addon: Welcome, locks!
 
 Version 0.5.9

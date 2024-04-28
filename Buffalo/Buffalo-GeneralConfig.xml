@@ -34,8 +34,8 @@
 						_G[self:GetName().."High"]:SetText("5 (only full groups)");
 					</OnLoad>
 					<OnValueChanged>
-						if Buffalo_PrayerThresholdChanged then
-						Buffalo_PrayerThresholdChanged(self);
+						if Buffalo_onPrayerThresholdChanged then
+						Buffalo_onPrayerThresholdChanged(self);
 						end;
 					</OnValueChanged>
 				</Scripts>
@@ -52,8 +52,8 @@
 						_G[self:GetName().."High"]:SetText("2 minutes");
 					</OnLoad>
 					<OnValueChanged>
-						if Buffalo_RenewOverlapChanged then
-						Buffalo_RenewOverlapChanged(self);
+						if Buffalo_onRenewOverlapChanged then
+						Buffalo_onRenewOverlapChanged(self);
 						end;
 					</OnValueChanged>
 				</Scripts>
@@ -70,8 +70,8 @@
 						_G[self:GetName().."High"]:SetText("Slow scan (1 per sec)");
 					</OnLoad>
 					<OnValueChanged>
-						if Buffalo_ScanFrequencyChanged then
-						Buffalo_ScanFrequencyChanged(self);
+						if Buffalo_onScanFrequencyChanged then
+						Buffalo_onScanFrequencyChanged(self);
 						end;
 					</OnValueChanged>
 				</Scripts>
@@ -87,7 +87,7 @@
 						_G[self:GetName().."Text"]:SetText("Display missing buffs in Local Chat")
 					</OnLoad>
 					<OnClick>
-						Buffalo_HandleCheckbox(self);
+						Buffalo_handleCheckbox(self);
 					</OnClick>
 				</Scripts>
 			</CheckButton>
@@ -100,7 +100,7 @@
 						_G[self:GetName().."Text"]:SetText("Display buffed targets in Local Chat")
 					</OnLoad>
 					<OnClick>
-						Buffalo_HandleCheckbox(self);
+						Buffalo_handleCheckbox(self);
 					</OnClick>
 				</Scripts>
 			</CheckButton>
@@ -116,7 +116,7 @@
 					</Anchor>
 				</Anchors>
 				<Scripts>
-					<OnClick>Buffalo_GeneralConfigOnCloseButtonClick();</OnClick>
+					<OnClick>Buffalo:onGeneralConfigCloseButtonClick();</OnClick>
 				</Scripts>
 			</Button>
 		</Frames>
@@ -193,10 +193,10 @@
 				tinsert(UISpecialFrames, self:GetName());
 			</OnLoad>
 			<OnShow>
-				PlaySound(IG_MAINMENU_OPEN);
+				PlaySound(Buffalo.sounds.IG_MAINMENU_OPEN);
 			</OnShow>
 			<OnHide>
-				PlaySound(IG_MAINMENU_CLOSE);
+				PlaySound(Buffalo.sounds.IG_MAINMENU_CLOSE);
 			</OnHide>
 		</Scripts>
 	</Frame>

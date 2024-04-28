@@ -48,6 +48,9 @@
     <Content Include="Buffalo-Classic.toc">
       <SubType>TableOfContents</SubType>
     </Content>
+    <Content Include="Constants.lua">
+      <SubType>Code</SubType>
+    </Content>
     <Content Include="DigamAddonLib.lua">
       <SubType>Code</SubType>
     </Content>

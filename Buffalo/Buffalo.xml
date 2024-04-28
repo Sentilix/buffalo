@@ -19,8 +19,8 @@
 				self:RegisterForDrag("LeftButton");
 				self:RegisterForClicks("LeftButtonUp", "RightButtonUp");
 
-				self:SetScript("PreClick", Buffalo_OnBeforeBuffClick);
-				self:SetScript("PostClick", Buffalo_OnAfterBuffClick);
+				self:SetScript("PreClick", Buffalo_onBeforeBuffClick);
+				self:SetScript("PostClick", Buffalo_onAfterBuffClick);
 
 				self:SetAttribute("*type1", "spell");
 				self:SetAttribute("unit", nil);
@@ -35,7 +35,7 @@
 			</OnDragStart>
 			<OnDragStop>
 				self:StopMovingOrSizing();
-				Buffalo_RepositionateButton(self);
+				Buffalo_repositionateButton(self);
 			</OnDragStop>
 		</Scripts>
 	</Button>
@@ -45,18 +45,18 @@
 	<Frame name="BuffaloEventFrame">
 		<Scripts>
 			<OnLoad>
-				if (Buffalo_OnLoad) then
-					Buffalo_OnLoad();
+				if (Buffalo_onLoad) then
+					Buffalo_onLoad();
 				end
 			</OnLoad>
 			<OnEvent>
-				if (Buffalo_OnEvent) then
-					Buffalo_OnEvent(self, event, ...);
+				if (Buffalo_onEvent) then
+				Buffalo_onEvent(self, event, ...);
 				end
 			</OnEvent>
 			<OnUpdate>
-				if (Buffalo_OnTimer) then
-					Buffalo_OnTimer(elapsed);
+				if (Buffalo_onTimer) then
+					Buffalo_onTimer(elapsed);
 				end
 			</OnUpdate>
 		</Scripts>
