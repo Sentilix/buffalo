@@ -823,7 +823,6 @@ function Buffalo:scanRaid()
 	local currentUnitid = "player";
 	if groupType == "solo" then
 		unitid = "player"
---		roster[unitid] = { ["Group"]=1, ["IsOnline"]=true, ["IsDead"]=nil, ["BuffMask"]=0, ["Class"]=Buffalo.vars.PlayerClass, ["ClassMask"]=Buffalo.classmasks.Selected };
 		roster[unitid] = Buffalo:getUnitRosterEntry(unitid, 1)
 
 	elseif groupType == "party" then
@@ -845,7 +844,8 @@ function Buffalo:scanRaid()
 		for raidIndex = 1, 40, 1 do
 			local name, rank, subgroup, level, _, filename, zone, online, dead, role, isML = GetRaidRosterInfo(raidIndex);
 			if name then
-				roster[unitid] = Buffalo_GetUnitRosterEntry(unitid, subgroup, online, dead);
+				unitid = "raid"..raidIndex;
+				roster[unitid] = Buffalo:getUnitRosterEntry(unitid, subgroup, online, dead);
 				-- No need to check pet for non-existing player
 				if roster[unitid] then
 					unitid = groupType .. "pet" .. raidIndex;

@@ -80,12 +80,18 @@ Priest		PowerWordFortitude			53
 
 Version history
 ---------------
+Version 0.6.0b3:
+* Fixed nasty LUA bug. Not sure why it first showed up now!
+
+
 Version 0.6.0b2:
 * Refactored large potions of the code.
 * Added Pet as target for buffing - thanks to DJSchaffner for the Pet addition code.
 
+
 Version 0.6.0b1:
 * Added Warlock buffs to the addon: Welcome, locks!
+
 
 Version 0.5.9
 * Bumped Classic client version to 1.15.2
