@@ -21,8 +21,9 @@ Buffalo.classmasks.Shaman			= 0x0040;
 Buffalo.classmasks.Warlock			= 0x0080;
 Buffalo.classmasks.Warrior			= 0x0100;
 Buffalo.classmasks.DeathKnight		= 0x0200;
+Buffalo.classmasks.Pet				= 0x0400;
 --	Class behavior:
-Buffalo.classmasks.MANAUSERS		= 0x00df;
+Buffalo.classmasks.MANAUSERS		= 0x04df;
 Buffalo.classmasks.ALL				= 0x03ff;
 Buffalo.classmasks.Selected			= 0x0000;
 

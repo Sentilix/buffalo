@@ -14,51 +14,66 @@ Buffalo.matrix.Class = { };			--	[classname<english>]={ ICONID=<icon id>, MASK=<
 
 Buffalo.matrix.Master = {
 	["DRUID"] = {
+		["SORTORDER"] = 1,
 		["MASK"] = Buffalo.classmasks.Druid,
 		["ICONID"] = 625999,
 	},
 	["HUNTER"] = {
+		["SORTORDER"] = 2,
 		["MASK"] = Buffalo.classmasks.Hunter,
 		["ICONID"] = 626000,
 	},
 	["MAGE"] = {
+		["SORTORDER"] = 3,
 		["MASK"] = Buffalo.classmasks.Mage,
 		["ICONID"] = 626001,
 	},
 	["PALADIN"] = {
+		["SORTORDER"] = 4,
 		["MASK"] = Buffalo.classmasks.Paladin,
 		["ICONID"] = 626003,
 		["ALLIANCE-EXPAC"] = 1,
 		["HORDE-EXPAC"] = 2,
 	},
 	["PRIEST"] = {
+		["SORTORDER"] = 5,
 		["MASK"] = Buffalo.classmasks.Priest,
 		["ICONID"] = 626004,
 	},
 	["ROGUE"] = {
+		["SORTORDER"] = 6,
 		["MASK"] = Buffalo.classmasks.Rogue,
 		["ICONID"] = 626005,
 	},
 	["SHAMAN"] = {
+		["SORTORDER"] = 7,
 		["MASK"] = Buffalo.classmasks.Shaman,
 		["ICONID"] = 626006,
 		["ALLIANCE-EXPAC"] = 2,
 		["HORDE-EXPAC"] = 1,
 	},
 	["WARLOCK"] = {
+		["SORTORDER"] = 8,
 		["MASK"] = Buffalo.classmasks.Warlock,
 		["ICONID"] = 626007,
 	},
 	["WARRIOR"] = {
+		["SORTORDER"] = 9,
 		["MASK"] = Buffalo.classmasks.Warrior,
 		["ICONID"] = 626008,
 	},
 	["DEATHKNIGHT"] = {
+		["SORTORDER"] = 10,
 		["MASK"] = Buffalo.classmasks.DeathKnight,
 		["ICONID"] = 135771,
 		["ALLIANCE-EXPAC"] = 3,
 		["HORDE-EXPAC"] = 3,
 	},
+	["PET"] = {
+		["SORTORDER"] = 11,
+		["MASK"] = Buffalo.classmasks.Pet,
+		["ICONID"] = 132599,
+	}
 };
 
 
