@@ -846,15 +846,20 @@ function Buffalo:scanRaid()
 			if name then
 				unitid = "raid"..raidIndex;
 				roster[unitid] = Buffalo:getUnitRosterEntry(unitid, subgroup, online, dead);
+
 				-- No need to check pet for non-existing player
 				if roster[unitid] then
-					unitid = groupType .. "pet" .. raidIndex;
-					roster[unitid] = Buffalo:getUnitRosterEntry(unitid, subgroup);
-				end;
+					-- Save unitid on current player:
+					if name == playername then
+						currentUnitid = unitid;
+					end;
 
-				-- Find unitid on current player:
-				if name == playername then
-					currentUnitid = unitid;
+					--	Only support Hunter pets for now; Lock pets are a bit more restricted when it comes to buffing!
+					local _, currentClass = UnitClass(unitid);
+					if currentClass == "HUNTER" then
+						unitid = groupType .. "pet" .. raidIndex;
+						roster[unitid] = Buffalo:getUnitRosterEntry(unitid, subgroup);
+					end;
 				end;
 			end;
 		end;
@@ -967,7 +972,7 @@ function Buffalo:scanRaid()
 				buffMask = bit.bor(buffMask, 0x002000);
 			end;
 			
-			--	This may be nil when new people joins while scanning is done:
+			--	This can be nil when new people joins while scanning is done:
 			if not roster[unitid] then
 				roster[unitid] = { };
 			end;
@@ -1093,13 +1098,12 @@ function Buffalo:scanRaid()
 
 
 	--	Self buffs:
-	local groupMask = Buffalo.config.value.AssignedBuffSelf;
-	if groupMask > 0 then
+	if Buffalo.config.value.AssignedBuffSelf > 0 then
 		--	Search through the buffs, and count each buff per group and unit combo:
 		for buffName, buffInfo in next, Buffalo.matrix.Buff do
 			--	Skip buffs which we haven't committed to do. That includes GREATER/PRAYER buffs:
-			if(bit.band(buffInfo["BITMASK"], groupMask) > 0) and not buffInfo["GROUP"] then
-				--A:echo(string.format("Buff=%s, bmask=%d, gmask=%d", buffName, bitMask, groupMask));
+			if(bit.band(buffInfo["BITMASK"], Buffalo.config.value.AssignedBuffSelf) > 0) and not buffInfo["GROUP"] then
+				--A:echo(string.format("Buff=%s, bmask=%d, gmask=%d", buffName, buffInfo["BITMASK"], Buffalo.config.value.AssignedBuffSelf));
 
 				local waitForCooldown = false;
 				if buffInfo["COOLDOWN"] then
@@ -1122,7 +1126,7 @@ function Buffalo:scanRaid()
 							if (bit.band(rosterInfo["BuffMask"], buffInfo["BITMASK"]) == 0) then
 								--echo(string.format("Found missing buff, unit=%s, group=%d, buff=%s", UnitName(unitid), groupIndex, buffName));
 
-								if (bit.band(groupMask, buffInfo["BITMASK"]) > 0) then
+								if (bit.band(Buffalo.config.value.AssignedBuffSelf, buffInfo["BITMASK"]) > 0) then
 									--echo(string.format("Adding: unitid=%s, unit=%s, group=%d, buff=%s", unitid, unitname, groupIndex, buffName));
 									missingBuffIndex = missingBuffIndex + 1;
 									local priority = buffInfo["PRIORITY"];

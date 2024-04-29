@@ -79,7 +79,7 @@ Buffalo.config.DEFAULT_Druid_GroupMask	= 1;
 Buffalo.config.DEFAULT_Mage_GroupMask		= 1;
 --	Priests default: 0x0003 = Fort + Spirit on all groups
 Buffalo.config.DEFAULT_Priest_GroupMask	= 3;
---	Warlock default: 0x0000 = no default
+--	Warlock default: 0x0000 = no default buffs
 Buffalo.config.DEFAULT_Warlock_GroupMask	= 0;
 
 

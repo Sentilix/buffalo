@@ -403,6 +403,7 @@ function Buffalo:initializeBuffMatrix()
 			["CLASSES"]		= Buffalo.classmasks.ALL,
 			["PRIORITY"]	= 22,
 			["GROUP"]		= false, 
+			["IGNORERANGECHECK"] = true,
 		};
 
 		matrix[Buffalo.spellnames.warlock.FireShield] = { 
@@ -425,8 +426,8 @@ function Buffalo:initializeBuffMatrix()
 				["PRIORITY"]	= 11,
 				["GROUP"]		= false, 
 			};
-		else
-			matrix[Buffalo.spellnames.warlock.DemonSkin]	= { 
+		elseif Buffalo:getSpellID(Buffalo.spellnames.warlock.DemonSkin) then
+			matrix[Buffalo.spellnames.warlock.DemonSkin]	= {
 				["BITMASK"]		= 0x000100,
 				["ICONID"]		= 136185,
 				["SPELLID"]		= Buffalo:getSpellID(Buffalo.spellnames.warlock.DemonSkin),

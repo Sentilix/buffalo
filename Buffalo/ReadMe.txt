@@ -81,7 +81,9 @@ Priest		PowerWordFortitude			53
 Version history
 ---------------
 Version 0.6.0b3:
-* Fixed nasty LUA bug. Not sure why it first showed up now!
+* Bugfix: LUA bug kept popping up when scanning raid
+* Bugfix: Player's pet was assigned for "selfie buffing"
+* Bugfix: Lock pets does not accept (some?) buffs - now ignoring Lock pets.
 
 
 Version 0.6.0b2:
