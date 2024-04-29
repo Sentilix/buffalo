@@ -80,6 +80,9 @@ Priest		PowerWordFortitude			53
 
 Version history
 ---------------
+Version 0.6.0b4:
+* Bugfix: Fixed a LUA bug in Classic when initializing addon as Mage.
+
 Version 0.6.0b3:
 * Bugfix: LUA bug kept popping up when scanning raid
 * Bugfix: Player's pet was assigned for "selfie buffing"

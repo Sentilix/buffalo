@@ -222,15 +222,17 @@ function Buffalo:initializeBuffMatrix()
 			["FAMILY"]		= "Armor"
 		};
 
-		matrix[Buffalo.spellnames.mage.MoltenArmor] = {
-			["BITMASK"]		= 0x000800,
-			["ICONID"]		= 132221,
-			["SPELLID"]		= Buffalo:getSpellID(Buffalo.spellnames.mage.MoltenArmor),
-			["CLASSES"]		= Buffalo.classmasks.Mage,
-			["PRIORITY"]	= 14,
-			["GROUP"]		= false,
-			["FAMILY"]		= "Armor"
-		};
+		if Buffalo.spellnames.mage.MoltenArmor then
+			matrix[Buffalo.spellnames.mage.MoltenArmor] = {
+				["BITMASK"]		= 0x000800,
+				["ICONID"]		= 132221,
+				["SPELLID"]		= Buffalo:getSpellID(Buffalo.spellnames.mage.MoltenArmor),
+				["CLASSES"]		= Buffalo.classmasks.Mage,
+				["PRIORITY"]	= 14,
+				["GROUP"]		= false,
+				["FAMILY"]		= "Armor"
+			};
+		end;
 
 		matrix[Buffalo.spellnames.mage.MageArmor] = {
 			["BITMASK"]		= 0x000100,
