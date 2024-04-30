@@ -80,6 +80,10 @@ Priest		PowerWordFortitude			53
 
 Version history
 ---------------
+Version 0.6.0b5:
+* Bugfix: Class config index order is wrong, making buff selection count for wrong class!
+
+
 Version 0.6.0b4:
 * Bugfix: Fixed a LUA bug in Classic when initializing addon as Mage.
 

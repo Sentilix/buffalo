@@ -10,7 +10,8 @@ Buffalo = select(2, ...)
 
 Buffalo.matrix = { };
 Buffalo.matrix.Buff = { };
-Buffalo.matrix.Class = { };			--	[classname<english>]={ ICONID=<icon id>, MASK=<bitmask value> }
+Buffalo.matrix.Class = { };				--	[classname<english>]={ ICONID=<icon id>, MASK=<bitmask value> }
+Buffalo.matrix.ClassSorted = { };		--	Same, but sorted by SORTORDER: [SORTORDER]={ NAME=classname<english>, ICONID=<icon id>, MASK=<bitmask value> }
 
 Buffalo.matrix.Master = {
 	["DRUID"] = {

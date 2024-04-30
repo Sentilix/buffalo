@@ -17,6 +17,22 @@
 		</Scripts>
 	</Button>
 
+	<!-- Frame template for one label button -->
+	<Button name="BuffaloMiniButtonTemplate" inherits="ActionButtonTemplate" frameStrata="HIGH" hidden="false" virtual="true">
+		<Size>
+			<AbsDimension x="16" y="16" />
+		</Size>
+		<NormalTexture file="Interface\PaperDoll\UI-Backpack-EmptySlot" />
+		<Scripts>
+			<OnLoad>
+				self:RegisterForClicks("LeftButtonDown", "RightButtonDown");
+			</OnLoad>
+			<OnClick>
+				Buffalo:onToggleRowBuffsClick(self);
+			</OnClick>
+		</Scripts>
+	</Button>
+
 	<!-- Frame template for one buffer (one buff in one group) -->
 	<Button name="GroupBuffTemplate" hidden="true" virtual="true">
 		<Size>
@@ -55,7 +71,6 @@
 			</OnLoad>
 		</Scripts>
 		<NormalTexture name="$parentBG">
-			<!--<Color r="0.3" g="0.3" b="0.3" a="0.6"/>-->
 			<Color r="0.8" g="0.7" b="0.2" a="0.4"/>
 		</NormalTexture>
 	</Button>

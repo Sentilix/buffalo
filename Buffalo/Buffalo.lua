@@ -632,6 +632,8 @@ end
 
 --[[
 	Generate a class matrix, based on the current expansion level.
+	Buffalo.matrix.Class represented in a table ordered by Classname.
+	Usefull when doing classname lookups.
 	Added in 0.4.0
 --]]
 function Buffalo:initializeClassMatrix()
@@ -651,6 +653,28 @@ function Buffalo:initializeClassMatrix()
 			Buffalo.classmasks.Selected = bit.bor(Buffalo.classmasks.Selected, classInfo["MASK"]);
 		end;
 	end;
+
+	--	Update the SortOrder indexed version as well:
+	Buffalo:updateSortedClassMatrix();
+end;
+
+--[[
+	Buffalo.matrix.Class represented in a table ordered by SortOrder:
+	Usefull when displaying stuff.
+	Added in 0.6.0
+--]]
+function Buffalo:updateSortedClassMatrix()
+	Buffalo.matrix.ClassSorted = { };
+
+	--	Copy class information into a table so we can sort it using sortOrder:
+	for className, classInfo in next, Buffalo.matrix.Class do
+		tinsert(Buffalo.matrix.ClassSorted, {
+			className	= className, 
+			iconId		= classInfo["ICONID"],
+			sortOrder	= classInfo["SORTORDER"]
+		});
+	end;
+	table.sort(Buffalo.matrix.ClassSorted, function (a, b) return a.sortOrder < b.sortOrder; end);
 end;
 
 
@@ -1434,7 +1458,7 @@ function Buffalo:initializeBuffSettingsUI()
 
 	--	Generate group labels:
 	posX = UISettings.Left;
-	posY = UISettings.Top - 80;
+	posY = UISettings.Top - 25;
 	for groupIndex = 1, 8, 1 do
 		local labelName = string.format("buffgrouplabel_%s", groupIndex);
 		local fLabel = BuffaloConfigFrame:CreateFontString(labelName, "ARTWORK", "GameFontNormal");
@@ -1444,7 +1468,6 @@ function Buffalo:initializeBuffSettingsUI()
 	
 		posX = posX + UISettings.Width;
 	end;
-
 
 	Buffalo:initializePersonalGroupBuffs(UISettings);
 	Buffalo:initializeRaidGroupBuffs(UISettings);
@@ -1502,42 +1525,28 @@ function Buffalo:initializeBuffSettingsUI()
 	--	Display a row of Class icons.
 	posX = 0;
 	posY = 0;
-
-	--	Copy class information into a table so we can sort it using sortOrder:
-	local classArray = {}
-	for className, classInfo in next, Buffalo.matrix.Class do
-		tinsert(classArray, {
-			classname = className, 
-			iconid = classInfo["ICONID"],
-			sortorder = classInfo["SORTORDER"]
-		});
-	end;
-
-	table.sort(classArray, function (a, b) return a.sortorder < b.sortorder; end);
-
-	for _, classInfo in next, classArray do
-		buttonName = string.format("ClassImage%s", classInfo.classname);
+	for _, classInfo in next, Buffalo.matrix.ClassSorted do
+		buttonName = string.format("ClassImage%s", classInfo.className);
 		local entry = CreateFrame("Button", buttonName, BuffaloClassConfigFrameClass, "BuffaloClassButtonTemplate");
 		entry:SetAlpha(Buffalo.ui.alpha.Enabled);
 		entry:SetPoint("TOPLEFT", posX, posY);
-		entry:SetNormalTexture(classInfo.iconid);
-		entry:SetPushedTexture(classInfo.iconid);
+		entry:SetNormalTexture(classInfo.iconId);
+		entry:SetPushedTexture(classInfo.iconId);
 
 		posX = posX + colWidth;
 	end;
 
 
-	--	Step 2:
+	--	Step 2 - ClassConfig dialogue:
 	--	Display buff image for each buff+class combo:
 	posY = 0;
 	buffCount = #Buffalo.vars.GroupBuffProps;
 	for rowNumber = 1, buffCount, 1 do
 		posX = 0;
 		posY = posY - rowHeight;
-
-		for className, classInfo in next, Buffalo.matrix.Class do
+		for _, classInfo in next, Buffalo.matrix.ClassSorted do
 			-- We just disable the buttons, we will refresh status in a second.
-			buttonName = string.format("%s_row%s", className, rowNumber);
+			buttonName = string.format("%s_row%s", classInfo.className, rowNumber);
 
 			local entry = CreateFrame("Button", buttonName, BuffaloClassConfigFrameClass, "BuffaloBuffButtonTemplate");
 			entry:SetAlpha(Buffalo.ui.alpha.Disabled);
@@ -1565,8 +1574,21 @@ function Buffalo:initializePersonalGroupBuffs(UISettings)
 	local buttonName;
 	for groupNumber = 1, 8, 1 do
 		posX = UISettings.Left + UISettings.Width * (groupNumber - 1);
-		posY = UISettings.Top - 20;
+		posY = UISettings.Top - 10;
+
+		--	Button to toggle all Column buffs:
+		local colBtn = CreateFrame("Button", string.format("toggle_col_%d", groupNumber), BuffaloConfigFramePersonal, "BuffaloMiniButtonTemplate");
+		colBtn:SetPoint("TOPLEFT", posX+8, UISettings.Top+12);
+		colBtn:SetNormalTexture(Buffalo.ui.icons.GroupBuff);
+
 		for rowNumber = 1, #Buffalo.vars.GroupBuffProps, 1 do
+			--	Button to toggle all Row buffs:
+			if groupNumber == 1 then
+				local rowBtn = CreateFrame("Button", string.format("toggle_row_%d", rowNumber), BuffaloConfigFramePersonal, "BuffaloMiniButtonTemplate");
+				rowBtn:SetPoint("TOPLEFT", posX - 60, posY-8);
+				rowBtn:SetNormalTexture(Buffalo.ui.icons.GroupBuff);
+			end;
+
 			buttonName = string.format("buffalo_personal_buff_%d_%d", rowNumber, groupNumber);
 			local entry = CreateFrame("Button", buttonName, BuffaloConfigFramePersonal, "BuffaloGroupButtonTemplate");
 			entry:SetAlpha(Buffalo.ui.alpha.Disabled);
@@ -1890,7 +1912,7 @@ function Buffalo_buffGroupDropdownMenu_Initialize(self, level, menuList)
 
 	local classInfo = Buffalo.matrix.Class[Buffalo.vars.SyncClass];
 	local players = Buffalo:getPlayersInRoster(classInfo["MASK"]);
-	for playerIndex = 1, table.getn(players), 1 do
+	for playerIndex = 1, #players, 1 do
 		local info = UIDropDownMenu_CreateInfo();
 		info.notCheckable = true;
 		info.text       = players[playerIndex]["NAME"];
@@ -2156,13 +2178,14 @@ end;
 
 function Buffalo:refreshClassSettingsUI()
 	--	Update alpha value on each button so it matches the current settings.
+
 	buffCount = #Buffalo.vars.GroupBuffProps;
 	for rowNumber = 1, buffCount, 1 do
-		for className, classInfo in next, Buffalo.matrix.Class do
-			buttonName = string.format("%s_row%s", className, rowNumber);
+		for _, classInfo in next, Buffalo.matrix.ClassSorted do
+			buttonName = string.format("%s_row%s", classInfo.className, rowNumber);
 
 			local entry = _G[buttonName];
-			if bit.band(Buffalo.config.value.AssignedClasses[className], Buffalo.vars.GroupBuffProps[rowNumber].bitmask) > 0 then
+			if bit.band(Buffalo.config.value.AssignedClasses[classInfo.className], Buffalo.vars.GroupBuffProps[rowNumber].bitmask) > 0 then
 				entry:SetAlpha(Buffalo.ui.alpha.Enabled);
 			else
 				entry:SetAlpha(Buffalo.ui.alpha.Disabled);
@@ -2226,6 +2249,95 @@ function Buffalo:onConfigurationBuffClick(self, ...)
 		Buffalo:setConfigOption(Buffalo.config.key.AssignedBuffSelf, Buffalo.config.value.AssignedBuffSelf);
 	else
 		Buffalo.config.value.AssignedBuffGroups[col] = groupMask;
+	end;
+
+	Buffalo:updateGroupBuffUI();
+end;
+
+function Buffalo:onToggleRowBuffsClick(self, ...)
+	local buttonName = self:GetName();
+	local buttonType = GetMouseButtonClicked();
+	local _, _, rowOrCol, number = string.find(buttonName, "toggle_(%a+)_(%d)");
+
+	local enableBuffs = (buttonType == "LeftButton");
+
+	if rowOrCol == 'row' then
+		Buffalo:toggleRowBuffs(1 * number, enableBuffs);
+	elseif rowOrCol == 'col' then
+		Buffalo:toggleColumnBuffs(1 * number, enableBuffs);
+	end;
+end;
+
+function Buffalo:toggleRowBuffs(rowNumber, enableBuffs)
+	--	GroupMask tells what buffs I have selected for the actual group.
+	--	Properties are the name / icon/ mask for the clicked buff.
+	local properties = Buffalo.vars.GroupBuffProps;
+	local buffMask = properties[rowNumber].bitmask;		--	BuffMask is the clicked buff's bitvalue.
+	local buffInfo = Buffalo.matrix.Buff[properties[rowNumber].name];
+	local maskOut = 0x0ffff - buffMask;					-- preserve all buffs except for the selected one:
+
+	local groupMask, col;
+	for col = 1, 8, 1 do
+		groupMask  = Buffalo.config.value.AssignedBuffGroups[col];
+
+		if enableBuffs then
+			--	ADD the buff: first disable all other buffs in same family (if any)
+			local family = buffInfo["FAMILY"];
+			if family then
+				local familyMask = 0x0000;
+				for buffName, buffInfo in next, Buffalo.matrix.Buff do
+					if buffInfo["FAMILY"] == family then
+						familyMask = bit.bor(familyMask, buffInfo["BITMASK"]);
+					end;
+				end;
+
+				groupMask = bit.band(groupMask, 0x0ffff - familyMask);
+			end;
+
+			groupMask = bit.bor(groupMask, buffMask);
+		else
+			groupMask = bit.band(groupMask, maskOut);
+		end;
+
+		Buffalo.config.value.AssignedBuffGroups[col] = groupMask;
+	end;
+
+	Buffalo:updateGroupBuffUI();
+end;
+
+function Buffalo:toggleColumnBuffs(colNumber, enableBuffs)
+	--	GroupMask tells what buffs I have selected for the actual group.
+	--	Properties are the name / icon/ mask for the clicked buff.
+	local properties = Buffalo.vars.GroupBuffProps;
+	local groupMask  = Buffalo.config.value.AssignedBuffGroups[colNumber];
+
+	local buffMask, buffInfo, maskOut;
+
+	for row = 1, #properties, 1 do
+		buffMask = properties[row].bitmask;				--	BuffMask is the clicked buff's bitvalue.
+		buffInfo = Buffalo.matrix.Buff[properties[row].name];
+		maskOut = 0x0ffff - buffMask;					-- preserve all buffs except for the selected one:
+
+		if enableBuffs then
+			--	ADD the buff: first disable all other buffs in same family (if any)
+			local family = buffInfo["FAMILY"];
+			if family then
+				local familyMask = 0x0000;
+				for buffName, buffInfo in next, Buffalo.matrix.Buff do
+					if buffInfo["FAMILY"] == family then
+						familyMask = bit.bor(familyMask, buffInfo["BITMASK"]);
+					end;
+				end;
+
+				groupMask = bit.band(groupMask, 0x0ffff - familyMask);
+			end;
+
+			groupMask = bit.bor(groupMask, buffMask);
+		else
+			groupMask = bit.band(groupMask, maskOut);
+		end;
+
+		Buffalo.config.value.AssignedBuffGroups[colNumber] = groupMask;
 	end;
 
 	Buffalo:updateGroupBuffUI();
