@@ -82,7 +82,7 @@ Version history
 ---------------
 Version 0.6.0b5:
 * Bugfix: Class config index order is wrong, making buff selection count for wrong class!
-* Added buttons to select/deselect an entire row or column in Personal buff mode.
+* Added buttons to select/deselect an entire row in Personal buff mode.
 
 
 Version 0.6.0b4:

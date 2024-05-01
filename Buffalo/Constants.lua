@@ -163,9 +163,8 @@ Buffalo.ui.icons.PlayerIsDead					= "Interface\\Icons\\Ability_rogue_feigndeath"
 Buffalo.ui.icons.RaidNone						= 134121;	-- Raid mode 0: white
 Buffalo.ui.icons.RaidOpen						= 134125;	-- Raid mode 1: green
 Buffalo.ui.icons.RaidClosed						= 134124;	-- Raid mode 2: red
-Buffalo.ui.icons.Minus							= 135768;
-Buffalo.ui.icons.Plus							= 135769;
-Buffalo.ui.icons.GroupBuff						= 132307;
+Buffalo.ui.icons.GroupBuff						= 252268;
+Buffalo.ui.icons.GroupBuffPushed				= 252268;
 
 
 --	Backdrops:
