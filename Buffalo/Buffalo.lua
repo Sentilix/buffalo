@@ -1581,8 +1581,8 @@ function Buffalo:initializePersonalGroupBuffs(UISettings)
 			if groupNumber == 1 then
 				local rowBtn = CreateFrame("Button", string.format("toggle_row_%d", rowNumber), BuffaloConfigFramePersonal, "BuffaloMiniButtonTemplate");
 				rowBtn:SetPoint("TOPLEFT", posX - 60, posY-8);
-				rowBtn:SetNormalTexture(Buffalo.ui.icons.GroupBuff);
-				rowBtn:SetPushedTexture(Buffalo.ui.icons.GroupBuffPushed);
+				rowBtn:SetNormalTexture(Buffalo.vars.GroupBuffProps[rowNumber].iconId);
+				rowBtn:SetPushedTexture(Buffalo.vars.GroupBuffProps[rowNumber].iconId);
 			end;
 
 			buttonName = string.format("buffalo_personal_buff_%d_%d", rowNumber, groupNumber);
