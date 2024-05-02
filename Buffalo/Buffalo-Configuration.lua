@@ -213,15 +213,37 @@ function Buffalo:initializeBuffMatrix()
 			["FAMILY"]		= "AmplifyDampen"
 		};
 
-		matrix[Buffalo.spellnames.mage.FrostArmor] = {
-			["BITMASK"]		= 0x001000,
-			["ICONID"]		= 135843,
-			["SPELLID"]		= Buffalo:getSpellID(Buffalo.spellnames.mage.FrostArmor),
+		matrix[Buffalo.spellnames.mage.MageArmor] = {
+			["BITMASK"]		= 0x000100,
+			["ICONID"]		= 135991,
+			["SPELLID"]		= Buffalo:getSpellID(Buffalo.spellnames.mage.MageArmor),
 			["CLASSES"]		= Buffalo.classmasks.Mage,
-			["PRIORITY"]	= 15,
+			["PRIORITY"]	= 13,
 			["GROUP"]		= false,
 			["FAMILY"]		= "Armor"
 		};
+
+		if Buffalo.spellnames.mage.IceArmor then
+			matrix[Buffalo.spellnames.mage.IceArmor] = {
+				["BITMASK"]		= 0x000200,
+				["ICONID"]		= 135843,
+				["SPELLID"]		= Buffalo:getSpellID(Buffalo.spellnames.mage.IceArmor),
+				["CLASSES"]		= Buffalo.classmasks.Mage,
+				["PRIORITY"]	= 12,
+				["GROUP"]		= false,
+				["FAMILY"]		= "Armor"
+			};
+		else
+			matrix[Buffalo.spellnames.mage.FrostArmor] = {
+				["BITMASK"]		= 0x000200,
+				["ICONID"]		= 135843,
+				["SPELLID"]		= Buffalo:getSpellID(Buffalo.spellnames.mage.FrostArmor),
+				["CLASSES"]		= Buffalo.classmasks.Mage,
+				["PRIORITY"]	= 15,
+				["GROUP"]		= false,
+				["FAMILY"]		= "Armor"
+			};
+		end;
 
 		if Buffalo.spellnames.mage.MoltenArmor then
 			matrix[Buffalo.spellnames.mage.MoltenArmor] = {
@@ -234,26 +256,6 @@ function Buffalo:initializeBuffMatrix()
 				["FAMILY"]		= "Armor"
 			};
 		end;
-
-		matrix[Buffalo.spellnames.mage.MageArmor] = {
-			["BITMASK"]		= 0x000100,
-			["ICONID"]		= 135991,
-			["SPELLID"]		= Buffalo:getSpellID(Buffalo.spellnames.mage.MageArmor),
-			["CLASSES"]		= Buffalo.classmasks.Mage,
-			["PRIORITY"]	= 13,
-			["GROUP"]		= false,
-			["FAMILY"]		= "Armor"
-		};
-
-		matrix[Buffalo.spellnames.mage.IceArmor] = {
-			["BITMASK"]		= 0x000200,
-			["ICONID"]		= 135843,
-			["SPELLID"]		= Buffalo:getSpellID(Buffalo.spellnames.mage.IceArmor),
-			["CLASSES"]		= Buffalo.classmasks.Mage,
-			["PRIORITY"]	= 12,
-			["GROUP"]		= false,
-			["FAMILY"]		= "Armor"
-		};
 
 		matrix[Buffalo.spellnames.mage.IceBarrier] = {
 			["BITMASK"]		= 0x000400,

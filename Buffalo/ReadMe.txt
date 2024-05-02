@@ -80,27 +80,19 @@ Priest		PowerWordFortitude			53
 
 Version history
 ---------------
-Version 0.6.0b5:
+Version 0.6.0:
 * Added buttons to select/deselect an entire row in Personal buff mode.
+* Added Warlocks and their buffs to the addon: Welcome, Warlocks!
+* Added Pet as target for buffing - thanks to DJSchaffner for the Pet addition code.
+* Refactored large potions of the code.
+
+
+Version 0.6.0b1-5:
 * Bugfix: Class config index order is wrong, making buff selection count for wrong class!
-
-
-Version 0.6.0b4:
-* Bugfix: Fixed a LUA bug in Classic when initializing addon as Mage.
-
-Version 0.6.0b3:
 * Bugfix: LUA bug kept popping up when scanning raid
 * Bugfix: Player's pet was assigned for "selfie buffing"
 * Bugfix: Lock pets does not accept (some?) buffs - now ignoring Lock pets.
-
-
-Version 0.6.0b2:
-* Refactored large potions of the code.
-* Added Pet as target for buffing - thanks to DJSchaffner for the Pet addition code.
-
-
-Version 0.6.0b1:
-* Added Warlock buffs to the addon: Welcome, locks!
+* Bugfix: Fixed a LUA bug in Classic when initializing addon as Mage.
 
 
 Version 0.5.9
