@@ -80,6 +80,11 @@ Priest		PowerWordFortitude			53
 
 Version history
 ---------------
+Version 0.7.0b1:
+* Removed support for WotLK after Cataclysm took over.
+	* No, I do not intend to play Cataclysm so no cata port.
+
+
 Version 0.6.0:
 * Added buttons to select/deselect an entire row in Personal buff mode.
 * Added Warlocks and their buffs to the addon: Welcome, Warlocks!

@@ -17,6 +17,7 @@ local addonMetadata = {
 };
 local A = DigamAddonLib:new(addonMetadata);
 
+Buffalo.lib = A;
 
 Buffalo.SyncUnused								= "(None)";
 Buffalo.Version									= 0;
@@ -34,7 +35,9 @@ Buffalo.vars.RaidBuffFrameHeight				= 0;
 --	Internal variables
 Buffalo.vars.PlayerIsBuffClass					= false;
 Buffalo.vars.PlayerNameAndRealm					= "";
-Buffalo.vars.PlayerClass						= "";
+Buffalo.vars.PlayerClass						= UnitClass("player");
+Buffalo.vars.PlayerFaction						= UnitFactionGroup("player");
+
 Buffalo.vars.InitializationComplete				= false;
 Buffalo.vars.InitializationRetryTimer			= 0;
 Buffalo.vars.UpdateMessageShown					= false;
@@ -50,7 +53,6 @@ Buffalo.vars.SyncGroup							= nil;
 Buffalo.vars.OrderedBuffGroups					= { };		-- [buff index] = { PRIORITY, NAME, MASK, ICONID } 
 Buffalo.vars.GroupBuffProps						= { };
 Buffalo.vars.SelfBuffProps						= { };
-
 
 
 -- Configuration:
@@ -636,47 +638,45 @@ end
 	Usefull when doing classname lookups.
 	Added in 0.4.0
 --]]
-function Buffalo:initializeClassMatrix()
-	local factionEN = UnitFactionGroup("player");
+function Buffalo:initializeClasses()
+--	local factionEN = UnitFactionGroup("player");
 
-	Buffalo.matrix.Class = { };
+--	Buffalo.matrix.Class = { };
+--	Buffalo.classmasks.Selected = 0x0000;
+
+--	local expacKey = "ALLIANCE-EXPAC";
+--	if factionEN == "Horde" then
+--		expacKey = "HORDE-EXPAC";
+--	end;
+
+--	for className, classInfo in next, Buffalo.matrix.Master do
+--		if not classInfo[expacKey] or classInfo[expacKey] <= A.addonExpansionLevel then
+--			Buffalo.matrix.Class[className] = classInfo;
+--			Buffalo.classmasks.Selected = bit.bor(Buffalo.classmasks.Selected, classInfo["MASK"]);
+--		end;
+--	end;
+
 	Buffalo.classmasks.Selected = 0x0000;
 
-	local expacKey = "ALLIANCE-EXPAC";
-	if factionEN == "Horde" then
-		expacKey = "HORDE-EXPAC";
+	local expacKey = "AllianceExpac";
+	if Buffalo.vars.PlayerFaction == "Horde" then
+		expacKey = "HordeExpac";
 	end;
 
-	for className, classInfo in next, Buffalo.matrix.Master do
-		if not classInfo[expacKey] or classInfo[expacKey] <= A.addonExpansionLevel then
-			Buffalo.matrix.Class[className] = classInfo;
-			Buffalo.classmasks.Selected = bit.bor(Buffalo.classmasks.Selected, classInfo["MASK"]);
+	for className, classInfo in next, Buffalo.classes do
+		if className ~= "shared" then
+			classInfo.Enabled = nil;
+			if not classInfo[expacKey] or classInfo[expacKey] <= A.addonExpansionLevel then
+				classInfo.Enabled = true;
+
+				Buffalo.classmasks.Selected = bit.bor(Buffalo.classmasks.Selected, classInfo.Mask);
+			end;
 		end;
 	end;
 
 	--	Update the SortOrder indexed version as well:
-	Buffalo:updateSortedClassMatrix();
+	Buffalo:sortClasses();
 end;
-
---[[
-	Buffalo.matrix.Class represented in a table ordered by SortOrder:
-	Usefull when displaying stuff.
-	Added in 0.6.0
---]]
-function Buffalo:updateSortedClassMatrix()
-	Buffalo.matrix.ClassSorted = { };
-
-	--	Copy class information into a table so we can sort it using sortOrder:
-	for className, classInfo in next, Buffalo.matrix.Class do
-		tinsert(Buffalo.matrix.ClassSorted, {
-			className	= className, 
-			iconId		= classInfo["ICONID"],
-			sortOrder	= classInfo["SORTORDER"]
-		});
-	end;
-	table.sort(Buffalo.matrix.ClassSorted, function (a, b) return a.sortOrder < b.sortOrder; end);
-end;
-
 
 --[[
 	Generate array of Classes with a Buff mask each.
@@ -733,8 +733,13 @@ function Buffalo:mainInitialization(reloaded)
 	Buffalo.vars.GroupBuffProps = Buffalo:getGroupBuffProperties();
 	Buffalo.vars.SelfBuffProps = Buffalo:getGroupBuffProperties(true);
 
-	--	This sets up a matrix with icon+mask for each class, based on expansion level:
-	Buffalo:initializeClassMatrix();
+	Buffalo:updateSpellMatrix();
+	--A:printAll(Buffalo.classes[Buffalo.vars.PlayerClass]);
+	--A:printAll(Buffalo.classes["shared"]);
+
+
+	--	This set all eligible classes to Enabled=true:
+	Buffalo:initializeClasses();
 
 	Buffalo:initializeClassBuffs();
 
@@ -1247,7 +1252,8 @@ function Buffalo:getUnitRosterEntry(unitid, group, isOnline, isDead)
 		local isDead   = isDead or (0 and UnitIsDead(unitid) and 1);
 		local classname = "PET"
 		if isOnline then
-			return { ["Group"]=group, ["IsOnline"]=isOnline, ["IsDead"]=isDead, ["BuffMask"]=0, ["Class"]=classname, ["ClassMask"]=Buffalo.matrix.Class[classname]["MASK"] };
+			--return { ["Group"]=group, ["IsOnline"]=isOnline, ["IsDead"]=isDead, ["BuffMask"]=0, ["Class"]=classname, ["ClassMask"]=Buffalo.matrix.Class[classname]["MASK"] };
+			return { ["Group"]=group, ["IsOnline"]=isOnline, ["IsDead"]=isDead, ["BuffMask"]=0, ["Class"]=classname, ["ClassMask"]=Buffalo.classes[classname].Mask };
 		end;
 	elseif unitid == "player" and group == 1 then
 		return { ["Group"]=1, ["IsOnline"]=true, ["IsDead"]=nil, ["BuffMask"]=0, ["Class"]=Buffalo.vars.PlayerClass, ["ClassMask"]=Buffalo.classmasks.ALL };
@@ -1258,7 +1264,8 @@ function Buffalo:getUnitRosterEntry(unitid, group, isOnline, isDead)
 	
 		if classname then
 			local classUpper = string.upper(classname);
-			return { ["Group"]=group, ["IsOnline"]=isOnline, ["IsDead"]=isDead, ["BuffMask"]=0, ["Class"]=classUpper, ["ClassMask"]=Buffalo.matrix.Class[classname]["MASK"] };
+			--return { ["Group"]=group, ["IsOnline"]=isOnline, ["IsDead"]=isDead, ["BuffMask"]=0, ["Class"]=classUpper, ["ClassMask"]=Buffalo.matrix.Class[classname]["MASK"] };
+			return { ["Group"]=group, ["IsOnline"]=isOnline, ["IsDead"]=isDead, ["BuffMask"]=0, ["Class"]=classUpper, ["ClassMask"]=Buffalo.classes[classname].Mask };
 		end;
 	end;
 	return nil;
@@ -1526,13 +1533,15 @@ function Buffalo:initializeBuffSettingsUI()
 	--	Display a row of Class icons.
 	posX = 0;
 	posY = 0;
-	for _, classInfo in next, Buffalo.matrix.ClassSorted do
-		buttonName = string.format("ClassImage%s", classInfo.className);
+	--for _, classInfo in next, Buffalo.matrix.ClassSorted do
+	for className, classInfo in next, Buffalo.sorted.classes do
+		--buttonName = string.format("ClassImage%s", classInfo.className);
+		buttonName = string.format("ClassImage%s", className);
 		local entry = CreateFrame("Button", buttonName, BuffaloClassConfigFrameClass, "BuffaloClassButtonTemplate");
 		entry:SetAlpha(Buffalo.ui.alpha.Enabled);
 		entry:SetPoint("TOPLEFT", posX, posY);
-		entry:SetNormalTexture(classInfo.iconId);
-		entry:SetPushedTexture(classInfo.iconId);
+		entry:SetNormalTexture(classInfo.IconID);
+		entry:SetPushedTexture(classInfo.IconID);
 
 		posX = posX + colWidth;
 	end;
@@ -1545,9 +1554,11 @@ function Buffalo:initializeBuffSettingsUI()
 	for rowNumber = 1, buffCount, 1 do
 		posX = 0;
 		posY = posY - rowHeight;
-		for _, classInfo in next, Buffalo.matrix.ClassSorted do
+		--for _, classInfo in next, Buffalo.matrix.ClassSorted do
+		for className, classInfo in next, Buffalo.sorted.classes do
 			-- We just disable the buttons, we will refresh status in a second.
-			buttonName = string.format("%s_row%s", classInfo.className, rowNumber);
+			--buttonName = string.format("%s_row%s", classInfo.className, rowNumber);
+			buttonName = string.format("%s_row%s", className, rowNumber);
 
 			local entry = CreateFrame("Button", buttonName, BuffaloClassConfigFrameClass, "BuffaloBuffButtonTemplate");
 			entry:SetAlpha(Buffalo.ui.alpha.Disabled);
@@ -1906,8 +1917,9 @@ function Buffalo_buffGroupDropdownMenu_Initialize(self, level, menuList)
 	info.func       = function() Buffalo:BuffGroupDropdownMenu_OnClick(this, nil) end;
 	UIDropDownMenu_AddButton(info);
 
-	local classInfo = Buffalo.matrix.Class[Buffalo.vars.SyncClass];
-	local players = Buffalo:getPlayersInRoster(classInfo["MASK"]);
+	--local classInfo = Buffalo.matrix.Class[Buffalo.vars.SyncClass];
+	local classInfo = Buffalo.classes[Buffalo.vars.SyncClass];
+	local players = Buffalo:getPlayersInRoster(classInfo.Mask);
 	for playerIndex = 1, #players, 1 do
 		local info = UIDropDownMenu_CreateInfo();
 		info.notCheckable = true;
@@ -1945,13 +1957,14 @@ function Buffalo:getPlayersInRoster(classMask)
 			
 			local fullName = Buffalo:getPlayerAndRealm(unitid);
 			local _, className = UnitClass(unitid);
-			local classInfo = Buffalo.matrix.Class[className];
+			--local classInfo = Buffalo.matrix.Class[className];
+			local classInfo = Buffalo.classes[className];
 
-			if bit.band(classInfo["MASK"], classMask) > 0 then
+			if bit.band(classInfo.Mask, classMask) > 0 then
 				tinsert(players, { 
 					["NAME"] = fullName,
-					["MASK"] = classInfo["MASK"], 
-					["ICONID"] = classInfo["ICONID"],
+					["MASK"] = classInfo.Mask, 
+					["ICONID"] = classInfo.IconID,
 					["CLASS"] = className,
 				});
 			end;
@@ -1966,13 +1979,14 @@ function Buffalo:getPlayersInRoster(classMask)
 
 			local fullName = Buffalo:getPlayerAndRealm(unitid);
 			local _, className = UnitClass(unitid);		
-			local classInfo = Buffalo.matrix.Class[className];
+			--local classInfo = Buffalo.matrix.Class[className];
+			local classInfo = Buffalo.classes[className];
 
-			if bit.band(classInfo["MASK"], classMask) > 0 then
+			if bit.band(classInfo.Mask, classMask) > 0 then
 				tinsert(players, {
 					["NAME"] = fullName, 
-					["MASK"] = classInfo["MASK"], 
-					["ICONID"] = classInfo["ICONID"],
+					["MASK"] = classInfo.Mask, 
+					["ICONID"] = classInfo.IconID,
 					["CLASS"] = className, 
 				});
 			end;
@@ -1982,13 +1996,14 @@ function Buffalo:getPlayersInRoster(classMask)
 		local unitid = "player";
 		local fullName = Buffalo:getPlayerAndRealm(unitid);
 		local _, className = UnitClass(unitid);
-		local classInfo = Buffalo.matrix.Class[className];
+		--local classInfo = Buffalo.matrix.Class[className];
+		local classInfo = Buffalo.matrix.classes[className];
 
-		if bit.band(classInfo["MASK"], classMask) > 0 then
+		if bit.band(classInfo.Mask, classMask) > 0 then
 			tinsert(players, {
 				["NAME"] = fullName,
-				["MASK"] = classInfo["MASK"], 
-				["ICONID"] = classInfo["ICONID"],
+				["MASK"] = classInfo.Mask, 
+				["ICONID"] = classInfo.IconID,
 				["CLASS"] = className,
 			});
 		end;
@@ -2177,11 +2192,13 @@ function Buffalo:refreshClassSettingsUI()
 
 	buffCount = #Buffalo.vars.GroupBuffProps;
 	for rowNumber = 1, buffCount, 1 do
-		for _, classInfo in next, Buffalo.matrix.ClassSorted do
-			buttonName = string.format("%s_row%s", classInfo.className, rowNumber);
+		--for _, classInfo in next, Buffalo.matrix.ClassSorted do
+		for className, classInfo in next, Buffalo.sorted.classes do
+			--buttonName = string.format("%s_row%s", classInfo.className, rowNumber);
+			buttonName = string.format("%s_row%s", className, rowNumber);
 
 			local entry = _G[buttonName];
-			if bit.band(Buffalo.config.value.AssignedClasses[classInfo.className], Buffalo.vars.GroupBuffProps[rowNumber].bitmask) > 0 then
+			if bit.band(Buffalo.config.value.AssignedClasses[className], Buffalo.vars.GroupBuffProps[rowNumber].bitmask) > 0 then
 				entry:SetAlpha(Buffalo.ui.alpha.Enabled);
 			else
 				entry:SetAlpha(Buffalo.ui.alpha.Disabled);

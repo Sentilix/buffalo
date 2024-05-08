@@ -18,6 +18,9 @@
     <Content Include="Buffalo-ClassConfig.xml">
       <SubType>Frame</SubType>
     </Content>
+    <Content Include="Buffalo-Classic.toc">
+      <SubType>TableOfContents</SubType>
+    </Content>
     <Content Include="Buffalo-Configuration.lua">
       <SubType>Code</SubType>
       <DependentUpon>Buffalo-Configuration.xml</DependentUpon>
@@ -32,9 +35,6 @@
     <Content Include="Buffalo-GeneralConfig.xml">
       <SubType>Frame</SubType>
     </Content>
-    <Content Include="Buffalo-Wrath.toc">
-      <SubType>TableOfContents</SubType>
-    </Content>
     <Content Include="Buffalo.toc">
       <SubType>TableOfContents</SubType>
     </Content>
@@ -44,9 +44,6 @@
     <Content Include="Buffalo.lua">
       <SubType>Code</SubType>
       <DependentUpon>Buffalo.xml</DependentUpon>
-    </Content>
-    <Content Include="Buffalo-Classic.toc">
-      <SubType>TableOfContents</SubType>
     </Content>
     <Content Include="Constants.lua">
       <SubType>Code</SubType>
