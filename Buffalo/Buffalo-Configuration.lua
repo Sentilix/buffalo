@@ -9,73 +9,74 @@
 Buffalo = select(2, ...)
 
 Buffalo.matrix = { };
-Buffalo.matrix.Buff = { };
---Buffalo.matrix.Class = { };				--	[classname<english>]={ ICONID=<icon id>, MASK=<bitmask value> }
+--Buffalo.matrix.Buff = { };			--	Replaced by Buffalo.spells.active[<spellname>]
+--Buffalo.matrix.Class = { };			--	Replaced by Buffalo.classes[<classname>]	[classname<english>]={ ICONID=<icon id>, MASK=<bitmask value> }
 --Buffalo.matrix.ClassSorted = { };		--	Same, but sorted by SORTORDER: [SORTORDER]={ NAME=classname<english>, ICONID=<icon id>, MASK=<bitmask value> }
 
-Buffalo.matrix.Master = {
-	["DRUID"] = {
-		["SORTORDER"] = 1,
-		["MASK"] = Buffalo.classmasks.Druid,
-		["ICONID"] = 625999,
-	},
-	["HUNTER"] = {
-		["SORTORDER"] = 2,
-		["MASK"] = Buffalo.classmasks.Hunter,
-		["ICONID"] = 626000,
-	},
-	["MAGE"] = {
-		["SORTORDER"] = 3,
-		["MASK"] = Buffalo.classmasks.Mage,
-		["ICONID"] = 626001,
-	},
-	["PALADIN"] = {
-		["SORTORDER"] = 4,
-		["MASK"] = Buffalo.classmasks.Paladin,
-		["ICONID"] = 626003,
-		["ALLIANCE-EXPAC"] = 1,
-		["HORDE-EXPAC"] = 2,
-	},
-	["PRIEST"] = {
-		["SORTORDER"] = 5,
-		["MASK"] = Buffalo.classmasks.Priest,
-		["ICONID"] = 626004,
-	},
-	["ROGUE"] = {
-		["SORTORDER"] = 6,
-		["MASK"] = Buffalo.classmasks.Rogue,
-		["ICONID"] = 626005,
-	},
-	["SHAMAN"] = {
-		["SORTORDER"] = 7,
-		["MASK"] = Buffalo.classmasks.Shaman,
-		["ICONID"] = 626006,
-		["ALLIANCE-EXPAC"] = 2,
-		["HORDE-EXPAC"] = 1,
-	},
-	["WARLOCK"] = {
-		["SORTORDER"] = 8,
-		["MASK"] = Buffalo.classmasks.Warlock,
-		["ICONID"] = 626007,
-	},
-	["WARRIOR"] = {
-		["SORTORDER"] = 9,
-		["MASK"] = Buffalo.classmasks.Warrior,
-		["ICONID"] = 626008,
-	},
-	["DEATHKNIGHT"] = {
-		["SORTORDER"] = 10,
-		["MASK"] = Buffalo.classmasks.DeathKnight,
-		["ICONID"] = 135771,
-		["ALLIANCE-EXPAC"] = 3,
-		["HORDE-EXPAC"] = 3,
-	},
-	["PET"] = {
-		["SORTORDER"] = 11,
-		["MASK"] = Buffalo.classmasks.Pet,
-		["ICONID"] = 132599,
-	}
-};
+--	Replaced by Buffalo.classes[<classname>]
+--Buffalo.matrix.Master = {
+--	["DRUID"] = {
+--		["SORTORDER"] = 1,
+--		["MASK"] = Buffalo.classmasks.Druid,
+--		["ICONID"] = 625999,
+--	},
+--	["HUNTER"] = {
+--		["SORTORDER"] = 2,
+--		["MASK"] = Buffalo.classmasks.Hunter,
+--		["ICONID"] = 626000,
+--	},
+--	["MAGE"] = {
+--		["SORTORDER"] = 3,
+--		["MASK"] = Buffalo.classmasks.Mage,
+--		["ICONID"] = 626001,
+--	},
+--	["PALADIN"] = {
+--		["SORTORDER"] = 4,
+--		["MASK"] = Buffalo.classmasks.Paladin,
+--		["ICONID"] = 626003,
+--		["ALLIANCE-EXPAC"] = 1,
+--		["HORDE-EXPAC"] = 2,
+--	},
+--	["PRIEST"] = {
+--		["SORTORDER"] = 5,
+--		["MASK"] = Buffalo.classmasks.Priest,
+--		["ICONID"] = 626004,
+--	},
+--	["ROGUE"] = {
+--		["SORTORDER"] = 6,
+--		["MASK"] = Buffalo.classmasks.Rogue,
+--		["ICONID"] = 626005,
+--	},
+--	["SHAMAN"] = {
+--		["SORTORDER"] = 7,
+--		["MASK"] = Buffalo.classmasks.Shaman,
+--		["ICONID"] = 626006,
+--		["ALLIANCE-EXPAC"] = 2,
+--		["HORDE-EXPAC"] = 1,
+--	},
+--	["WARLOCK"] = {
+--		["SORTORDER"] = 8,
+--		["MASK"] = Buffalo.classmasks.Warlock,
+--		["ICONID"] = 626007,
+--	},
+--	["WARRIOR"] = {
+--		["SORTORDER"] = 9,
+--		["MASK"] = Buffalo.classmasks.Warrior,
+--		["ICONID"] = 626008,
+--	},
+--	["DEATHKNIGHT"] = {
+--		["SORTORDER"] = 10,
+--		["MASK"] = Buffalo.classmasks.DeathKnight,
+--		["ICONID"] = 135771,
+--		["ALLIANCE-EXPAC"] = 3,
+--		["HORDE-EXPAC"] = 3,
+--	},
+--	["PET"] = {
+--		["SORTORDER"] = 11,
+--		["MASK"] = Buffalo.classmasks.Pet,
+--		["ICONID"] = 132599,
+--	}
+--};
 
 
 Buffalo["spellnames"] = {
@@ -127,6 +128,12 @@ Buffalo["spellnames"] = {
 Buffalo["sorted"] = {
 	["classes"] = { },
 	["spells"] = { },
+	["groupOnly"] = { },
+	["groupAll"] = { },		-- Er denne ikke samme som "spells"?
+};
+
+Buffalo["spells"] = {
+	["active"] = { },
 };
 
 
@@ -207,21 +214,21 @@ Buffalo["classes"] = {
 				["Priority"]	= 13,
 				["Family"]		= "Armor"
 			},
+			[Buffalo.spellnames.mage.FrostArmor] = {
+				["Bitmask"]		= 0x000200,
+				["Classmask"]	= Buffalo.classmasks.Mage,
+				["MaxSpellId"]	= 12544,
+				["Priority"]	= 12,
+				["ReplacedBy"]	= Buffalo.spellnames.mage.IceArmor,
+				["Family"]		= "Armor"
+			},
 			[Buffalo.spellnames.mage.IceArmor] = {
 				["Bitmask"]		= 0x000200,
 				["Classmask"]	= Buffalo.classmasks.Mage,
 				["MaxSpellId"]	= 10220,
 				["Priority"]	= 12,
-				["ReplacedBy"]	= Buffalo.spellnames.mage.FrostArmor,
+				["Replacing"]	= Buffalo.spellnames.mage.FrostArmor,
 				["Family"]		= "Armor"				
-			},
-			[Buffalo.spellnames.mage.FrostArmor] = {
-				["Bitmask"]		= 0x000200,
-				["Classmask"]	= Buffalo.classmasks.Mage,
-				["MaxSpellId"]	= 12544,
-				["Priority"]	= 15,
-				["Replacing"]	= Buffalo.spellnames.mage.IceArmor,
-				["Family"]		= "Armor"
 			},
 			[Buffalo.spellnames.mage.IceBarrier] = {
 				["Bitmask"]		= 0x000400,
@@ -441,6 +448,9 @@ Buffalo["classes"] = {
 function Buffalo:updateSpellMatrix()
 	Buffalo:updateSpellMatrixByClass(Buffalo.vars.PlayerClass);
 	Buffalo:updateSpellMatrixByClass("shared");
+
+	Buffalo:updateActiveBuffs();
+
 	Buffalo:sortSpells();
 end;
 
@@ -498,15 +508,39 @@ function Buffalo:updateSpellMatrixByClass(classname)
 		end;
 
 		spellInfo.Enabled = enabled;
-		spellInfo.IconId = iconId;
-		spellInfo.SpellId = spellId;
+		spellInfo.IconID = iconId;
+		spellInfo.SpellID = spellId;
 	end;
-	
 
 --	Buffalo.lib:printAll(classInfo);
 --	print(string.format('*** Initializing, player=%s', Buffalo.vars.PlayerClass));
 end;
 
+--[[
+	Buffalo.spells.active[<buff name>] = spellInfo
+	Added in 0.7.0
+--]]
+function Buffalo:updateActiveBuffs()
+	Buffalo.spells.active = { };
+
+	local classInfo = Buffalo.classes[Buffalo.vars.PlayerClass];
+	if classInfo then
+		for spellName, spellInfo in pairs(classInfo.spells) do
+			if spellInfo.Enabled then
+				Buffalo.spells.active[spellName] = spellInfo;
+			end;
+		end;
+	end;
+
+	classInfo = Buffalo.classes.shared;
+	if classInfo then
+		for spellName, spellInfo in pairs(classInfo.spells) do
+			if spellInfo.Enabled then
+				Buffalo.spells.active[spellName] = spellInfo;
+			end;
+		end;
+	end;
+end;
 
 --[[
 	Buffalo.classes[<classname>] represented in a table ordered by Priority.
@@ -571,6 +605,51 @@ function Buffalo:sortClasses()
 	end;
 	table.sort(Buffalo.sorted.classes, function (a, b) return a.SortOrder < b.SortOrder; end);
 end;
+
+
+function Buffalo:updateGroupBuffs(includeSelfBuffs)
+	--	This generate a table of all RAID buffs, ordered in priority:
+	local buffs = { };
+
+	local priority;
+
+	local includeMask = 0x00ff;
+	local selfiePrio = 0;
+	--	This includes Self buffs, but not Find Herbs/Minerals
+	local selfiePrioMask = 0x03f00;
+	if includeSelfBuffs then
+		includeMask = 0x0ffff;
+		selfiePrio = 50;
+	end;
+
+	--for buffName, props in pairs(Buffalo.matrix.Buff) do
+	for spellName, spellInfo in pairs(Buffalo.spells.active) do
+		if not spellInfo.Group and (bit.band(spellInfo.Bitmask, includeMask) > 0) then
+			priority = spellInfo.Priority;
+
+			if bit.band(spellInfo.Bitmask, selfiePrioMask) > 0 then
+				priority = priority + selfiePrio;
+			end;
+
+			tinsert(buffs, {
+				["SpellName"]	= spellName;
+				["IconID"]		= spellInfo.IconID;
+				["Bitmask"]		= spellInfo.Bitmask;
+				["Priority"]	= priority;
+				--buffProperties[buffCount].nextSpell	= props["NEXTSPELL"];		--?? There is no NEXTSPELL property
+			});
+		end;
+	end;
+
+	table.sort(buffs, function (a, b) return a.Priority > b.Priority; end);
+
+	if includeSelfBuffs then
+		Buffalo.sorted.groupAll = buffs;
+	else
+		Buffalo.sorted.groupOnly = buffs;
+	end;
+end;
+
 
 
 
