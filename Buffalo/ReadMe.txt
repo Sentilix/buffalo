@@ -56,11 +56,13 @@ ALL			FindMinerals				10
 Druid		Thorns						11
 Druid		GiftOfTheWild				52
 Druid		MarkOfTheWild				52
+Druid		OmenOfClarity				53
 
-Mage		IceBarrier					11
 Mage		IceArmor					12
+Mage		FrostArmor					12
 Mage		MageArmor					13
 Mage		MoltenArmor					14 (WotLK)
+Mage		IceBarrier					30
 Mage		DampenMagic					51
 Mage		AmplifyMagic				52
 Mage		ArcaneBrilliance			53
@@ -75,14 +77,61 @@ Priest		DivineSpirit				52
 Priest		PrayerOfFortitude			53
 Priest		PowerWordFortitude			53
 
+Warlock		DemonSkin					11
+Warlock		DemonArmor					11
+Warlock		DetectLesserInvisibility	21
+Warlock		DetectInvisibility			21
+Warlock		DetectGreaterInvisibility	21
+Warlock		UnendingBreath				22
+Warlock		FireShield					23
+Warlock		Incubus						36
+Warlock		Succubus					36
+Warlock		Felhunter					37
+Warlock		Voidwalker					38
+Warlock		Imp							39
+
+
 
 
 
 Version history
 ---------------
 Version 0.7.0b1:
-* Removed support for WotLK after Cataclysm took over.
-	* No, I do not intend to play Cataclysm so no cata port.
+* Major refactoring of the entire spell tree. This fixed some minor spell selection bugs (and probably introduced some others)
+* Added: Learning new talents or changing spec (Anniversary) now updates the UI.
+* Added: Omen of Clarity for Balance Druids
+* Removed support for WotLK after Cataclysm took over. No, I do not intend to play Cataclysm or Mist of Pandaria.
+* Bugfix: 6/5 in PrayerBuffs forced default 4/5 to be used when reloading addon.
+
+
+Version 0.6.7:
+* Removed two debug messages.
+* Bumped Classic client version to 1.15.7
+
+
+Version 0.6.6:
+* Fixed a bug which prevented lower versions of spells to be ignored (Frost armor ignored for Ice Armor etc.)
+
+
+Version 0.6.5:
+* Bumped Classic client version to 1.15.6
+
+
+Version 0.6.4:
+* Bumped Classic client version to 1.15.5
+
+
+Version 0.6.3:
+* Fixed broken checkboxes after updating to 1.15.4 API.
+  Thanks Blizzard for changing API in a #nochanges game.
+ 
+
+Version 0.6.2:
+* Bumped Classic client version to 1.15.4
+
+
+Version 0.6.1:
+* Bumped Classic client version to 1.15.3
 
 
 Version 0.6.0:

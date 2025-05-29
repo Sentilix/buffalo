@@ -8,7 +8,7 @@
 			<KeyValue key="backdropColor" value="BLACK" type="global"/>
 			<KeyValue key="backdropBorderColor" value="WHITE" type="global"/>
 		</KeyValues>
-		<Size x="400" y="350" />
+		<Size x="500" y="350" />
 		<Anchors>
 			<Anchor point="CENTER"/>
 		</Anchors>
@@ -16,23 +16,18 @@
 		<Frames>
 			<!-- Options are inserted here -->
 			<Frame name="$parentOptions" hidden="false">
-				<Size x="400" y="350" />
+				<Size x="500" y="350" />
 				<Anchors>
 					<Anchor point="TOPLEFT" x="30" y="-40" />
 				</Anchors>
 			</Frame>
 
-			<!-- Group buff threshold -->
-			<Slider name="BuffaloConfigFramePrayerThreshold" minValue="1" maxValue="5" defaultValue="4" valueStep="1" inherits="OptionsSliderTemplate" enableMouse="true">
-				<Size x="260" y="20" />
+			<Slider name="BuffaloConfigFramePrayerThreshold" minValue="1" maxValue="6" defaultValue="4" valueStep="1" inherits="HorizontalSliderTemplate" enableMouse="true">
+				<Size x="360" y="20" />
 				<Anchors>
 					<Anchor point="TOPLEFT" x="0" y="-20" relativeTo="$parentOptions"/>
 				</Anchors>
 				<Scripts>
-					<OnLoad>
-						_G[self:GetName().."Low"]:SetText("1 (always use greater buffs)");
-						_G[self:GetName().."High"]:SetText("5 (only full groups)");
-					</OnLoad>
 					<OnValueChanged>
 						if Buffalo_onPrayerThresholdChanged then
 						Buffalo_onPrayerThresholdChanged(self);
@@ -41,16 +36,12 @@
 				</Scripts>
 			</Slider>
 			<!-- Renew overlap period -->
-			<Slider name="BuffaloConfigFrameRenewOverlap" minValue="0" maxValue="120" defaultValue="10" valueStep="10" inherits="OptionsSliderTemplate" enableMouse="true">
-				<Size x="260" y="20" />
+			<Slider name="BuffaloConfigFrameRenewOverlap" minValue="0" maxValue="120" defaultValue="10" valueStep="10" inherits="HorizontalSliderTemplate" enableMouse="true">
+				<Size x="360" y="20" />
 				<Anchors>
 					<Anchor point="TOPLEFT" x="0" y="-80" relativeTo="$parentOptions"/>
 				</Anchors>
 				<Scripts>
-					<OnLoad>
-						_G[self:GetName().."Low"]:SetText("0 minutes (wait for expiration)");
-						_G[self:GetName().."High"]:SetText("2 minutes");
-					</OnLoad>
 					<OnValueChanged>
 						if Buffalo_onRenewOverlapChanged then
 						Buffalo_onRenewOverlapChanged(self);
@@ -59,16 +50,12 @@
 				</Scripts>
 			</Slider>
 			<!-- Scan frequency slider -->
-			<Slider name="BuffaloConfigFrameScanFrequency" minValue="1" maxValue="10" defaultValue="3" valueStep="1" inherits="OptionsSliderTemplate" enableMouse="true">
-				<Size x="260" y="20" />
+			<Slider name="BuffaloConfigFrameScanFrequency" minValue="1" maxValue="10" defaultValue="3" valueStep="1" inherits="HorizontalSliderTemplate" enableMouse="true">
+				<Size x="360" y="20" />
 				<Anchors>
 					<Anchor point="TOPLEFT" x="0" y="-140" relativeTo="$parentOptions"/>
 				</Anchors>
 				<Scripts>
-					<OnLoad>
-						_G[self:GetName().."Low"]:SetText("Fast scan (10 per sec)");
-						_G[self:GetName().."High"]:SetText("Slow scan (1 per sec)");
-					</OnLoad>
 					<OnValueChanged>
 						if Buffalo_onScanFrequencyChanged then
 						Buffalo_onScanFrequencyChanged(self);
@@ -78,7 +65,7 @@
 			</Slider>
 
 			<!-- checkbox options -->
-			<CheckButton name="BuffaloConfigFrameOptionAnnounceMissing" inherits="OptionsCheckButtonTemplate">
+			<CheckButton name="BuffaloConfigFrameOptionAnnounceMissing" inherits="ChatConfigCheckButtonTemplate">
 				<Anchors>
 					<Anchor point="TOPLEFT" x="0" y="-195" relativeTo="$parentOptions"/>
 				</Anchors>
@@ -91,7 +78,7 @@
 					</OnClick>
 				</Scripts>
 			</CheckButton>
-			<CheckButton name="BuffaloConfigFrameOptionAnnounceComplete" inherits="OptionsCheckButtonTemplate">
+			<CheckButton name="BuffaloConfigFrameOptionAnnounceComplete" inherits="ChatConfigCheckButtonTemplate">
 				<Anchors>
 					<Anchor point="TOPLEFT" x="0" y="-225" relativeTo="$parentOptions"/>
 				</Anchors>
@@ -125,7 +112,7 @@
 			<Layer level="ARTWORK">
 				<Texture name="$parentHeaderTexture" file="Interface\DialogFrame\UI-DialogBox-Header">
 					<Size>
-						<AbsDimension x="800" y="64"/>
+						<AbsDimension x="1000" y="64"/>
 					</Size>
 					<Anchors>
 						<Anchor point="TOP">
@@ -152,17 +139,55 @@
 					</Anchors>
 					<Color r="0.9" g="0.8" b="0.2" a="1.0"/>
 				</FontString>
+				<FontString name="$parentPrayerThresholdCaptionLow" inherits="GameFontNormal" text="1 (always use greater buffs)">
+					<Anchors>
+						<Anchor point="LEFT" x="0" y="-20" relativeTo="BuffaloConfigFramePrayerThreshold"/>
+					</Anchors>
+					<Color r="0.8" g="0.8" b="0.8" a="1.0"/>
+				</FontString>
+				<FontString name="$parentPrayerThresholdCaptionHigh" inherits="GameFontNormal" text="6 (always use small buffs)">
+					<Anchors>
+						<Anchor point="RIGHT" x="0" y="-20" relativeTo="BuffaloConfigFramePrayerThreshold"/>
+					</Anchors>
+					<Color r="0.8" g="0.8" b="0.8" a="1.0"/>
+				</FontString>
+
 				<FontString name="$parentRenewOverlapCaption" inherits="GameFontNormal" text="Time left (in seconds) until a buff will be renewed">
 					<Anchors>
 						<Anchor point="LEFT" x="0" y="20" relativeTo="BuffaloConfigFrameRenewOverlap"/>
 					</Anchors>
 					<Color r="0.9" g="0.8" b="0.2" a="1.0"/>
 				</FontString>
+				<FontString name="$parentRenewOverlapCaptionLow" inherits="GameFontNormal" text="0 minutes (wait for expiration)">
+					<Anchors>
+						<Anchor point="LEFT" x="0" y="-20" relativeTo="BuffaloConfigFrameRenewOverlap"/>
+					</Anchors>
+					<Color r="0.8" g="0.8" b="0.8" a="1.0"/>
+				</FontString>
+				<FontString name="$parentRenewOverlapCaptionHigh" inherits="GameFontNormal" text="2 minutes">
+					<Anchors>
+						<Anchor point="RIGHT" x="0" y="-20" relativeTo="BuffaloConfigFrameRenewOverlap"/>
+					</Anchors>
+					<Color r="0.8" g="0.8" b="0.8" a="1.0"/>
+				</FontString>
+
 				<FontString name="$parentScanFrequencyCaption" inherits="GameFontNormal" text="Buff scan frequency: slower = better performance">
 					<Anchors>
 						<Anchor point="LEFT" x="0" y="20" relativeTo="BuffaloConfigFrameScanFrequency"/>
 					</Anchors>
 					<Color r="0.9" g="0.8" b="0.2" a="1.0"/>
+				</FontString>
+				<FontString name="$parentRenewOverlapCaptionLow" inherits="GameFontNormal" text="Fast scan (10 per sec)">
+					<Anchors>
+						<Anchor point="LEFT" x="0" y="-20" relativeTo="BuffaloConfigFrameScanFrequency"/>
+					</Anchors>
+					<Color r="0.8" g="0.8" b="0.8" a="1.0"/>
+				</FontString>
+				<FontString name="$parentRenewOverlapCaptionHigh" inherits="GameFontNormal" text="Slow scan (1 per sec)">
+					<Anchors>
+						<Anchor point="RIGHT" x="0" y="-20" relativeTo="BuffaloConfigFrameScanFrequency"/>
+					</Anchors>
+					<Color r="0.8" g="0.8" b="0.8" a="1.0"/>
 				</FontString>
 
 				<!-- slider values -->

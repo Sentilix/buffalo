@@ -543,7 +543,7 @@ function Buffalo:initializeConfigSettings()
 	Buffalo:setConfigOption(Buffalo.config.key.RenewOverlap, Buffalo.config.value.RenewOverlap);
 
 	Buffalo.config.value.GroupBuffThreshold = Buffalo:getConfigOption(Buffalo.config.key.GroupBuffThreshold, Buffalo.config.default.GroupBuffThreshold);
-	if Buffalo.config.value.GroupBuffThreshold < 1 or Buffalo.config.value.GroupBuffThreshold > 5 then
+	if Buffalo.config.value.GroupBuffThreshold < 1 or Buffalo.config.value.GroupBuffThreshold > 6 then
 		Buffalo.config.value.GroupBuffThreshold = Buffalo.config.default.GroupBuffThreshold;
 	end;
 	Buffalo:setConfigOption(Buffalo.config.key.GroupBuffThreshold, Buffalo.config.value.GroupBuffThreshold);
@@ -637,23 +637,6 @@ end
 	Added in 0.4.0
 --]]
 function Buffalo:initializeClasses()
---	local factionEN = UnitFactionGroup("player");
-
---	Buffalo.matrix.Class = { };
---	Buffalo.classmasks.Selected = 0x0000;
-
---	local expacKey = "ALLIANCE-EXPAC";
---	if factionEN == "Horde" then
---		expacKey = "HORDE-EXPAC";
---	end;
-
---	for className, classInfo in next, Buffalo.matrix.Master do
---		if not classInfo[expacKey] or classInfo[expacKey] <= A.addonExpansionLevel then
---			Buffalo.matrix.Class[className] = classInfo;
---			Buffalo.classmasks.Selected = bit.bor(Buffalo.classmasks.Selected, classInfo["MASK"]);
---		end;
---	end;
-
 	Buffalo.classmasks.Selected = 0x0000;
 
 	local expacKey = "AllianceExpac";
@@ -686,7 +669,6 @@ function Buffalo:initializeClassBuffs()
 		Buffalo.config.value.AssignedClasses = { };
 	end;
 
-	--for className, classInfo in next, Buffalo.matrix.Master do
 	for className, classInfo in next, Buffalo.classes do
 		if className ~= "shared" then
 			if not Buffalo.config.value.AssignedClasses[className] then
@@ -714,17 +696,10 @@ function Buffalo:mainInitialization(reloaded)
 	Buffalo.vars.CurrentRaidMode = Buffalo.raidmodes.Personal;
 	Buffalo:initializeConfigSettings();
 
-	--	This sets the buffs up for MY class:
-	Buffalo.matrix.Buff = Buffalo:initializeBuffMatrix();
+	--	Time tp update the MATRIX!
 	Buffalo:updateSpellMatrix();
 
 	if not reloaded then
-		--local matrixCount = 0;
-		--for _ in pairs(Buffalo.matrix.Buff) do 
-		--	matrixCount = matrixCount + 1; 
-		--end;
-
-		--if matrixCount == 0 then
 		if #Buffalo.spells.active == 0 then
 			--	This can fail if wow havent loaded all objects yet.
 			--	We just wait a couple of seconds and try again:
@@ -735,9 +710,6 @@ function Buffalo:mainInitialization(reloaded)
 
 	Buffalo:updateGroupBuffs();
 	Buffalo:updateGroupBuffs(true);
-
-	--Buffalo.lib:printAll(Buffalo.sorted.groupAll);
-
 
 	--	This set all eligible classes to Enabled=true:
 	Buffalo:initializeClasses();
@@ -770,8 +742,8 @@ function Buffalo:mainInitialization(reloaded)
 	if A.addonExpansionLevel == 1 or A.addonExpansionLevel == 2 or A.addonExpansionLevel == 3 then
 		--	Check if the current class can cast buffs.
 		--	Note: herbing/mining is excluded via the 0x00ff mask:
-		for buffName, buffInfo in next, Buffalo.matrix.Buff do
-			if bit.band(buffInfo["BITMASK"], 0x00ff) > 0 then
+		for buffName, buffInfo in next, Buffalo.spells.active do
+			if bit.band(buffInfo.Bitmask, 0x00ff) > 0 then
 				Buffalo.vars.PlayerIsBuffClass = true;
 				break;
 			end;
@@ -926,8 +898,8 @@ function Buffalo:scanRaid()
 				local buffName, iconID, _, _, duration, expirationTime = UnitBuff(unitid, buffIndex, "CANCELABLE");
 				if not buffName then break; end;
 
-				local buffInfo = Buffalo.matrix.Buff[buffName];
-				if buffInfo then
+				local buffInfo = Buffalo.spells.active[buffName];
+				if buffInfo and buffInfo.Enabled then
 					if expirationTime and duration > 0 then
 						local timeOverlap = Buffalo.config.value.RenewOverlap;
 						if duration <= 60 and timeOverlap > 10 then 
@@ -944,12 +916,12 @@ function Buffalo:scanRaid()
 						renewTime = expirationTime - timeOverlap;
 
 						if renewTime > currentTime then
-							buffMask = bit.bor(buffMask, buffInfo["BITMASK"]);
+							buffMask = bit.bor(buffMask, buffInfo.Bitmask);
 						else
 							--	Set expirationTime on roster object so we can check the time later on:
 							local renewName = buffName;
-							if buffInfo["SINGLE"] then 
-								renewName = buffInfo["SINGLE"];
+							if buffInfo.Single then 
+								renewName = buffInfo.Single;
 							end;
 
 							if not roster[unitid] then 
@@ -958,7 +930,7 @@ function Buffalo:scanRaid()
 							roster[unitid][renewName] = expirationTime;
 						end;
 					else
-						buffMask = bit.bor(buffMask, buffInfo["BITMASK"]);
+						buffMask = bit.bor(buffMask, buffInfo.Bitmask);
 					end;
 				end;
 			end
@@ -970,10 +942,10 @@ function Buffalo:scanRaid()
 				--	Possible problem: Documentation does not state wether the returned name is localized or not.
 				--	All examples shows English names, so going for that until I know better ...
 				local trackingIcon = GetTrackingTexture();
-				for buffName, buffInfo in next, Buffalo.matrix.Buff do
-					if buffInfo["ICONID"] == trackingIcon then
+				for buffName, buffInfo in next, Buffalo.spells.active do
+					if buffInfo.Enabled and buffInfo.IconID == trackingIcon then
 						--A.echo(string.format("<CLASSIC> Adding TrackingIcon buff:%s, mask:%s", buffName, buffInfo["BITMASK"]));
-						buffMask = bit.bor(buffMask, buffInfo["BITMASK"]);
+						buffMask = bit.bor(buffMask, buffInfo.Bitmask);
 					end;
 				end;
 			elseif A.addonExpansionLevel > 1 then
@@ -981,10 +953,10 @@ function Buffalo:scanRaid()
 				for n=1, GetNumTrackingTypes() do
 					local buffName, spellID, active = GetTrackingInfo(n);
 					if active then
-						buffInfo = Buffalo.matrix.Buff[buffName];
-						if buffInfo then
+						buffInfo = Buffalo.spells.active[buffName];
+						if buffInfo and buffInfo.Enabled then
 							--echo(string.format("<TBC> Adding TrackingIcon buff:%s, mask:%s", buffName, buffInfo["BITMASK"]));
-							buffMask = bit.bor(buffMask, buffInfo["BITMASK"]);
+							buffMask = bit.bor(buffMask, buffInfo.Bitmask);
 						end;
 					end;
 				end;
@@ -1007,7 +979,7 @@ function Buffalo:scanRaid()
 				roster[unitid] = { };
 			end;
 			--	Each unitid is now set with a buffMask: a bitmask containing the buffs they currently have.
-			roster[unitid]["BuffMask"] = buffMask;
+			roster[unitid].BuffMask = buffMask;
 		end;		
 	end;
 
@@ -1026,100 +998,95 @@ function Buffalo:scanRaid()
 		local groupMask = assignedGroups[groupIndex] or 0;
 
 		local filterFunction = function(entry)
-			return entry["Group"] == groupIndex;
+			return entry.Group == groupIndex;
 		end;
 
 		--	If groupMask is 0 then this group does not have any buffs to apply.
 		if groupMask > 0 then
 			--	Search through the buffs, and count each buff per group and unit combo:
-			for buffName, buffInfo in next, Buffalo.matrix.Buff do
-				local buffMissingCounter = 0;		-- No buffs detected so far.
-				local groupMemberCounter = 0;		-- Total # of units in group.
-				local MissingBuffsInGroup = { };	-- No units missing buffs in group (yet).
+			for buffName, buffInfo in next, Buffalo.spells.active do
+				--A:echo(string.format("Buff=%s, group=%d, gmask=%d", buffName, groupIndex, groupMask));
 
-				--	Skip buffs which we haven't committed to do. That includes GREATER/PRAYER buffs:
-				if(bit.band(buffInfo["BITMASK"], groupMask) > 0) and not buffInfo["GROUP"] then
-					--A:echo(string.format("Buff=%s, bmask=%d, group=%d, gmask=%d", buffName, bitMask, groupIndex, groupMask));
-					local waitForCooldown = false;
-					if buffInfo["COOLDOWN"] then
-						local start, duration, enabled = GetSpellCooldown(buffName);
-						waitForCooldown = (start > 3);
-					end;
-					if not waitForCooldown then
-						--	Iterate over Party
-						for unitid, rosterInfo in pairs(Buffalo:filterTable(roster, filterFunction)) do
-							-- Get player name (for debugging only)
-							unitname = Buffalo:getPlayerAndRealm(unitid);
+				if buffInfo.Enabled then
+					local buffMissingCounter = 0;		-- No buffs detected so far.
+					local groupMemberCounter = 0;		-- Total # of units in group.
+					local MissingBuffsInGroup = { };	-- No units missing buffs in group (yet).
 
-							--	Check 1: Target must be online and alive:
-							if rosterInfo and rosterInfo["IsOnline"] and not rosterInfo["IsDead"] then
-								groupMemberCounter = groupMemberCounter + 1;
+					--	Skip buffs which we haven't committed to do. That includes GREATER/PRAYER buffs:
+					if(bit.band(buffInfo.Bitmask, groupMask) > 0) and not buffInfo.Group then
+						--A:echo(string.format("Buff=%s, group=%d, gmask=%d", buffName, groupIndex, groupMask));
+						local waitForCooldown = false;
+						if buffInfo.Cooldown then
+							local start, duration, enabled = GetSpellCooldown(buffName);
+							waitForCooldown = (start > 3);
+						end;
+						if not waitForCooldown then
+							--	Iterate over Party
+							for unitid, rosterInfo in pairs(Buffalo:filterTable(roster, filterFunction)) do
+								--	Check 1: Target must be online and alive:
+								if rosterInfo and rosterInfo.IsOnline and not rosterInfo.IsDead then
+									groupMemberCounter = groupMemberCounter + 1;
 									
-								-- Check 2: Target class must be eligible for buff:
-								local classMask = Buffalo.config.value.AssignedClasses[rosterInfo["Class"]];
-								
-								if (bit.band(classMask, buffInfo["BITMASK"]) > 0)	then
-									--A:echo(string.format("Class is eligible for buff, Buff=%s, Unit=%s", buffName, unitname));
+									-- Check 2: Target class must be eligible for buff:
+									local classMask = Buffalo.config.value.AssignedClasses[rosterInfo.Class];							
+									if (bit.band(classMask, buffInfo.Bitmask) > 0)	then
 									
-									--	Check 3: Target must be in range:
-									if (buffInfo["IGNORERANGECHECK"]) or (IsSpellInRange(buffName, unitid) == 1) then 
-										--A:echo(string.format("Spell in range, Buff=%s, Unit=%s, BuffClass=%d, ClassMask=%d", buffName, unitname, buffInfo["CLASSES"], rosterInfo["ClassMask"]));
+										--	Check 3: Target must be in range:
+										if (buffInfo.IgnoreRangeCheck) or (IsSpellInRange(buffName, unitid) == 1) then 
 										
-										--	Check 4: There's a person alive in this group. Do he needs this specific buff?
-										if (bit.band(rosterInfo["BuffMask"], buffInfo["BITMASK"]) == 0) then
-											--A:echo(string.format("Found missing buff, unit=%s, group=%d, buff=%s", UnitName(unitid), groupIndex, buffName));
+											--	Check 4: There's a person alive in this group. Do he needs this specific buff?
+											if (bit.band(rosterInfo.BuffMask, buffInfo.Bitmask) == 0) then
 											
-											--	Check 5: Missing buff detected! "Selfie" buffs are only available by current player, e.g. "Inner Fire":
-											if	(bit.band(groupMask, buffInfo["BITMASK"]) > 0) then							-- Raid buff
-												buffMissingCounter = buffMissingCounter + 1;
-												local priority = buffInfo["PRIORITY"];
-												--A:echo(string.format("Adding: unit=%s, group=%d, buff=%s", unitname, groupIndex, buffName));
+												--	Check 5: Missing buff detected! "Selfie" buffs are only available by current player, e.g. "Inner Fire":
+												if	(bit.band(groupMask, buffInfo.Bitmask) > 0) then							-- Raid buff
+													buffMissingCounter = buffMissingCounter + 1;
+													local priority = buffInfo.Priority;
 												
-												local expirationTime = roster[unitid][buffName];
-												if expirationTime then
-													--	Set priority so first expiring buffs are selected first.
-													local seconds = math.floor(expirationTime - currentTime);
-													priority = priority - (50 + seconds);
+													local expirationTime = roster[unitid][buffName];
+													if expirationTime then
+														--	Set priority so first expiring buffs are selected first.
+														local seconds = math.floor(expirationTime - currentTime);
+														priority = priority - (50 + seconds);
+													end;
+
+													MissingBuffsInGroup[buffMissingCounter] = {
+														['unitid']		= unitid, 
+														['name']		= buffName, 
+														['iconid']		= buffInfo.IconID, 
+														['priority']	= priority, 
+														['expTime']		= expirationTime 
+													};
+												
 												end;
-
-
-												MissingBuffsInGroup[buffMissingCounter] = {
-													['unitid']		= unitid, 
-													['name']		= buffName, 
-													['iconid']		= buffInfo["ICONID"], 
-													['priority']	= priority, 
-													['expTime']		= expirationTime 
-												};
-												
 											end;
 										end;
 									end;
 								end;
-							end;
-						end;	-- end iterate raid
+							end;	-- end iterate raid
+						end;
 					end;
-				end;
 
-				--	If this is a group buff, and enough people are missing it, use the big one instead!
-				if buffInfo["PARENT"] and buffMissingCounter >= Buffalo.config.value.GroupBuffThreshold then
-					local parentBuffInfo = Buffalo.matrix.Buff[buffInfo["PARENT"]];
-					if parentBuffInfo then
-						local bufferUnitid = MissingBuffsInGroup[1].unitid;
-						missingBuffIndex = missingBuffIndex + 1;
-						local priority = parentBuffInfo["PRIORITY"] + (buffMissingCounter / groupMemberCounter * 5) + groupMemberCounter;
-						MissingBuffs[missingBuffIndex] = {
-							['unitid']		= bufferUnitid, 
-							['name']		= buffInfo["PARENT"], 
-							['iconid']		= parentBuffInfo["ICONID"], 
-							['priority']	= priority, 
-							['expTime']		= 0 
-						};
-					end;
-				else
-					-- Use single target buffing:
-					for missingIndex = 1, buffMissingCounter, 1 do
-						missingBuffIndex = missingBuffIndex + 1;
-						MissingBuffs[missingBuffIndex] = MissingBuffsInGroup[missingIndex];
+					--	If this is a group buff, and enough people are missing it, use the big one instead!
+					if buffInfo.Parent and buffMissingCounter >= Buffalo.config.value.GroupBuffThreshold then
+						local parentBuffInfo = Buffalo.spells.active[buffInfo.Parent];
+						if parentBuffInfo and parentBuffInfo.Enabled then
+							local bufferUnitid = MissingBuffsInGroup[1].unitid;
+							missingBuffIndex = missingBuffIndex + 1;
+							local priority = parentBuffInfo.Priority + (buffMissingCounter / groupMemberCounter * 5) + groupMemberCounter;
+							MissingBuffs[missingBuffIndex] = {
+								['unitid']		= bufferUnitid, 
+								['name']		= buffInfo.Parent, 
+								['iconid']		= parentBuffInfo.IconID, 
+								['priority']	= priority, 
+								['expTime']		= 0 
+							};
+						end;
+					else
+						-- Use single target buffing:
+						for missingIndex = 1, buffMissingCounter, 1 do
+							missingBuffIndex = missingBuffIndex + 1;
+							MissingBuffs[missingBuffIndex] = MissingBuffsInGroup[missingIndex];
+						end;
 					end;
 				end;
 			end;	-- end iterate buff matrix
@@ -1130,37 +1097,32 @@ function Buffalo:scanRaid()
 	--	Self buffs:
 	if Buffalo.config.value.AssignedBuffSelf > 0 then
 		--	Search through the buffs, and count each buff per group and unit combo:
-		for buffName, buffInfo in next, Buffalo.matrix.Buff do
-			--	Skip buffs which we haven't committed to do. That includes GREATER/PRAYER buffs:
-			if(bit.band(buffInfo["BITMASK"], Buffalo.config.value.AssignedBuffSelf) > 0) and not buffInfo["GROUP"] then
-				--A:echo(string.format("Buff=%s, bmask=%d, gmask=%d", buffName, buffInfo["BITMASK"], Buffalo.config.value.AssignedBuffSelf));
+		for buffName, buffInfo in next, Buffalo.spells.active do
+			if buffInfo.Enabled then
 
-				local waitForCooldown = false;
-				if buffInfo["COOLDOWN"] then
-					local start, duration, enabled = GetSpellCooldown(buffName);
-					waitForCooldown = (start > 3);
-				end;
-				if not waitForCooldown then
-					--	No cooldown (checking on GCD here as well)
-					local rosterInfo = roster[currentUnitid];
+				--	Skip buffs which we haven't committed to do. That includes GREATER/PRAYER buffs:
+				if(bit.band(buffInfo.Bitmask, Buffalo.config.value.AssignedBuffSelf) > 0) and not buffInfo.Group then
+
+					local waitForCooldown = false;
+					if buffInfo.Cooldown then
+						local start, duration, enabled = GetSpellCooldown(buffName);
+						waitForCooldown = (start > 3);
+					end;
+					if not waitForCooldown then
+						--	No cooldown (checking on GCD here as well)
+						local rosterInfo = roster[currentUnitid];
 	
-					--	Check 1: Target must be online and alive:
-					if rosterInfo and not rosterInfo["IsDead"] then
-						--A:echo(string.format("Checking %s (%s)", GetUnitName(currentUnitid, true), currentUnitid));
+						--	Check 1: Target must be online and alive:
+						if rosterInfo and not rosterInfo.IsDead then
 
-						--	Check 4: Target must be in range (and know the spell)
-						if IsSpellInRange(buffName, currentUnitid) ~= 0 then 
-							--A:echo(string.format("Spell in range, Buff=%s, Unit=%s, BuffClass=%d, ClassMask=%d", buffName, currentUnitid, buffInfo["CLASSES"], rosterInfo["ClassMask"]));
-
+							--	Check 4: Target must be in range (and know the spell) (self buffs? We dont care about range!)
 							--	Check 5: Do I needs this specific buff?
-							if (bit.band(rosterInfo["BuffMask"], buffInfo["BITMASK"]) == 0) then
-								--echo(string.format("Found missing buff, unit=%s, group=%d, buff=%s", UnitName(unitid), groupIndex, buffName));
+							if (bit.band(rosterInfo.BuffMask, buffInfo.Bitmask) == 0) then
 
-								if (bit.band(Buffalo.config.value.AssignedBuffSelf, buffInfo["BITMASK"]) > 0) then
-									--echo(string.format("Adding: unitid=%s, unit=%s, group=%d, buff=%s", unitid, unitname, groupIndex, buffName));
+								if (bit.band(Buffalo.config.value.AssignedBuffSelf, buffInfo.Bitmask) > 0) then
 									missingBuffIndex = missingBuffIndex + 1;
-									local priority = buffInfo["PRIORITY"];
-									if not buffInfo["GROUP"] then
+									local priority = buffInfo.Priority;
+									if not buffInfo.Group then
 										--	Self buffs have prio, unless they can also be grouped.
 										--	This is to avoid a Fort (single) self buffs overriding a Fort (group) buff in same group.
 										priority = priority + Buffalo.config.value.PlayerBuffPriority;
@@ -1176,7 +1138,7 @@ function Buffalo:scanRaid()
 									MissingBuffs[missingBuffIndex] = { 
 										['unitid']		= currentUnitid, 
 										['name']		= buffName, 
-										['iconid']		= buffInfo["ICONID"], 
+										['iconid']		= buffInfo.IconID, 
 										['priority']	= priority, 
 										['expTime']		= expirationTime
 									};
@@ -1253,7 +1215,6 @@ function Buffalo:getUnitRosterEntry(unitid, group, isOnline, isDead)
 		local isDead   = isDead or (0 and UnitIsDead(unitid) and 1);
 		local classname = "PET"
 		if isOnline then
-			--return { ["Group"]=group, ["IsOnline"]=isOnline, ["IsDead"]=isDead, ["BuffMask"]=0, ["Class"]=classname, ["ClassMask"]=Buffalo.matrix.Class[classname]["MASK"] };
 			return { ["Group"]=group, ["IsOnline"]=isOnline, ["IsDead"]=isDead, ["BuffMask"]=0, ["Class"]=classname, ["ClassMask"]=Buffalo.classes[classname].Mask };
 		end;
 	elseif unitid == "player" and group == 1 then
@@ -1265,7 +1226,6 @@ function Buffalo:getUnitRosterEntry(unitid, group, isOnline, isDead)
 	
 		if classname then
 			local classUpper = string.upper(classname);
-			--return { ["Group"]=group, ["IsOnline"]=isOnline, ["IsDead"]=isDead, ["BuffMask"]=0, ["Class"]=classUpper, ["ClassMask"]=Buffalo.matrix.Class[classname]["MASK"] };
 			return { ["Group"]=group, ["IsOnline"]=isOnline, ["IsDead"]=isDead, ["BuffMask"]=0, ["Class"]=classUpper, ["ClassMask"]=Buffalo.classes[classname].Mask };
 		end;
 	end;
@@ -1390,9 +1350,12 @@ end;
 --	UI is split into PERSONAL and RAID buffing UI.
 --	This function will initiate both, but the Update function
 --	will only show the current active one.
+--	NOTE:
+--	Function will be called in case Talents are updated; therefore
+--	we must re-use existing buttons and show/hide as needed.
 function Buffalo:initializeBuffSettingsUI()
-	local buffCount = #Buffalo.sorted.groupOnly;
 	local selfCount = #Buffalo.sorted.groupAll;
+	local activeBuffCount = 0;
 
 	local posX, posY;
 	local UISettings = {
@@ -1403,74 +1366,90 @@ function Buffalo:initializeBuffSettingsUI()
 		ButtonWidth = 200,
 	};
 
-	--	Generate Raid Mode buttons:
-	posX = UISettings.Left;
-	posY = UISettings.Top - 40;
-	for _, raidmode in next, Buffalo.raidmodes.setup do
-		local buttonName = string.format("raidmode_%s", raidmode["RAIDMODE"]);
-		local fButton = CreateFrame("Button", buttonName, BuffaloConfigFrame, "BuffaloBuffButtonTemplate");
-		fButton:SetPoint("TOPLEFT", posX, posY);
-		fButton:SetNormalTexture(raidmode["ICON"]);
-		fButton:SetPushedTexture(raidmode["ICON"]);
-		if raidmode["RAIDMODE"] == Buffalo.vars.CurrentRaidMode then
-			fButton:SetAlpha(Buffalo.ui.alpha.Enabled);
-		else
-			fButton:SetAlpha(Buffalo.ui.alpha.Disabled);
+	--	Labels etc. are only do during Initialization:
+	if not Buffalo.vars.UIInitialized then
+		--	Generate Raid Mode buttons:
+		posX = UISettings.Left;
+		posY = UISettings.Top - 40;
+		for _, raidmode in next, Buffalo.raidmodes.setup do
+			local buttonName = string.format("raidmode_%s", raidmode["RAIDMODE"]);
+			local fButton = CreateFrame("Button", buttonName, BuffaloConfigFrame, "BuffaloBuffButtonTemplate");
+			fButton:SetPoint("TOPLEFT", posX, posY);
+			fButton:SetNormalTexture(raidmode["ICON"]);
+			fButton:SetPushedTexture(raidmode["ICON"]);
+			if raidmode["RAIDMODE"] == Buffalo.vars.CurrentRaidMode then
+				fButton:SetAlpha(Buffalo.ui.alpha.Enabled);
+			else
+				fButton:SetAlpha(Buffalo.ui.alpha.Disabled);
+			end;
+
+			local fLabel = fButton:CreateFontString(nil, "ARTWORK", "GameFontNormal");
+			fLabel:SetText(raidmode["CAPTION"]);
+			fLabel:SetPoint("LEFT", 40, 0);
+			fButton:SetScript("OnClick", Buffalo_onRaidModeClick);
+			fButton:Show();
+
+			posX = posX + UISettings.ButtonWidth;
 		end;
 
-		local fLabel = fButton:CreateFontString(nil, "ARTWORK", "GameFontNormal");
-		fLabel:SetText(raidmode["CAPTION"]);
-		fLabel:SetPoint("LEFT", 40, 0);
-		fButton:SetScript("OnClick", Buffalo_onRaidModeClick);
-		fButton:Show();
+		--	Generate group labels:
+		posX = UISettings.Left;
+		posY = UISettings.Top - 80;
+		for groupIndex = 1, 8, 1 do
+			local labelName = string.format("buffgrouplabel_%s", groupIndex);
+			local fLabel = BuffaloConfigFrame:CreateFontString(labelName, "ARTWORK", "GameFontNormal");
+			fLabel:SetText(string.format("Group %s", groupIndex));
+			fLabel:SetPoint("TOPLEFT", posX, posY);
+			fLabel:SetTextColor(Buffalo.ui.colours.GroupLabels[1], Buffalo.ui.colours.GroupLabels[2], Buffalo.ui.colours.GroupLabels[3]);
+	
+			posX = posX + UISettings.Width;
+		end;
 
-		posX = posX + UISettings.ButtonWidth;
-	end;
-
-	--	Generate group labels:
-	posX = UISettings.Left;
-	posY = UISettings.Top - 80;
-	for groupIndex = 1, 8, 1 do
-		local labelName = string.format("buffgrouplabel_%s", groupIndex);
-		local fLabel = BuffaloConfigFrame:CreateFontString(labelName, "ARTWORK", "GameFontNormal");
-		fLabel:SetText(string.format("Group %s", groupIndex));
+		--	SELF buffs, label:
+		posX = 32;
+		posY = -10;
+		local fLabel = BuffaloConfigFrameSelf:CreateFontString("selfbufflabel", "ARTWORK", "GameFontNormal");
+		fLabel:SetText("Self buffs");
 		fLabel:SetPoint("TOPLEFT", posX, posY);
 		fLabel:SetTextColor(Buffalo.ui.colours.GroupLabels[1], Buffalo.ui.colours.GroupLabels[2], Buffalo.ui.colours.GroupLabels[3]);
-	
-		posX = posX + UISettings.Width;
 	end;
-
 
 	Buffalo:initializePersonalGroupBuffs(UISettings);
 	Buffalo:initializeRaidGroupBuffs(UISettings);
 
-
-	--	SELF buffs, label:
-	posX = 32;
-	posY = -10;
-	local fLabel = BuffaloConfigFrameSelf:CreateFontString("selfbufflabel", "ARTWORK", "GameFontNormal");
-	fLabel:SetText("Self buffs");
-	fLabel:SetPoint("TOPLEFT", posX, posY);
-	fLabel:SetTextColor(Buffalo.ui.colours.GroupLabels[1], Buffalo.ui.colours.GroupLabels[2], Buffalo.ui.colours.GroupLabels[3]);
 
 	--	Iterate over all buffs and render icons.
 	posX = UISettings.Left;
 	posY = 0;
 	for rowNumber = 1, selfCount, 1 do
 		buttonName = string.format("buffalo_personal_buff_%d_0", rowNumber);
-		local entry = CreateFrame("Button", buttonName, BuffaloConfigFrameSelf, "BuffaloGroupButtonTemplate");
-		entry:SetAlpha(Buffalo.ui.alpha.Disabled);
-		entry:SetPoint("TOPLEFT", posX, posY);
-		entry:SetNormalTexture(Buffalo.sorted.groupAll[rowNumber].IconID);
-		entry:SetPushedTexture(Buffalo.sorted.groupAll[rowNumber].IconID);
+		local entry = _G[buttonName];
+		if not entry then
+			entry = CreateFrame("Button", buttonName, BuffaloConfigFrameSelf, "BuffaloGroupButtonTemplate");
+			entry:SetNormalTexture(Buffalo.sorted.groupAll[rowNumber].IconID);
+			entry:SetPushedTexture(Buffalo.sorted.groupAll[rowNumber].IconID);
+		end;
 
-		posX = posX + UISettings.Width;
+		if Buffalo.sorted.groupAll[rowNumber].Learned then
+			entry:SetAlpha(Buffalo.ui.alpha.Disabled);
+			entry:SetPoint("TOPLEFT", posX, posY);
+			entry:Show();
+			posX = posX + UISettings.Width;
+			activeBuffCount = activeBuffCount + 1;
+		else
+			entry:Hide();
+		end
 	end;
 
-	local checkBox = CreateFrame("CheckButton", "BuffaloClassConfigFrameUseIncubus", BuffaloConfigFrameSelf, "OptionsCheckButtonTemplate");
-	checkBox:SetPoint("TOPLEFT", UISettings.Left, -56);
-	_G[checkBox:GetName().."Text"]:SetText("Use Incubus");
-	checkBox:SetScript("OnClick", Buffalo_handleCheckbox);
+--	local checkBox = CreateFrame("CheckButton", "BuffaloClassConfigFrameUseIncubus", BuffaloConfigFrameSelf, "OptionsCheckButtonTemplate");
+	buttonName = "BuffaloClassConfigFrameUseIncubus";	
+	local checkBox = _G[buttonName];
+	if not checkBox then
+		checkBox = CreateFrame("CheckButton", buttonName, BuffaloConfigFrameSelf, "ChatConfigCheckButtonTemplate");
+		checkBox:SetPoint("TOPLEFT", UISettings.Left, -56);
+		_G[checkBox:GetName().."Text"]:SetText("Use Incubus");
+		checkBox:SetScript("OnClick", Buffalo_handleCheckbox);
+	end;
 	checkboxValue = nil;
 	if Buffalo.config.value.UseIncubus then
 		checkboxValue = 1;
@@ -1484,9 +1463,9 @@ function Buffalo:initializeBuffSettingsUI()
 		checkBox:Hide();
 	end;
 
-
 	--	Need to check if someone picked Incubus ...
 	Buffalo:updateDemon();
+
 
 	--	Class configuration:
 	local colWidth = 40;				-- Width of each column.
@@ -1494,50 +1473,65 @@ function Buffalo:initializeBuffSettingsUI()
 	local posX, posY, buffMask;
 
 	--	Step 1:
-	--	Display a row of Class icons.
-	posX = 0;
-	posY = 0;
-	--for _, classInfo in next, Buffalo.matrix.ClassSorted do
-	for className, classInfo in next, Buffalo.sorted.classes do
-		--buttonName = string.format("ClassImage%s", classInfo.className);
-		buttonName = string.format("ClassImage%s", className);
-		local entry = CreateFrame("Button", buttonName, BuffaloClassConfigFrameClass, "BuffaloClassButtonTemplate");
-		entry:SetAlpha(Buffalo.ui.alpha.Enabled);
-		entry:SetPoint("TOPLEFT", posX, posY);
-		entry:SetNormalTexture(classInfo.IconID);
-		entry:SetPushedTexture(classInfo.IconID);
+	--	Display a row of Class icons (only during Initialization)
+	if not Buffalo.vars.UIInitialized then
+		posX = 0;
+		posY = 0;
+		--for _, classInfo in next, Buffalo.matrix.ClassSorted do
+		for className, classInfo in next, Buffalo.sorted.classes do
+			--buttonName = string.format("ClassImage%s", classInfo.className);
+			buttonName = string.format("ClassImage%s", className);
+			local entry = CreateFrame("Button", buttonName, BuffaloClassConfigFrameClass, "BuffaloClassButtonTemplate");
+			entry:SetAlpha(Buffalo.ui.alpha.Enabled);
+			entry:SetPoint("TOPLEFT", posX, posY);
+			entry:SetNormalTexture(classInfo.IconID);
+			entry:SetPushedTexture(classInfo.IconID);
 
-		posX = posX + colWidth;
+			posX = posX + colWidth;
+		end;
 	end;
 
 
 	--	Step 2 - ClassConfig dialogue:
 	--	Display buff image for each buff+class combo:
+	--	Counters include unlearned buffs as well, as we need to generate (but not show) the buttons.
 	posY = 0;
-	buffCount = #Buffalo.sorted.groupOnly;
+	activeBuffCount = 0;
+	local buffCount = #Buffalo.sorted.groupOnly;
 	for rowNumber = 1, buffCount, 1 do
 		posX = 0;
-		posY = posY - rowHeight;
-		--for _, classInfo in next, Buffalo.matrix.ClassSorted do
+		
+		if Buffalo.sorted.groupOnly[rowNumber].Learned then
+			activeBuffCount = activeBuffCount + 1;
+			posY = posY - rowHeight;
+		end;
+		
 		for _, classInfo in next, Buffalo.sorted.classes do
-			-- We just disable the buttons, we will refresh status in a second.
-			--buttonName = string.format("%s_row%s", classInfo.className, rowNumber);
 			buttonName = string.format("%s_row%s", classInfo.ClassName, rowNumber);
+			local entry = _G[buttonName];
+			if not entry then
+				entry = CreateFrame("Button", buttonName, BuffaloClassConfigFrameClass, "BuffaloBuffButtonTemplate");
+				entry:SetNormalTexture(Buffalo.sorted.groupOnly[rowNumber].IconID);
+				entry:SetPushedTexture(Buffalo.sorted.groupOnly[rowNumber].IconID);
+			end;
 
-			local entry = CreateFrame("Button", buttonName, BuffaloClassConfigFrameClass, "BuffaloBuffButtonTemplate");
-			entry:SetAlpha(Buffalo.ui.alpha.Disabled);
-			entry:SetPoint("TOPLEFT", 4+posX, posY);
-			entry:SetNormalTexture(Buffalo.sorted.groupOnly[rowNumber].IconID);
-			entry:SetPushedTexture(Buffalo.sorted.groupOnly[rowNumber].IconID);
-
-			posX = posX + colWidth;
+			if Buffalo.sorted.groupOnly[rowNumber].Learned then
+				entry:SetAlpha(Buffalo.ui.alpha.Disabled);
+				entry:SetPoint("TOPLEFT", 4+posX, posY);
+				entry:Show();
+				posX = posX + colWidth;
+			else
+				entry:Hide();
+			end;
 		end;
 	end;
 	
 	--	Set windows size to fit icons for class config:
-	BuffaloClassConfigFrame:SetHeight(128 + buffCount * rowHeight);
+	BuffaloClassConfigFrame:SetHeight(128 + activeBuffCount * rowHeight);
 	BuffaloClassConfigFrame:SetWidth(posX + 52);
 	BuffaloClassConfigFrameHeaderTexture:SetWidth(2 * (posX + 52));
+
+	Buffalo.vars.UIInitialized = true;
 end;
 
 function Buffalo:initializePersonalGroupBuffs(UISettings)
@@ -1553,22 +1547,33 @@ function Buffalo:initializePersonalGroupBuffs(UISettings)
 		posY = UISettings.Top - 20;
 		for rowNumber = 1, #Buffalo.sorted.groupOnly, 1 do
 			--	Button to toggle all Row buffs:
-
 			if groupNumber == 1 then
-				local rowBtn = CreateFrame("Button", string.format("toggle_row_%d", rowNumber), BuffaloConfigFramePersonal, "BuffaloMiniButtonTemplate");
+				buttonName = string.format("toggle_row_%d", rowNumber);
+				local rowBtn = _G[buttonName];
+				if not rowBtn then
+					rowBtn = CreateFrame("Button", buttonName, BuffaloConfigFramePersonal, "BuffaloMiniButtonTemplate");
+				end;
 				rowBtn:SetPoint("TOPLEFT", posX - 60, posY-8);
 				rowBtn:SetNormalTexture(Buffalo.sorted.groupOnly[rowNumber].IconID);
 				rowBtn:SetPushedTexture(Buffalo.sorted.groupOnly[rowNumber].IconID);
 			end;
 
 			buttonName = string.format("buffalo_personal_buff_%d_%d", rowNumber, groupNumber);
-			local entry = CreateFrame("Button", buttonName, BuffaloConfigFramePersonal, "BuffaloGroupButtonTemplate");
+			local entry = _G[buttonName];
+			if not entry then
+				entry = CreateFrame("Button", buttonName, BuffaloConfigFramePersonal, "BuffaloGroupButtonTemplate");
+			end;
 			entry:SetAlpha(Buffalo.ui.alpha.Disabled);
 			entry:SetPoint("TOPLEFT", posX, posY);
 			entry:SetNormalTexture(Buffalo.sorted.groupOnly[rowNumber].IconID);
 			entry:SetPushedTexture(Buffalo.sorted.groupOnly[rowNumber].IconID);
 
-			posY = posY - UISettings.Height;
+			if Buffalo.sorted.groupOnly[rowNumber].Learned then
+				entry:Show();
+				posY = posY - UISettings.Height;
+			else
+				entry:Hide();
+			end;
 		end;
 	end;
 
@@ -1581,13 +1586,13 @@ function Buffalo:initializeRaidGroupBuffs(UISettings)
 	--	so we do not do this every time we update also.
 	--	Sync.Buffs = { priority, buffname, buffmask, iconid }
 	Buffalo.vars.OrderedBuffGroups = { };
-	for buffName, buffInfo in next, Buffalo.matrix.Buff do
-		if not buffInfo["GROUP"] and bit.band(buffInfo["BITMASK"], 0x00ff) > 0 then
+	for buffName, buffInfo in next, Buffalo.spells.active do
+		if not buffInfo.Group and bit.band(buffInfo.Bitmask, 0x00ff) > 0 then
 			tinsert(Buffalo.vars.OrderedBuffGroups, {
-				['priority']	= buffInfo["PRIORITY"], 
+				['priority']	= buffInfo.Priority, 
 				['name']		= buffName, 
-				['bitmask']		= buffInfo["BITMASK"],
-				['iconid']		= buffInfo["ICONID"]
+				['bitmask']		= buffInfo.Bitmask,
+				['iconid']		= buffInfo.IconID
 			});
 		end;
 	end;
@@ -1600,11 +1605,16 @@ function Buffalo:initializeRaidGroupBuffs(UISettings)
 	local posY = UISettings.Top - 20;
 	for buffIndex = 1, #Buffalo.vars.OrderedBuffGroups, 1 do
 		local buttonName = string.format("buffrow_%s", buffIndex);
-		local fButton = CreateFrame("Button", buttonName, BuffaloConfigFrameRaid, "BuffaloBuffButtonTemplate");
+		local fButton = _G[buttonName];
+		if not fButton then
+			fButton = CreateFrame("Button", buttonName, BuffaloConfigFrameRaid, "BuffaloBuffButtonTemplate");
+		end;
+
 		fButton:SetPoint("TOPLEFT", posX, posY);
 		fButton:SetNormalTexture(Buffalo.vars.OrderedBuffGroups[buffIndex].iconid);
 		fButton:SetPushedTexture(Buffalo.vars.OrderedBuffGroups[buffIndex].iconid);
 		fButton:SetScript("OnClick", nil);
+		fButton:Show();
 
 		posY = posY - UISettings.Height;
 	end;
@@ -1618,8 +1628,10 @@ function Buffalo:initializeRaidGroupBuffs(UISettings)
 
 		for groupIndex = 1, 8, 1 do
 			local bufferName = string.format("buffgroup_%s_%s", buffIndex, groupIndex);
-
-			local fBuffer = CreateFrame("Button", bufferName, BuffaloConfigFrameRaid, "GroupBuffTemplate");
+			local fBuffer = _G[bufferFrame];
+			if not fBuffer then
+				fBuffer = CreateFrame("Button", bufferName, BuffaloConfigFrameRaid, "GroupBuffTemplate");
+			end;
 			fBuffer:SetPoint("TOPLEFT", posX, posY);
 			_G[bufferName.."Text"]:SetTextColor(Buffalo.ui.colours.Unused[1], Buffalo.ui.colours.Unused[2], Buffalo.ui.colours.Unused[3]);
 			_G[bufferName.."Text"]:SetText(Buffalo.SyncUnused);
@@ -1860,8 +1872,6 @@ function Buffalo:updateAssignedRaidGroups()
 	
 		for buffIndex = 1, #Buffalo.vars.OrderedBuffGroups, 1 do
 			local buffInfo = Buffalo.config.value.SynchronizedBuffs[buffIndex][groupIndex];	-- Assignment for a specific row + group
-			--local buff = Buffalo.vars.OrderedBuffGroups[buffIndex];				-- Data for a specific buff
-
 			if buffInfo["PLAYER"] == Buffalo.vars.PlayerNameAndRealm then
 				groupMask = bit.bor(groupMask, buffInfo["BITMASK"]);
 			end;
@@ -1961,8 +1971,7 @@ function Buffalo:getPlayersInRoster(classMask)
 		local unitid = "player";
 		local fullName = Buffalo:getPlayerAndRealm(unitid);
 		local _, className = UnitClass(unitid);
-		--local classInfo = Buffalo.matrix.Class[className];
-		local classInfo = Buffalo.matrix.classes[className];
+		local classInfo = Buffalo.Classes[className];
 
 		if bit.band(classInfo.Mask, classMask) > 0 then
 			tinsert(players, {
@@ -1985,6 +1994,18 @@ function Buffalo:onGroupRosterUpdate()
 	end;
 end;
 
+function Buffalo:onPlayerTalentUpdate()
+	Buffalo:updateSpellMatrix();
+
+	Buffalo:updateGroupBuffs();
+	Buffalo:updateGroupBuffs(true);
+	Buffalo:updateActiveBuffs();
+
+	Buffalo:initializeBuffSettingsUI();
+	Buffalo:updateGroupBuffUI();
+	Buffalo:refreshClassSettingsUI();
+end;
+
 --	Update Buffing UI (main entry)
 --	This will update PERSONAL or RAID buffs, depending on raid mode.
 function Buffalo:updateGroupBuffUI()
@@ -2003,6 +2024,11 @@ function Buffalo:updateGroupBuffUI()
 			["PRIEST"] = Buffalo.ui.backdrops.PriestFrame,
 			["WARLOCK"] = Buffalo.ui.backdrops.WarlockFrame,
 		};
+
+		local _, _, _, _, _, _, spellId = GetSpellInfo("Shadowform");
+		if spellId then
+			backdrops["PRIEST"] = Buffalo.ui.backdrops.ShadowPriestFrame;
+		end;
 
 		BuffaloConfigFrame:SetBackdrop(backdrops[Buffalo.vars.PlayerClass]);
 
@@ -2080,7 +2106,6 @@ function Buffalo:updatePersonalBuffUI()
 	--	PERSONAL raid buffs:
 	--	Iterate over all groups and render icons.
 	for groupNumber = 1, 8, 1 do
-		--local buffMask = Buffalo.config.value.AssignedBuffGroups[groupNumber];
 		local buffMask = assignedGroups[groupNumber];
 
 		for rowNumber = 1, buffCount, 1 do
@@ -2156,9 +2181,7 @@ function Buffalo:refreshClassSettingsUI()
 
 	buffCount = #Buffalo.sorted.groupOnly;
 	for rowNumber = 1, buffCount, 1 do
-		--for _, classInfo in next, Buffalo.matrix.ClassSorted do
 		for _, classInfo in next, Buffalo.sorted.classes do
-			--buttonName = string.format("%s_row%s", classInfo.className, rowNumber);
 			buttonName = string.format("%s_row%s", classInfo.ClassName, rowNumber);
 			local entry = _G[buttonName];
 
@@ -2244,10 +2267,15 @@ function Buffalo:onToggleRowBuffsClick(self, ...)
 end;
 
 function Buffalo:toggleRowBuffs(rowNumber, enableBuffs)
+	local spellName = Buffalo.sorted.groupOnly[rowNumber].SpellName;
+	local spellInfo = Buffalo.spells.active[spellName];
+	if not spellInfo then
+		return;
+	end; 
+
 	--	GroupMask tells what buffs I have selected for the actual group.
-	local spellMask = Buffalo.sorted.groupOnly[rowNumber].Bitmask;		--	spellMask is the clicked buff's bitvalue.
-	local spellInfo = Buffalo.spells.active[properties[rowNumber].SpellName];
-	local maskOut = 0x0ffff - buffMask;					-- preserve all buffs except for the selected one:
+	local spellMask = Buffalo.sorted.groupOnly[rowNumber].Bitmask;			--	spellMask is the clicked buff's bitvalue.
+	local maskOut = 0x0ffff - spellMask;									-- preserve all buffs except for the selected one:
 
 	local groupMask, col;
 	for col = 1, 8, 1 do
@@ -2495,6 +2523,9 @@ function Buffalo_onEvent(self, event, ...)
 			Buffalo:hideBuffButton();
 		end
 
+	elseif (event == "PLAYER_TALENT_UPDATE") then
+		Buffalo:onPlayerTalentUpdate(event, ...)
+
 	elseif (event == "CHAT_MSG_ADDON") then
 		Buffalo:onChatMsgAddon(event, ...)
 
@@ -2567,6 +2598,7 @@ function Buffalo_onLoad()
     BuffaloEventFrame:RegisterEvent("UNIT_SPELLCAST_STOP");
     BuffaloEventFrame:RegisterEvent("UNIT_SPELLCAST_FAILED");
     BuffaloEventFrame:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED");
+    BuffaloEventFrame:RegisterEvent("PLAYER_TALENT_UPDATE");
 
 	BuffaloClassConfigFrame:SetBackdrop(Buffalo.ui.backdrops.ClassFrame);
 	BuffaloGeneralConfigFrame:SetBackdrop(Buffalo.ui.backdrops.GeneralFrame);

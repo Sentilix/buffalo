@@ -27,60 +27,18 @@ Buffalo.classmasks.MANAUSERS		= 0x04df;
 Buffalo.classmasks.ALL				= 0x03ff;
 Buffalo.classmasks.Selected			= 0x0000;
 
---	Spell names: Values are set runtime:
---Buffalo.spellnames = { };
---Buffalo.spellnames.general = { };
---Buffalo.spellnames.shared.FindHerbs = '';
---Buffalo.spellnames.shared.FindMinerals = '';
---Buffalo.spellnames.druid = { };
---Buffalo.spellnames.druid.GiftOfTheWild = '';
---Buffalo.spellnames.druid.MarkOfTheWild = '';
---Buffalo.spellnames.druid.Thorns = '';
---Buffalo.spellnames.mage = { };
---Buffalo.spellnames.mage.ArcaneIntellect = '';
---Buffalo.spellnames.mage.ArcaneBrilliance = '';
---Buffalo.spellnames.mage.AmplifyMagic = '';
---Buffalo.spellnames.mage.DampenMagic = '';
---Buffalo.spellnames.mage.MoltenArmor = '';
---Buffalo.spellnames.mage.MageArmor = '';
---Buffalo.spellnames.mage.FrostArmor = '';
---Buffalo.spellnames.mage.IceArmor = '';
---Buffalo.spellnames.mage.IceBarrier = '';
---Buffalo.spellnames.priest = { };
---Buffalo.spellnames.priest.PowerWordFortitude = '';
---Buffalo.spellnames.priest.PrayerOfFortitude = '';
---Buffalo.spellnames.priest.DivineSpirit = '';
---Buffalo.spellnames.priest.PrayerOfSpirit = '';
---Buffalo.spellnames.priest.ShadowProtection = '';
---Buffalo.spellnames.priest.PrayerOfShadowProtection = '';
---Buffalo.spellnames.priest.InnerFire = '';
---Buffalo.spellnames.priest.ShadowForm = '';
---Buffalo.spellnames.warlock = { };
---Buffalo.spellnames.warlock.DemonSkin = '';
---Buffalo.spellnames.warlock.DemonArmor = '';
---Buffalo.spellnames.warlock.FireShield = '';
---Buffalo.spellnames.warlock.UnendingBreath = '';
---Buffalo.spellnames.warlock.DetectLesserInvisibility = '';
---Buffalo.spellnames.warlock.DetectInvisibility = '';
---Buffalo.spellnames.warlock.DetectGreaterInvisibility = '';
---Buffalo.spellnames.warlock.Imp = '';
---Buffalo.spellnames.warlock.Voidwalker = '';
---Buffalo.spellnames.warlock.Felhunter = '';
---Buffalo.spellnames.warlock.Succubus = '';
---Buffalo.spellnames.warlock.Incubus = '';
-
 
 --	Configuration:
 Buffalo.config = { };
 
 --	Druid default: 0x0001 = Wild on all groups
-Buffalo.config.DEFAULT_Druid_GroupMask	= 1;
+Buffalo.config.DEFAULT_Druid_GroupMask		= 0x000001;
 --	Mage default: 0x0001 = Intellect on all groups
-Buffalo.config.DEFAULT_Mage_GroupMask		= 1;
+Buffalo.config.DEFAULT_Mage_GroupMask		= 0x000001;
 --	Priests default: 0x0003 = Fort + Spirit on all groups
-Buffalo.config.DEFAULT_Priest_GroupMask	= 3;
+Buffalo.config.DEFAULT_Priest_GroupMask		= 0x000011;
 --	Warlock default: 0x0000 = no default buffs
-Buffalo.config.DEFAULT_Warlock_GroupMask	= 0;
+Buffalo.config.DEFAULT_Warlock_GroupMask	= 0x000000;
 
 
 --	Configuration keys:
@@ -130,16 +88,10 @@ Buffalo.config.value.UseIncubus					= Buffalo.config.default.UseIncubus;
 Buffalo.config.value.BuffButtonSize				= 32;		-- Size of buff button
 Buffalo.config.value.PlayerBuffPriority			= 90;		-- Priority to Self'
 
-
-
-
-
-
 --	Miscellaneous:
 Buffalo.sounds = { };
 Buffalo.sounds.IG_MAINMENU_OPEN		= 850;
 Buffalo.sounds.IG_MAINMENU_CLOSE	= 851;
-
 
 
 --	Design/UI constants
@@ -153,7 +105,7 @@ Buffalo.ui.colours.Buffer						= { 1.0, 1.0, 1.0 };
 Buffalo.ui.colours.Unused						= { 0.4, 0.4, 0.4 };
 
 Buffalo.ui.alpha = { };
-Buffalo.ui.alpha.Disabled						= 0.42;
+Buffalo.ui.alpha.Disabled						= 0.33;
 Buffalo.ui.alpha.Enabled						= 1.00;
 
 Buffalo.ui.icons = { };
@@ -203,6 +155,14 @@ Buffalo.ui.backdrops.MageFrame = {
 };
 Buffalo.ui.backdrops.PriestFrame = {
 	bgFile = "Interface\\TalentFrame\\PriestDiscipline-Topleft",
+	edgeFile = "Interface\\AchievementFrame\\UI-Achievement-WoodBorder",
+	edgeSize = 64,
+	tileEdge = true,
+	tile = 0,
+	tileSize = 900,
+};
+Buffalo.ui.backdrops.ShadowPriestFrame = {
+	bgFile = "Interface\\TalentFrame\\PriestShadow-Topleft",
 	edgeFile = "Interface\\AchievementFrame\\UI-Achievement-WoodBorder",
 	edgeSize = 64,
 	tileEdge = true,
