@@ -2451,8 +2451,8 @@ function Buffalo:updateDemon()
 	else
 		oldBuff = Buffalo.spellnames.warlock.Incubus;
 		newBuff = Buffalo.spellnames.warlock.Succubus;
-		Buffalo.spells.active[Buffalo.spellnames.warlock.Succubus]["BITMASK"] = 0x002000;
-		Buffalo.spells.active[Buffalo.spellnames.warlock.Incubus]["BITMASK"] = 0x000000;
+		Buffalo.spells.active[Buffalo.spellnames.warlock.Succubus].Bitmask = 0x002000;
+		Buffalo.spells.active[Buffalo.spellnames.warlock.Incubus].Bitmask = 0x000000;
 	end;
 	
 	for rowNumber = 1, #Buffalo.sorted.groupAll, 1 do
@@ -2461,7 +2461,7 @@ function Buffalo:updateDemon()
 			local entry = _G[string.format("buffalo_personal_buff_%d_0", rowNumber)];
 
 			Buffalo.sorted.groupAll[rowNumber].SpellName = newBuff;
-			Buffalo.sorted.groupAll[rowNumber].IconID = spellInfo["ICONID"];
+			Buffalo.sorted.groupAll[rowNumber].IconID = spellInfo.IconID;
 
 			entry:SetNormalTexture(Buffalo.sorted.groupAll[rowNumber].IconID);
 			entry:SetPushedTexture(Buffalo.sorted.groupAll[rowNumber].IconID);

@@ -96,6 +96,10 @@ Warlock		Imp							39
 
 Version history
 ---------------
+Version 0.7.0b2:
+* Fixed LUA error when trying to render Incubus icon.
+
+
 Version 0.7.0b1:
 * Major refactoring of the entire spell tree. This fixed some minor spell selection bugs (and probably introduced some others)
 * Added: Learning new talents or changing spec (Anniversary) now updates the UI.
