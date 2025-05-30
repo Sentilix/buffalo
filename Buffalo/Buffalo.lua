@@ -1441,7 +1441,6 @@ function Buffalo:initializeBuffSettingsUI()
 		end
 	end;
 
---	local checkBox = CreateFrame("CheckButton", "BuffaloClassConfigFrameUseIncubus", BuffaloConfigFrameSelf, "OptionsCheckButtonTemplate");
 	buttonName = "BuffaloClassConfigFrameUseIncubus";	
 	local checkBox = _G[buttonName];
 	if not checkBox then
@@ -1519,10 +1518,10 @@ function Buffalo:initializeBuffSettingsUI()
 				entry:SetAlpha(Buffalo.ui.alpha.Disabled);
 				entry:SetPoint("TOPLEFT", 4+posX, posY);
 				entry:Show();
-				posX = posX + colWidth;
 			else
 				entry:Hide();
 			end;
+			posX = posX + colWidth;
 		end;
 	end;
 	
@@ -2198,7 +2197,7 @@ function Buffalo:onConfigurationBuffClick(self, ...)
 	local buttonName = self:GetName();
 	local buttonType = GetMouseButtonClicked();
 
-	local _, _, row, col = string.find(buttonName, "buffalo_personal_buff_(%d)_(%d)");
+	local _, _, row, col = string.find(buttonName, "buffalo_personal_buff_(%d+)_(%d+)");
 
 	row = 1 * row;
 	col = 1 * col;	-- Col=0: self buff, col 1-8: raid buff
