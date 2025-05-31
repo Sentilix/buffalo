@@ -98,6 +98,7 @@ Version history
 ---------------
 Version 0.7.0b3:
 * Fixed LUA errors during initalizing when an "unsupported" class (e.g. a Warrior) logged on.
+* Fixed LUA error when learning new spells as an "unsupported" class.
 
 
 Version 0.7.0b2:

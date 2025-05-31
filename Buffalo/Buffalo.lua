@@ -1474,9 +1474,9 @@ function Buffalo:initializeBuffSettingsUI(firstTimeInitialization)
 
 	--	Step 1:
 	--	Display a row of Class icons (only during Initialization)
+	posX = 0;
+	posY = 0;
 	if firstTimeInitialization then
-		posX = 0;
-		posY = 0;
 		for className, classInfo in next, Buffalo.sorted.classes do
 			buttonName = string.format("ClassImage%s", className);
 			local entry = CreateFrame("Button", buttonName, BuffaloClassConfigFrameClass, "BuffaloClassButtonTemplate");
@@ -1484,7 +1484,6 @@ function Buffalo:initializeBuffSettingsUI(firstTimeInitialization)
 			entry:SetPoint("TOPLEFT", posX, posY);
 			entry:SetNormalTexture(classInfo.IconID);
 			entry:SetPushedTexture(classInfo.IconID);
-
 
 			posX = posX + colWidth;
 		end;
@@ -2466,7 +2465,6 @@ function Buffalo:updateDemon()
 	local disabledDemon = Buffalo.spellnames.warlock.Incubus;
 	local enabledDemon = Buffalo.spellnames.warlock.Succubus;
 	if Buffalo.config.value.UseIncubus then
-		print("Using Incubus");
 		disabledDemon = Buffalo.spellnames.warlock.Succubus;
 		enabledDemon = Buffalo.spellnames.warlock.Incubus;
 	end;
