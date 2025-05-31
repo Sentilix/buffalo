@@ -2605,6 +2605,13 @@ function Buffalo_onLoad()
 	Buffalo.vars.PlayerClass = classname;
 	Buffalo.vars.PlayerNameAndRealm = Buffalo:getPlayerAndRealm("player");
 
+	if not Buffalo.classes[classname] or not Buffalo.classes[classname].spells then
+		--	Warriors etc are not supported (no spells to buff), so we make sure Initialization is not performed!
+		Buffalo.vars.InitializationRetryTimer = 86400;
+		A:echo('Addon will go to sleep (Unsupported class)');
+		return;
+	end;
+
 	Buffalo.Version = A:calculateVersion();
 
 	A:echo(string.format("Type %s/buffalo%s to configure the addon.", A.chatColorHot, A.chatColorNormal));

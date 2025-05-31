@@ -96,13 +96,16 @@ Warlock		Imp							39
 
 Version history
 ---------------
+Version 0.7.0b3:
+* Fixed LUA errors during initalizing when an "unsupported" class (e.g. a Warrior) logged on.
+
+
 Version 0.7.0b2:
 * Fixed a LUA error when handling Warlock's Demon.
 * Fixed a LUA error when clicking some spells in Buff configuration.
 * Fixed Class configuration: window size was sometimes set wrong.
 * Fixed Incubus/Succubus: sometimes both spells were displayed.
 * Fixed Class configuration: missing class icons after login.
-
 
 
 Version 0.7.0b1:
