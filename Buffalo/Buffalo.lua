@@ -2076,7 +2076,7 @@ function Buffalo:updateGroupBuffUI()
 	local buffMask = Buffalo.config.value.AssignedBuffSelf;
 
 	local posX = Buffalo.ui.buffConfigDialog.Left;
-	local posY = Buffalo.ui.buffConfigDialog.Top - 20;
+	local posY = Buffalo.ui.buffConfigDialog.Top;
 	for rowNumber = 1, #Buffalo.spells.personal, 1 do
 		buttonName = string.format("buffalo_personal_buff_%d_0", rowNumber);
 		entry = _G[buttonName];
