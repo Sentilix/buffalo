@@ -116,6 +116,14 @@ Buffalo.ui.icons.RaidNone						= 134121;	-- Raid mode 0: white
 Buffalo.ui.icons.RaidOpen						= 134125;	-- Raid mode 1: green
 Buffalo.ui.icons.RaidClosed						= 134124;	-- Raid mode 2: red
 
+Buffalo.ui.buffConfigDialog = { };
+Buffalo.ui.buffConfigDialog.Top					= 0;
+Buffalo.ui.buffConfigDialog.Left				= 120;
+Buffalo.ui.buffConfigDialog.Width				= 100;
+Buffalo.ui.buffConfigDialog.Height				= 40;
+Buffalo.ui.buffConfigDialog.ButtonWidth			= 200;
+
+
 --	Backdrops:
 Buffalo.ui.backdrops = { };
 

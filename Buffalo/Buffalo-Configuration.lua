@@ -63,7 +63,9 @@ Buffalo["sorted"] = {
 };
 
 Buffalo["spells"] = {
-	["active"] = { },
+	["active"] = { },		--	All spells for the current class.
+	["personal"] = { },		--	Spells for buffing, including selfie spells.
+	["group"] = { },		--	Spells for buffing, raid buffing only.
 };
 
 
@@ -385,9 +387,7 @@ function Buffalo:updateSpellMatrix()
 	Buffalo:updateSpellMatrixByClass(Buffalo.vars.PlayerClass);
 	Buffalo:updateSpellMatrixByClass("shared");
 
-	Buffalo:updateActiveBuffs();
-
-	Buffalo:sortSpells();
+	Buffalo:refreshActiveSpells();
 end;
 
 function Buffalo:updateSpellMatrixByClass(classname)
@@ -400,6 +400,7 @@ function Buffalo:updateSpellMatrixByClass(classname)
 	--	This ensures dependencies will be handled correct regardless of what order they appear.
 	for spellName, spellInfo in pairs(classInfo.spells) do
 		spellInfo.Enabled = false;
+		spellInfo.Learned = false;
 	end;
 
 	--	Loop 2: Do the actual spell update one by one:
@@ -408,22 +409,26 @@ function Buffalo:updateSpellMatrixByClass(classname)
 		if not name then return; end;
 
 		local enabled = nil;
+		local learned = nil;
 		local _, _, _, _, _, _, spellId = GetSpellInfo(spellName);
 		if spellId ~= nil then
 			enabled = true;
+			learned = true;
 		end;
 
 		--	Disable this spell if there is a better active spell:
 		if spellInfo.ReplacedBy and enabled then
 			--	There is a better spell - and it is enabled:
-			if classInfo.spells[spellInfo.ReplacedBy].Enabled then
+			if classInfo.spells[spellInfo.ReplacedBy].Learned then
 				enabled = nil;
+				learned = nil;
 			end;
 		end;
 
 		--	Disable lower tier spell if this spell if active:
 		if spellInfo.Replacing and enabled then
 			classInfo.spells[spellInfo.Replacing].Enabled = nil;
+			classInfo.spells[spellInfo.Replacing].Learned = nil;
 		end;
 
 		--	Handle Succubus / Incubus configuration:
@@ -444,6 +449,7 @@ function Buffalo:updateSpellMatrixByClass(classname)
 		end;
 
 		spellInfo.Enabled = enabled;
+		spellInfo.Learned = learned;
 		spellInfo.IconID = iconId;
 		spellInfo.SpellID = spellId;
 	end;
@@ -452,18 +458,19 @@ function Buffalo:updateSpellMatrixByClass(classname)
 --	print(string.format('*** Initializing, player=%s', Buffalo.vars.PlayerClass));
 end;
 
+
 --[[
 	Buffalo.spells.active[<buff name>] = spellInfo
 	Added in 0.7.0
+	Refresh the list of all spells. This list contains both Learned and not learned spells.
 --]]
-function Buffalo:updateActiveBuffs()
+function Buffalo:refreshActiveSpells()
 	Buffalo.spells.active = { };
 
 	local classInfo = Buffalo.classes[Buffalo.vars.PlayerClass];
 	if classInfo then
 		for spellName, spellInfo in pairs(classInfo.spells) do
 			Buffalo.spells.active[spellName] = spellInfo;
-			Buffalo.spells.active[spellName].Learned = spellInfo.Enabled;
 		end;
 	end;
 
@@ -471,50 +478,8 @@ function Buffalo:updateActiveBuffs()
 	if classInfo then
 		for spellName, spellInfo in pairs(classInfo.spells) do
 			Buffalo.spells.active[spellName] = spellInfo;
-			Buffalo.spells.active[spellName].Learned = spellInfo.Enabled;
 		end;
 	end;
-end;
-
---[[
-	Buffalo.classes[<classname>] represented in a table ordered by Priority.
-	Only self buffs are added into this.
-	Added in 0.7.0
---]]
-function Buffalo:sortSpells()
-	Buffalo.sorted.spells = { };	
-
-	local classInfo = Buffalo.classes[Buffalo.vars.PlayerClass];
-	if classInfo then
-		for spellName, spellInfo in pairs(classInfo.spells) do
-			if spellInfo.frames then
-				for _, frame in spellInfo.frames do
-					frame:Hide();
-				end;
-			end;
-
-			if spellInfo.Enabled and not spellInfo.Single then
-				tinsert(Buffalo.sorted.spells, spellInfo);
-			end;
-		end;
-	end;
-
-	classInfo = Buffalo.classes.shared;
-	if classInfo then
-		for spellName, spellInfo in pairs(classInfo.spells) do
-			if spellInfo.frames then
-				for _, frame in spellInfo.frames do
-					frame:Hide();
-				end;
-			end;
-
-			if spellInfo.Enabled then
-				tinsert(Buffalo.sorted.spells, spellInfo);
-			end;
-		end;
-	end;
-
-	table.sort(Buffalo.sorted.spells, function (a, b) return a.Priority < b.Priority; end);
 end;
 
 --[[
@@ -538,15 +503,18 @@ function Buffalo:sortClasses()
 	table.sort(Buffalo.sorted.classes, function (a, b) return a.SortOrder < b.SortOrder; end);
 end;
 
-
+--[[
+	Buffalo.spells.personal (when includeSelfBuffs = true)	Was: Buffalo.sorted.groupAll
+	Buffalo.spells.group (no selfie buffs included)			Was: Buffalo.sorted.groupOnly
+--]]
 function Buffalo:updateGroupBuffs(includeSelfBuffs)
 	--	This generate a table of all RAID buffs, ordered in priority:
 	local buffs = { };
 
 	local priority;
-
 	local includeMask = 0x00ff;
 	local selfiePrio = 0;
+
 	--	This includes Self buffs, but not Find Herbs/Minerals
 	local selfiePrioMask = 0x03f00;
 	if includeSelfBuffs then
@@ -554,8 +522,7 @@ function Buffalo:updateGroupBuffs(includeSelfBuffs)
 		selfiePrio = 50;
 	end;
 
-	--for buffName, props in pairs(Buffalo.matrix.Buff) do
-	--	Must contain ALL spells, not only ACTIVE spells.
+	--	Works on ALL spells, not only ACTIVE (learned) spells.
 	for spellName, spellInfo in pairs(Buffalo.spells.active) do
 		if not spellInfo.Group and (bit.band(spellInfo.Bitmask, includeMask) > 0) then
 			priority = spellInfo.Priority;
@@ -569,6 +536,7 @@ function Buffalo:updateGroupBuffs(includeSelfBuffs)
 				["IconID"]		= spellInfo.IconID;
 				["Bitmask"]		= spellInfo.Bitmask;
 				["Priority"]	= priority;
+				["Enabled"]		= spellInfo.Enabled;
 				["Learned"]		= spellInfo.Learned;
 			});
 		end;
@@ -577,9 +545,9 @@ function Buffalo:updateGroupBuffs(includeSelfBuffs)
 	table.sort(buffs, function (a, b) return a.Priority > b.Priority; end);
 
 	if includeSelfBuffs then
-		Buffalo.sorted.groupAll = buffs;
+		Buffalo.spells.personal = buffs;
 	else
-		Buffalo.sorted.groupOnly = buffs;
+		Buffalo.spells.group = buffs;
 	end;
 end;
 

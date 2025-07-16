@@ -96,6 +96,25 @@ Warlock		Imp							39
 
 Version history
 ---------------
+Version 0.7.1:
+* Fixed Buffalo icon for non-buffing classes: it was invisible but still clickable which caused an empty addon to be displayed.
+
+Version 0.7.0:
+* Fixed selfie buffs position: now aligned with label.
+
+Version 0.7.0b3:
+* Fixed LUA errors during initalizing when an "unsupported" class (e.g. a Warrior) logged on.
+* Fixed LUA error when learning new spells as an "unsupported" class.
+
+
+Version 0.7.0b2:
+* Fixed a LUA error when handling Warlock's Demon.
+* Fixed a LUA error when clicking some spells in Buff configuration.
+* Fixed Class configuration: window size was sometimes set wrong.
+* Fixed Incubus/Succubus: sometimes both spells were displayed.
+* Fixed Class configuration: missing class icons after login.
+
+
 Version 0.7.0b1:
 * Major refactoring of the entire spell tree. This fixed some minor spell selection bugs (and probably introduced some others)
 * Added: Learning new talents or changing spec (Anniversary) now updates the UI.

@@ -696,7 +696,7 @@ function Buffalo:mainInitialization(reloaded)
 	Buffalo.vars.CurrentRaidMode = Buffalo.raidmodes.Personal;
 	Buffalo:initializeConfigSettings();
 
-	--	Time tp update the MATRIX!
+	--	Time to update the MATRIX!
 	Buffalo:updateSpellMatrix();
 
 	if not reloaded then
@@ -711,12 +711,15 @@ function Buffalo:mainInitialization(reloaded)
 	Buffalo:updateGroupBuffs();
 	Buffalo:updateGroupBuffs(true);
 
+
 	--	This set all eligible classes to Enabled=true:
 	Buffalo:initializeClasses();
 
 	Buffalo:initializeClassBuffs();
 
-	Buffalo:initializeBuffSettingsUI();
+	Buffalo:initializeBuffSettingsUI(true);
+	Buffalo:updateGroupBuffUI();
+	Buffalo:refreshClassSettingsUI();
 
 	--	Note: setting defaults should be part of the config, but at that time
 	--	the Buffalo_InitializeBuffSync() has not yet been called.
@@ -1353,24 +1356,22 @@ end;
 --	NOTE:
 --	Function will be called in case Talents are updated; therefore
 --	we must re-use existing buttons and show/hide as needed.
-function Buffalo:initializeBuffSettingsUI()
-	local selfCount = #Buffalo.sorted.groupAll;
+function Buffalo:initializeBuffSettingsUI(firstTimeInitialization)
+	local selfCount = #Buffalo.spells.personal;
 	local activeBuffCount = 0;
 
 	local posX, posY;
-	local UISettings = {
-		Top = 0,
-		Left = 120,
-		Width = 100,
-		Height = 40,
-		ButtonWidth = 200,
-	};
+
+	--	We might be called during other events, but don't accept anything until ready:
+	if not firstTimeInitialization and not Buffalo.vars.InitializationComplete then
+		return;
+	end;
 
 	--	Labels etc. are only do during Initialization:
-	if not Buffalo.vars.UIInitialized then
-		--	Generate Raid Mode buttons:
-		posX = UISettings.Left;
-		posY = UISettings.Top - 40;
+	if firstTimeInitialization then
+		--	Generate Raid Mode buttons in top of screen:
+		posX = Buffalo.ui.buffConfigDialog.Left;
+		posY = Buffalo.ui.buffConfigDialog.Top - 40;
 		for _, raidmode in next, Buffalo.raidmodes.setup do
 			local buttonName = string.format("raidmode_%s", raidmode["RAIDMODE"]);
 			local fButton = CreateFrame("Button", buttonName, BuffaloConfigFrame, "BuffaloBuffButtonTemplate");
@@ -1389,12 +1390,12 @@ function Buffalo:initializeBuffSettingsUI()
 			fButton:SetScript("OnClick", Buffalo_onRaidModeClick);
 			fButton:Show();
 
-			posX = posX + UISettings.ButtonWidth;
+			posX = posX + Buffalo.ui.buffConfigDialog.ButtonWidth;
 		end;
 
 		--	Generate group labels:
-		posX = UISettings.Left;
-		posY = UISettings.Top - 80;
+		posX = Buffalo.ui.buffConfigDialog.Left;
+		posY = Buffalo.ui.buffConfigDialog.Top - 80;
 		for groupIndex = 1, 8, 1 do
 			local labelName = string.format("buffgrouplabel_%s", groupIndex);
 			local fLabel = BuffaloConfigFrame:CreateFontString(labelName, "ARTWORK", "GameFontNormal");
@@ -1402,7 +1403,7 @@ function Buffalo:initializeBuffSettingsUI()
 			fLabel:SetPoint("TOPLEFT", posX, posY);
 			fLabel:SetTextColor(Buffalo.ui.colours.GroupLabels[1], Buffalo.ui.colours.GroupLabels[2], Buffalo.ui.colours.GroupLabels[3]);
 	
-			posX = posX + UISettings.Width;
+			posX = posX + Buffalo.ui.buffConfigDialog.Width;
 		end;
 
 		--	SELF buffs, label:
@@ -1414,39 +1415,38 @@ function Buffalo:initializeBuffSettingsUI()
 		fLabel:SetTextColor(Buffalo.ui.colours.GroupLabels[1], Buffalo.ui.colours.GroupLabels[2], Buffalo.ui.colours.GroupLabels[3]);
 	end;
 
-	Buffalo:initializePersonalGroupBuffs(UISettings);
-	Buffalo:initializeRaidGroupBuffs(UISettings);
+	Buffalo:initializePersonalGroupBuffs();
+	Buffalo:initializeRaidGroupBuffs();
 
 
 	--	Iterate over all buffs and render icons.
-	posX = UISettings.Left;
+	posX = Buffalo.ui.buffConfigDialog.Left;
 	posY = 0;
 	for rowNumber = 1, selfCount, 1 do
 		buttonName = string.format("buffalo_personal_buff_%d_0", rowNumber);
 		local entry = _G[buttonName];
 		if not entry then
 			entry = CreateFrame("Button", buttonName, BuffaloConfigFrameSelf, "BuffaloGroupButtonTemplate");
-			entry:SetNormalTexture(Buffalo.sorted.groupAll[rowNumber].IconID);
-			entry:SetPushedTexture(Buffalo.sorted.groupAll[rowNumber].IconID);
+			entry:SetNormalTexture(Buffalo.spells.personal[rowNumber].IconID);
+			entry:SetPushedTexture(Buffalo.spells.personal[rowNumber].IconID);
 		end;
 
-		if Buffalo.sorted.groupAll[rowNumber].Learned then
+		if Buffalo.spells.personal[rowNumber].Learned then
 			entry:SetAlpha(Buffalo.ui.alpha.Disabled);
 			entry:SetPoint("TOPLEFT", posX, posY);
 			entry:Show();
-			posX = posX + UISettings.Width;
+			posX = posX + Buffalo.ui.buffConfigDialog.Width;
 			activeBuffCount = activeBuffCount + 1;
 		else
 			entry:Hide();
 		end
 	end;
 
---	local checkBox = CreateFrame("CheckButton", "BuffaloClassConfigFrameUseIncubus", BuffaloConfigFrameSelf, "OptionsCheckButtonTemplate");
 	buttonName = "BuffaloClassConfigFrameUseIncubus";	
 	local checkBox = _G[buttonName];
 	if not checkBox then
 		checkBox = CreateFrame("CheckButton", buttonName, BuffaloConfigFrameSelf, "ChatConfigCheckButtonTemplate");
-		checkBox:SetPoint("TOPLEFT", UISettings.Left, -56);
+		checkBox:SetPoint("TOPLEFT", Buffalo.ui.buffConfigDialog.Left, -56);
 		_G[checkBox:GetName().."Text"]:SetText("Use Incubus");
 		checkBox:SetScript("OnClick", Buffalo_handleCheckbox);
 	end;
@@ -1474,12 +1474,10 @@ function Buffalo:initializeBuffSettingsUI()
 
 	--	Step 1:
 	--	Display a row of Class icons (only during Initialization)
-	if not Buffalo.vars.UIInitialized then
-		posX = 0;
-		posY = 0;
-		--for _, classInfo in next, Buffalo.matrix.ClassSorted do
+	posX = 0;
+	posY = 0;
+	if firstTimeInitialization then
 		for className, classInfo in next, Buffalo.sorted.classes do
-			--buttonName = string.format("ClassImage%s", classInfo.className);
 			buttonName = string.format("ClassImage%s", className);
 			local entry = CreateFrame("Button", buttonName, BuffaloClassConfigFrameClass, "BuffaloClassButtonTemplate");
 			entry:SetAlpha(Buffalo.ui.alpha.Enabled);
@@ -1497,11 +1495,11 @@ function Buffalo:initializeBuffSettingsUI()
 	--	Counters include unlearned buffs as well, as we need to generate (but not show) the buttons.
 	posY = 0;
 	activeBuffCount = 0;
-	local buffCount = #Buffalo.sorted.groupOnly;
+	local buffCount = #Buffalo.spells.group;
 	for rowNumber = 1, buffCount, 1 do
 		posX = 0;
 		
-		if Buffalo.sorted.groupOnly[rowNumber].Learned then
+		if Buffalo.spells.group[rowNumber].Learned then
 			activeBuffCount = activeBuffCount + 1;
 			posY = posY - rowHeight;
 		end;
@@ -1511,18 +1509,18 @@ function Buffalo:initializeBuffSettingsUI()
 			local entry = _G[buttonName];
 			if not entry then
 				entry = CreateFrame("Button", buttonName, BuffaloClassConfigFrameClass, "BuffaloBuffButtonTemplate");
-				entry:SetNormalTexture(Buffalo.sorted.groupOnly[rowNumber].IconID);
-				entry:SetPushedTexture(Buffalo.sorted.groupOnly[rowNumber].IconID);
+				entry:SetNormalTexture(Buffalo.spells.group[rowNumber].IconID);
+				entry:SetPushedTexture(Buffalo.spells.group[rowNumber].IconID);
 			end;
 
-			if Buffalo.sorted.groupOnly[rowNumber].Learned then
+			if Buffalo.spells.group[rowNumber].Learned then
 				entry:SetAlpha(Buffalo.ui.alpha.Disabled);
 				entry:SetPoint("TOPLEFT", 4+posX, posY);
 				entry:Show();
-				posX = posX + colWidth;
 			else
 				entry:Hide();
 			end;
+			posX = posX + colWidth;
 		end;
 	end;
 	
@@ -1531,10 +1529,14 @@ function Buffalo:initializeBuffSettingsUI()
 	BuffaloClassConfigFrame:SetWidth(posX + 52);
 	BuffaloClassConfigFrameHeaderTexture:SetWidth(2 * (posX + 52));
 
-	Buffalo.vars.UIInitialized = true;
+	Buffalo.vars.BuffingDialogReady = true;
 end;
 
-function Buffalo:initializePersonalGroupBuffs(UISettings)
+--[[
+	Render the RaidBuff portion + labels and Icons for Personal buffing.
+	Selfie buffs are rendered elsewhere.
+--]]
+function Buffalo:initializePersonalGroupBuffs()
 	local posX, posY;
 
 	--	RAID buffs:
@@ -1543,34 +1545,42 @@ function Buffalo:initializePersonalGroupBuffs(UISettings)
 	--	We will refresh the alpha value after rendering.
 	local buttonName;
 	for groupNumber = 1, 8, 1 do
-		posX = UISettings.Left + UISettings.Width * (groupNumber - 1);
-		posY = UISettings.Top - 20;
-		for rowNumber = 1, #Buffalo.sorted.groupOnly, 1 do
+		posX = Buffalo.ui.buffConfigDialog.Left + Buffalo.ui.buffConfigDialog.Width * (groupNumber - 1);
+		posY = Buffalo.ui.buffConfigDialog.Top - 20;
+		for rowNumber = 1, #Buffalo.spells.group, 1 do
+			local spellInfo = Buffalo.spells.group[rowNumber];
+
 			--	Button to toggle all Row buffs:
 			if groupNumber == 1 then
 				buttonName = string.format("toggle_row_%d", rowNumber);
 				local rowBtn = _G[buttonName];
 				if not rowBtn then
 					rowBtn = CreateFrame("Button", buttonName, BuffaloConfigFramePersonal, "BuffaloMiniButtonTemplate");
+					rowBtn:SetNormalTexture(spellInfo.IconID);
+					rowBtn:SetPushedTexture(spellInfo.IconID);
 				end;
 				rowBtn:SetPoint("TOPLEFT", posX - 60, posY-8);
-				rowBtn:SetNormalTexture(Buffalo.sorted.groupOnly[rowNumber].IconID);
-				rowBtn:SetPushedTexture(Buffalo.sorted.groupOnly[rowNumber].IconID);
+				if spellInfo.Learned then
+					rowBtn:Show();
+				else
+					rowBtn:Hide();
+				end;
 			end;
 
+			--	One button per group - 8 in total per row:
 			buttonName = string.format("buffalo_personal_buff_%d_%d", rowNumber, groupNumber);
 			local entry = _G[buttonName];
 			if not entry then
 				entry = CreateFrame("Button", buttonName, BuffaloConfigFramePersonal, "BuffaloGroupButtonTemplate");
+				entry:SetNormalTexture(spellInfo.IconID);
+				entry:SetPushedTexture(spellInfo.IconID);
 			end;
 			entry:SetAlpha(Buffalo.ui.alpha.Disabled);
 			entry:SetPoint("TOPLEFT", posX, posY);
-			entry:SetNormalTexture(Buffalo.sorted.groupOnly[rowNumber].IconID);
-			entry:SetPushedTexture(Buffalo.sorted.groupOnly[rowNumber].IconID);
 
-			if Buffalo.sorted.groupOnly[rowNumber].Learned then
+			if spellInfo.Learned then
 				entry:Show();
-				posY = posY - UISettings.Height;
+				posY = posY - Buffalo.ui.buffConfigDialog.Height;
 			else
 				entry:Hide();
 			end;
@@ -1580,7 +1590,7 @@ function Buffalo:initializePersonalGroupBuffs(UISettings)
 	Buffalo.vars.PersonalBuffFrameHeight = posY * -1;
 end;
 
-function Buffalo:initializeRaidGroupBuffs(UISettings)
+function Buffalo:initializeRaidGroupBuffs()
 
 	--	Iterate over all buffs for this class, and store result in a "temp" table
 	--	so we do not do this every time we update also.
@@ -1602,7 +1612,7 @@ function Buffalo:initializeRaidGroupBuffs(UISettings)
 
 	--	Render the buff icon, and thereby defining the final size of the frame:
 	local posX = 32;
-	local posY = UISettings.Top - 20;
+	local posY = Buffalo.ui.buffConfigDialog.Top - 20;
 	for buffIndex = 1, #Buffalo.vars.OrderedBuffGroups, 1 do
 		local buttonName = string.format("buffrow_%s", buffIndex);
 		local fButton = _G[buttonName];
@@ -1616,15 +1626,15 @@ function Buffalo:initializeRaidGroupBuffs(UISettings)
 		fButton:SetScript("OnClick", nil);
 		fButton:Show();
 
-		posY = posY - UISettings.Height;
+		posY = posY - Buffalo.ui.buffConfigDialog.Height;
 	end;
 
 	Buffalo.vars.RaidBuffFrameHeight = -1 * posY;
 	
 	--	Now render frame buttons for all potential buffers.
-	posY = UISettings.Top - 20;
+	posY = Buffalo.ui.buffConfigDialog.Top - 20;
 	for buffIndex = 1, #Buffalo.vars.OrderedBuffGroups, 1 do
-		posX = UISettings.Left;
+		posX = Buffalo.ui.buffConfigDialog.Left;
 
 		for groupIndex = 1, 8, 1 do
 			local bufferName = string.format("buffgroup_%s_%s", buffIndex, groupIndex);
@@ -1637,9 +1647,9 @@ function Buffalo:initializeRaidGroupBuffs(UISettings)
 			_G[bufferName.."Text"]:SetText(Buffalo.SyncUnused);
 			fBuffer:Show();
 
-			posX = posX + UISettings.Width;
+			posX = posX + Buffalo.ui.buffConfigDialog.Width;
 		end;
-		posY = posY - UISettings.Height;
+		posY = posY - Buffalo.ui.buffConfigDialog.Height;
 	end;
 end;
 
@@ -1892,7 +1902,6 @@ function Buffalo_buffGroupDropdownMenu_Initialize(self, level, menuList)
 	info.func       = function() Buffalo:BuffGroupDropdownMenu_OnClick(this, nil) end;
 	UIDropDownMenu_AddButton(info);
 
-	--local classInfo = Buffalo.matrix.Class[Buffalo.vars.SyncClass];
 	local classInfo = Buffalo.classes[Buffalo.vars.SyncClass];
 	local players = Buffalo:getPlayersInRoster(classInfo.Mask);
 	for playerIndex = 1, #players, 1 do
@@ -1932,7 +1941,6 @@ function Buffalo:getPlayersInRoster(classMask)
 			
 			local fullName = Buffalo:getPlayerAndRealm(unitid);
 			local _, className = UnitClass(unitid);
-			--local classInfo = Buffalo.matrix.Class[className];
 			local classInfo = Buffalo.classes[className];
 
 			if bit.band(classInfo.Mask, classMask) > 0 then
@@ -1954,7 +1962,6 @@ function Buffalo:getPlayersInRoster(classMask)
 
 			local fullName = Buffalo:getPlayerAndRealm(unitid);
 			local _, className = UnitClass(unitid);		
-			--local classInfo = Buffalo.matrix.Class[className];
 			local classInfo = Buffalo.classes[className];
 
 			if bit.band(classInfo.Mask, classMask) > 0 then
@@ -1995,11 +2002,15 @@ function Buffalo:onGroupRosterUpdate()
 end;
 
 function Buffalo:onPlayerTalentUpdate()
+	if not Buffalo.vars.InitializationComplete then
+		return;
+	end;
+
 	Buffalo:updateSpellMatrix();
 
 	Buffalo:updateGroupBuffs();
 	Buffalo:updateGroupBuffs(true);
-	Buffalo:updateActiveBuffs();
+	Buffalo:refreshActiveSpells();
 
 	Buffalo:initializeBuffSettingsUI();
 	Buffalo:updateGroupBuffUI();
@@ -2064,11 +2075,21 @@ function Buffalo:updateGroupBuffUI()
 	local buttonName, entry;
 	local buffMask = Buffalo.config.value.AssignedBuffSelf;
 
-	for rowNumber = 1, #Buffalo.sorted.groupAll, 1 do
+	local posX = Buffalo.ui.buffConfigDialog.Left;
+	local posY = Buffalo.ui.buffConfigDialog.Top;
+	for rowNumber = 1, #Buffalo.spells.personal, 1 do
 		buttonName = string.format("buffalo_personal_buff_%d_0", rowNumber);
 		entry = _G[buttonName];
+		entry:SetPoint("TOPLEFT", posX, posY);
 
-		if (bit.band(buffMask, Buffalo.sorted.groupAll[rowNumber].Bitmask) > 0) then
+		if Buffalo.spells.personal[rowNumber].Enabled then
+			entry:Show();
+			posX = posX + Buffalo.ui.buffConfigDialog.Width;
+		else
+			entry:Hide();
+		end;
+
+		if (bit.band(buffMask, Buffalo.spells.personal[rowNumber].Bitmask) > 0) then
 			entry:SetAlpha(Buffalo.ui.alpha.Enabled);
 		else
 			entry:SetAlpha(Buffalo.ui.alpha.Disabled);
@@ -2096,7 +2117,7 @@ function Buffalo:updateRaidModeButtons()
 end;
 
 function Buffalo:updatePersonalBuffUI()
-	local buffCount = #Buffalo.sorted.groupOnly;
+	local buffCount = #Buffalo.spells.group;
 
 	local assignedGroups = Buffalo.config.value.AssignedBuffGroups;
 	if Buffalo.vars.CurrentRaidMode ~= Buffalo.raidmodes.Personal then
@@ -2113,7 +2134,7 @@ function Buffalo:updatePersonalBuffUI()
 			local entry = _G[buttonName];
 
 			local alpha = Buffalo.ui.alpha.Disabled;
-			if (bit.band(buffMask, Buffalo.sorted.groupOnly[rowNumber].Bitmask) > 0) then
+			if (bit.band(buffMask, Buffalo.spells.group[rowNumber].Bitmask) > 0) then
 				alpha = Buffalo.ui.alpha.Enabled;
 			end;
 
@@ -2121,7 +2142,7 @@ function Buffalo:updatePersonalBuffUI()
 				entry:Disable();
 			else
 				entry:Enable();
-			end;			
+			end;
 
 			entry:SetAlpha(alpha);
 		end;
@@ -2179,13 +2200,13 @@ end;
 function Buffalo:refreshClassSettingsUI()
 	--	Update alpha value on each button so it matches the current settings.
 
-	buffCount = #Buffalo.sorted.groupOnly;
+	buffCount = #Buffalo.spells.group;
 	for rowNumber = 1, buffCount, 1 do
 		for _, classInfo in next, Buffalo.sorted.classes do
 			buttonName = string.format("%s_row%s", classInfo.ClassName, rowNumber);
 			local entry = _G[buttonName];
 
-			if bit.band(Buffalo.config.value.AssignedClasses[classInfo.ClassName], Buffalo.sorted.groupOnly[rowNumber].Bitmask) > 0 then
+			if bit.band(Buffalo.config.value.AssignedClasses[classInfo.ClassName], Buffalo.spells.group[rowNumber].Bitmask) > 0 then
 				entry:SetAlpha(Buffalo.ui.alpha.Enabled);
 			else
 				entry:SetAlpha(Buffalo.ui.alpha.Disabled);
@@ -2198,7 +2219,7 @@ function Buffalo:onConfigurationBuffClick(self, ...)
 	local buttonName = self:GetName();
 	local buttonType = GetMouseButtonClicked();
 
-	local _, _, row, col = string.find(buttonName, "buffalo_personal_buff_(%d)_(%d)");
+	local _, _, row, col = string.find(buttonName, "buffalo_personal_buff_(%d+)_(%d+)");
 
 	row = 1 * row;
 	col = 1 * col;	-- Col=0: self buff, col 1-8: raid buff
@@ -2208,10 +2229,10 @@ function Buffalo:onConfigurationBuffClick(self, ...)
 	--	Properties are the name / icon/ mask for the clicked buff.
 	local properties = { };
 	if col == 0 then
-		properties = Buffalo.sorted.groupAll;
+		properties = Buffalo.spells.personal;
 		groupMask = Buffalo.config.value.AssignedBuffSelf;
 	else 
-		properties = Buffalo.sorted.groupOnly;
+		properties = Buffalo.spells.group;
 		groupMask = Buffalo.config.value.AssignedBuffGroups[col];
 	end;
 
@@ -2267,14 +2288,14 @@ function Buffalo:onToggleRowBuffsClick(self, ...)
 end;
 
 function Buffalo:toggleRowBuffs(rowNumber, enableBuffs)
-	local spellName = Buffalo.sorted.groupOnly[rowNumber].SpellName;
+	local spellName = Buffalo.spells.group[rowNumber].SpellName;
 	local spellInfo = Buffalo.spells.active[spellName];
 	if not spellInfo then
 		return;
 	end; 
 
 	--	GroupMask tells what buffs I have selected for the actual group.
-	local spellMask = Buffalo.sorted.groupOnly[rowNumber].Bitmask;			--	spellMask is the clicked buff's bitvalue.
+	local spellMask = Buffalo.spells.group[rowNumber].Bitmask;			--	spellMask is the clicked buff's bitvalue.
 	local maskOut = 0x0ffff - spellMask;									-- preserve all buffs except for the selected one:
 
 	local groupMask, col;
@@ -2315,7 +2336,7 @@ function Buffalo:onClassConfigClick(self, ...)
 	row = 1 * row;
 
 	local classMask = Buffalo.config.value.AssignedClasses[className];
-	local buffMask = Buffalo.sorted.groupOnly[row].Bitmask;
+	local buffMask = Buffalo.spells.group[row].Bitmask;
 
 	if buttonType == "LeftButton" then
 		--	Left button: ADD the buff
@@ -2438,34 +2459,30 @@ function Buffalo:updateDemon()
 	end;
 
 	--	Get spells from the Matrix to see if user actually knows them:
-	if not Buffalo.spells.active[Buffalo.spellnames.warlock.Succubus] or not Buffalo.spells.active[Buffalo.spellnames.warlock.Incubus] then
-		return;
+	if not Buffalo.spells.active[Buffalo.spellnames.warlock.Succubus].Learned and not Buffalo.spells.active[Buffalo.spellnames.warlock.Incubus].Learned then
 	end;
 
-	local oldBuff, newBuff;
+	local disabledDemon = Buffalo.spellnames.warlock.Incubus;
+	local enabledDemon = Buffalo.spellnames.warlock.Succubus;
 	if Buffalo.config.value.UseIncubus then
-		oldBuff = Buffalo.spellnames.warlock.Succubus;
-		newBuff = Buffalo.spellnames.warlock.Incubus;
-		Buffalo.spells.active[Buffalo.spellnames.warlock.Succubus].Bitmask = 0x000000;
-		Buffalo.spells.active[Buffalo.spellnames.warlock.Incubus].Bitmask = 0x002000;
-	else
-		oldBuff = Buffalo.spellnames.warlock.Incubus;
-		newBuff = Buffalo.spellnames.warlock.Succubus;
-		Buffalo.spells.active[Buffalo.spellnames.warlock.Succubus]["BITMASK"] = 0x002000;
-		Buffalo.spells.active[Buffalo.spellnames.warlock.Incubus]["BITMASK"] = 0x000000;
+		disabledDemon = Buffalo.spellnames.warlock.Succubus;
+		enabledDemon = Buffalo.spellnames.warlock.Incubus;
 	end;
-	
-	for rowNumber = 1, #Buffalo.sorted.groupAll, 1 do
-		if Buffalo.sorted.groupAll[rowNumber].SpellName == oldBuff then
-			local spellInfo = Buffalo.spells.active[newBuff];
-			local entry = _G[string.format("buffalo_personal_buff_%d_0", rowNumber)];
+	Buffalo.spells.active[disabledDemon].Bitmask = 0x000000;
+	Buffalo.spells.active[disabledDemon].Enabled = nil;
+	Buffalo.spells.active[enabledDemon].Bitmask = 0x002000;
+	Buffalo.spells.active[enabledDemon].Enabled = true;
 
-			Buffalo.sorted.groupAll[rowNumber].SpellName = newBuff;
-			Buffalo.sorted.groupAll[rowNumber].IconID = spellInfo["ICONID"];
+	local demonButton;
+	for rowNumber = 1, #Buffalo.spells.personal, 1 do
+		if Buffalo.spells.personal[rowNumber].SpellName == disabledDemon then
+			demonButton = _G[string.format("buffalo_personal_buff_%d_0", rowNumber)];
+			demonButton:Hide();
+		end;
 
-			entry:SetNormalTexture(Buffalo.sorted.groupAll[rowNumber].IconID);
-			entry:SetPushedTexture(Buffalo.sorted.groupAll[rowNumber].IconID);
-			break;
+		if Buffalo.spells.personal[rowNumber].SpellName == enabledDemon then
+			demonButton = _G[string.format("buffalo_personal_buff_%d_0", rowNumber)];
+			demonButton:Show();
 		end;
 	end;
 end;
@@ -2585,6 +2602,14 @@ function Buffalo_onLoad()
 	local _, classname = UnitClass("player");
 	Buffalo.vars.PlayerClass = classname;
 	Buffalo.vars.PlayerNameAndRealm = Buffalo:getPlayerAndRealm("player");
+
+	if not Buffalo.classes[classname] or not Buffalo.classes[classname].spells then
+		--	Warriors etc are not supported (no spells to buff), so we make sure Initialization is not performed!
+		BuffButton:Hide();
+		Buffalo.vars.InitializationRetryTimer = 86400;
+		A:echo('Addon will go to sleep (Unsupported class)');
+		return;
+	end;
 
 	Buffalo.Version = A:calculateVersion();
 
