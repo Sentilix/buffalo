@@ -2605,6 +2605,7 @@ function Buffalo_onLoad()
 
 	if not Buffalo.classes[classname] or not Buffalo.classes[classname].spells then
 		--	Warriors etc are not supported (no spells to buff), so we make sure Initialization is not performed!
+		BuffButton:Hide();
 		Buffalo.vars.InitializationRetryTimer = 86400;
 		A:echo('Addon will go to sleep (Unsupported class)');
 		return;

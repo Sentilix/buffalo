@@ -96,6 +96,9 @@ Warlock		Imp							39
 
 Version history
 ---------------
+Version 0.7.1:
+* Fixed Buffalo icon for non-buffing classes: it was invisible but still clickable which caused an empty addon to be displayed.
+
 Version 0.7.0:
 * Fixed selfie buffs position: now aligned with label.
 
