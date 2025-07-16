@@ -51,6 +51,7 @@
     <Content Include="DigamAddonLib.lua">
       <SubType>Code</SubType>
     </Content>
+    <Content Include="ReadMe.txt" />
   </ItemGroup>
   <Import Project="$(DevEnvDir)\Extensions\Tools\MSBuild\AddonStudio\Wow\3.0\WowAddonStudio.targets" />
   <!--
