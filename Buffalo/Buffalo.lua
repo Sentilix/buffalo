@@ -536,6 +536,12 @@ function Buffalo:initializeConfigSettings()
 	end;
 	Buffalo:setConfigOption(Buffalo.config.key.ScanFrequency, Buffalo.config.value.ScanFrequency);
 
+	Buffalo.config.value.ButtonOpacity = Buffalo:getConfigOption(Buffalo.config.key.ButtonOpacity, Buffalo.config.default.ButtonOpacity);
+	if Buffalo.config.value.ButtonOpacity == nil or Buffalo.config.value.ButtonOpacity < 0.0 or Buffalo.config.value.ButtonOpacity > 1.0 then
+		Buffalo.config.value.ButtonOpacity = Buffalo.config.default.ButtonOpacity;
+	end;
+	Buffalo:setConfigOption(Buffalo.config.key.ButtonOpacity, Buffalo.config.value.ButtonOpacity);
+
 	Buffalo.config.value.RenewOverlap = Buffalo:getConfigOption(Buffalo.config.key.RenewOverlap, Buffalo.config.default.RenewOverlap);
 	if Buffalo.config.value.RenewOverlap < 0 or Buffalo.config.value.RenewOverlap > 120 then
 		Buffalo.config.value.RenewOverlap = Buffalo.config.default.RenewOverlap;
@@ -1318,7 +1324,8 @@ function Buffalo:setButtonTexture(textureName, isEnabled)
 
 	if Buffalo.vars.BuffButtonLastTexture ~= textureName then
 		Buffalo.vars.BuffButtonLastTexture = textureName;
-		BuffButton:SetAlpha(alphaValue);
+
+		BuffButton:SetAlpha(alphaValue * Buffalo.config.value.ButtonOpacity);
 		BuffButton:SetNormalTexture(textureName);		
 	end;
 end;
@@ -2183,6 +2190,9 @@ function Buffalo:refreshGeneralSettingsUI()
 	BuffaloConfigFrameScanFrequency:SetValue(Buffalo.config.value.ScanFrequency * 10);
 	BuffaloSliderScanFrequencyText:SetText(string.format("%s/10 sec.", Buffalo.config.value.ScanFrequency * 10));
 
+	BuffaloConfigFrameButtonOpacity:SetValue(Buffalo.config.value.ButtonOpacity * 100);
+	BuffaloSliderButtonOpacityText:SetText(string.format("%s percent", Buffalo.config.value.ButtonOpacity * 100));
+
 	--	Refresh checkboxes:
 	local checkboxValue = nil;
 	if Buffalo.config.value.AnnounceMissingBuff then
@@ -2411,6 +2421,23 @@ function Buffalo_onScanFrequencyChanged(object)
 	BuffaloSliderScanFrequencyText:SetText(string.format("%s/10 sec.", Buffalo.config.value.ScanFrequency * 10));
 end;
 
+function Buffalo_onButtonOpacityChanged(object)
+	local value = math.floor(object:GetValue());
+	object:SetValueStep(1);
+	object:SetValue(value);
+
+	--	Slider works from 1-100, we need values from 0.0 - 1.0:
+	value = value / 100;
+	if value ~= Buffalo.config.value.ButtonOpacity then
+		Buffalo.config.value.ButtonOpacity = value;
+		Buffalo:setConfigOption(Buffalo.config.key.ButtonOpacity, Buffalo.config.value.ButtonOpacity);
+
+		BuffButton:SetAlpha(value);
+	end;
+	
+	BuffaloSliderButtonOpacityText:SetText(string.format("%s percent", Buffalo.config.value.ButtonOpacity * 100));
+end;
+
 function Buffalo_handleCheckbox(checkbox)
 	if not checkbox then return end;
 
@@ -2631,6 +2658,7 @@ function Buffalo_onLoad()
 	BuffaloConfigFramePrayerThreshold:SetBackdrop(Buffalo.ui.backdrops.Slider);
 	BuffaloConfigFrameRenewOverlap:SetBackdrop(Buffalo.ui.backdrops.Slider);
 	BuffaloConfigFrameScanFrequency:SetBackdrop(Buffalo.ui.backdrops.Slider);
+	BuffaloConfigFrameButtonOpacity:SetBackdrop(Buffalo.ui.backdrops.Slider);
 
 	C_ChatInfo.RegisterAddonMessagePrefix(A.addonPrefix);
 end

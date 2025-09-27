@@ -63,15 +63,29 @@
 					</OnValueChanged>
 				</Scripts>
 			</Slider>
+			<!-- Button opacity slider -->
+			<Slider name="BuffaloConfigFrameButtonOpacity" minValue="0" maxValue="100" defaultValue="100" valueStep="1" inherits="HorizontalSliderTemplate" enableMouse="true">
+				<Size x="360" y="20" />
+				<Anchors>
+					<Anchor point="TOPLEFT" x="0" y="-200" relativeTo="$parentOptions"/>
+				</Anchors>
+				<Scripts>
+					<OnValueChanged>
+						if Buffalo_onButtonOpacityChanged then
+						Buffalo_onButtonOpacityChanged(self);
+						end;
+					</OnValueChanged>
+				</Scripts>
+			</Slider>
 
 			<!-- checkbox options -->
 			<CheckButton name="BuffaloConfigFrameOptionAnnounceMissing" inherits="ChatConfigCheckButtonTemplate">
 				<Anchors>
-					<Anchor point="TOPLEFT" x="0" y="-195" relativeTo="$parentOptions"/>
+					<Anchor point="TOPLEFT" x="0" y="-235" relativeTo="$parentOptions"/>
 				</Anchors>
 				<Scripts>
 					<OnLoad>
-						_G[self:GetName().."Text"]:SetText("Display missing buffs in Local Chat")
+						_G[self:GetName().."Text"]:SetText("Say when buffs missing")
 					</OnLoad>
 					<OnClick>
 						Buffalo_handleCheckbox(self);
@@ -80,11 +94,11 @@
 			</CheckButton>
 			<CheckButton name="BuffaloConfigFrameOptionAnnounceComplete" inherits="ChatConfigCheckButtonTemplate">
 				<Anchors>
-					<Anchor point="TOPLEFT" x="0" y="-225" relativeTo="$parentOptions"/>
+					<Anchor point="TOPLEFT" x="200" y="-235" relativeTo="$parentOptions"/>
 				</Anchors>
 				<Scripts>
 					<OnLoad>
-						_G[self:GetName().."Text"]:SetText("Display buffed targets in Local Chat")
+						_G[self:GetName().."Text"]:SetText("Say when buffs done")
 					</OnLoad>
 					<OnClick>
 						Buffalo_handleCheckbox(self);
@@ -190,6 +204,25 @@
 					<Color r="0.8" g="0.8" b="0.8" a="1.0"/>
 				</FontString>
 
+				<FontString name="$parentButtonOpacityCaption" inherits="GameFontNormal" text="Buff button opacity">
+					<Anchors>
+						<Anchor point="LEFT" x="0" y="20" relativeTo="BuffaloConfigFrameButtonOpacity"/>
+					</Anchors>
+					<Color r="0.9" g="0.8" b="0.2" a="1.0"/>
+				</FontString>
+				<FontString name="$parentButtonOpacityCaptionLow" inherits="GameFontNormal" text="Invisible">
+					<Anchors>
+						<Anchor point="LEFT" x="0" y="-20" relativeTo="BuffaloConfigFrameButtonOpacity"/>
+					</Anchors>
+					<Color r="0.8" g="0.8" b="0.8" a="1.0"/>
+				</FontString>
+				<FontString name="$parentButtonOpacityCaptionHigh" inherits="GameFontNormal" text="Solid">
+					<Anchors>
+						<Anchor point="RIGHT" x="0" y="-20" relativeTo="BuffaloConfigFrameButtonOpacity"/>
+					</Anchors>
+					<Color r="0.8" g="0.8" b="0.8" a="1.0"/>
+				</FontString>
+
 				<!-- slider values -->
 				<FontString name="BuffaloSliderPrayerThresholdText" inherits="GameFontNormal" text="?">
 					<Anchors>
@@ -206,6 +239,12 @@
 				<FontString name="BuffaloSliderScanFrequencyText" inherits="GameFontNormal" text="?">
 					<Anchors>
 						<Anchor point="RIGHT" x="80" y="0" relativeTo="BuffaloConfigFrameScanFrequency"/>
+					</Anchors>
+					<Color r="1" g="1" b="1" a="1.0"/>
+				</FontString>
+				<FontString name="BuffaloSliderButtonOpacityText" inherits="GameFontNormal" text="?">
+					<Anchors>
+						<Anchor point="RIGHT" x="80" y="0" relativeTo="BuffaloConfigFrameButtonOpacity"/>
 					</Anchors>
 					<Color r="1" g="1" b="1" a="1.0"/>
 				</FontString>
