@@ -27,6 +27,7 @@ Buffalo["spellnames"] = {
 		["MageArmor"]					= GetSpellInfo(22783),
 		["FrostArmor"]					= GetSpellInfo(7301),
 		["IceArmor"]					= GetSpellInfo(10220),
+		["MoltenArmor"]					= GetSpellInfo(30482),
 		["IceBarrier"]					= GetSpellInfo(13033),
 	},
 	["priest"] = {
@@ -173,8 +174,9 @@ Buffalo["classes"] = {
 				["Cooldown"]	= 30,
 				["Classmask"]	= Buffalo.classmasks.Mage,
 				["MaxSpellId"]	= 13033,
-				["Priority"]	= 11,
+				["Priority"]	= 10,
 			},
+			--	TBC: 0x000800	Buffalo.spellnames.mage.MoltenArmor
 		},
 	},
 	["PALADIN"] = {
@@ -272,7 +274,7 @@ Buffalo["classes"] = {
 				["Priority"]	= 21,
 				["ReplacedBy"]	= Buffalo.spellnames.warlock.DetectInvisibility,
 			},
-			[Buffalo.spellnames.warlock.DetectInvisibility] = { 
+			[Buffalo.spellnames.warlock.DetectInvisibility or '_DetectInvisibility'] = { 
 				["Bitmask"]		= 0x000001,
 				["Classmask"]	= Buffalo.classmasks.ALL,
 				["MaxSpellId"]	= 2970,
@@ -280,7 +282,7 @@ Buffalo["classes"] = {
 				["Replacing"]	= Buffalo.spellnames.warlock.DetectLesserInvisibility,
 				["ReplacedBy"]	= Buffalo.spellnames.warlock.DetectGreaterInvisibility,
 			},
-			[Buffalo.spellnames.warlock.DetectGreaterInvisibility] = { 
+			[Buffalo.spellnames.warlock.DetectGreaterInvisibility or '_DetectGreaterInvisibility'] = { 
 				["Bitmask"]		= 0x000001,
 				["Classmask"]	= Buffalo.classmasks.ALL,
 				["MaxSpellId"]	= 11743,
@@ -315,6 +317,7 @@ Buffalo["classes"] = {
 				["Priority"]	= 11,
 				["Replacing"]	= Buffalo.spellnames.warlock.DemonSkin,
 			},
+			--	TBC: 0x000100	Buffalo.spellnames.warlock.FelArmor
 			[Buffalo.spellnames.warlock.Imp] = { 
 				["Bitmask"]		= 0x000400,
 				["Classmask"]	= Buffalo.classmasks.Warlock,
@@ -352,6 +355,8 @@ Buffalo["classes"] = {
 				["Family"]		= "Demon",
 				["Incubus"]		= true,
 			},
+			--	TBC: 0x004000	Buffalo.spellnames.warlock.Felguard
+			--	TBC: 0x008000	Buffalo.spellnames.warlock.Inferno
 		},
 	},
 	["WARRIOR"] = {
@@ -382,6 +387,56 @@ Buffalo["classes"] = {
 	},
 }
 
+--	Added in TBC:
+--	Hack: the library has not loaded yet, we need to figure out the expansion level ourselves:
+local _addonExpansionLevel = tonumber(C_AddOns.GetAddOnMetadata("Buffalo", "X-Expansion-Level"))
+
+if (_addonExpansionLevel or 0) == 2 then
+
+	Buffalo.spellnames.mage["MoltenArmor"]		= GetSpellInfo(30482);
+	Buffalo.spellnames.warlock["Felguard"]		= GetSpellInfo(30146);
+	Buffalo.spellnames.warlock["Inferno"]		= GetSpellInfo(34249);
+	Buffalo.spellnames.warlock["FelArmor"]		= GetSpellInfo(28189);
+
+
+	Buffalo.classes.MAGE.spells[Buffalo.spellnames.mage.MoltenArmor] = {
+		["Bitmask"]		= 0x000800,
+		["Classmask"]	= Buffalo.classmasks.Mage,
+		["MaxSpellId"]	= 30482,
+		["Priority"]	= 11,
+		["Family"]		= "Armor",
+	}
+
+	Buffalo.classes.WARLOCK.spells[Buffalo.spellnames.warlock.Felguard] = {
+		["Bitmask"]		= 0x004000,
+		["Classmask"]	= Buffalo.classmasks.Warlock,
+		["MaxSpellId"]	= 30146,
+		["Priority"]	= 35,
+		["Family"]		= "Demon",
+	}
+	Buffalo.classes.WARLOCK.spells[Buffalo.spellnames.warlock.Inferno] = {
+		["Bitmask"]		= 0x008000,
+		["Classmask"]	= Buffalo.classmasks.Warlock,
+		["MaxSpellId"]	= 34249,
+		["Priority"]	= 34,
+		["Family"]		= "Demon",
+	}
+
+	Buffalo.classes.WARLOCK.spells[Buffalo.spellnames.warlock.DemonSkin]["ReplacedBy"]	= Buffalo.spellnames.warlock.FelArmor;
+	Buffalo.classes.WARLOCK.spells[Buffalo.spellnames.warlock.DemonArmor] = nil;
+	Buffalo.classes.WARLOCK.spells[Buffalo.spellnames.warlock.FelArmor] = {
+		["Bitmask"]		= 0x000100,
+		["Classmask"]	= Buffalo.classmasks.Warlock,
+		["MaxSpellId"]	= 28189,
+		["Priority"]	= 11,
+		["Replacing"]	= Buffalo.spellnames.warlock.DemonSkin,
+	}
+
+	Buffalo.classes.WARLOCK.spells[Buffalo.spellnames.warlock.DetectLesserInvisibility].ReplacedBy = nil;
+	Buffalo.classes.WARLOCK.spells[Buffalo.spellnames.warlock.DetectLesserInvisibility].MaxSpellId = 132;
+
+end;
+
 
 function Buffalo:updateSpellMatrix()
 	Buffalo:updateSpellMatrixByClass(Buffalo.vars.PlayerClass);
@@ -405,52 +460,55 @@ function Buffalo:updateSpellMatrixByClass(classname)
 
 	--	Loop 2: Do the actual spell update one by one:
 	for spellName, spellInfo in pairs(classInfo.spells) do
-		local name, _, iconId, _, _, _, maxSpellId = GetSpellInfo(spellInfo.MaxSpellId);
-		if not name then return; end;
-
 		local enabled = nil;
 		local learned = nil;
-		local _, _, _, _, _, _, spellId = GetSpellInfo(spellName);
-		if spellId ~= nil then
-			enabled = true;
-			learned = true;
-		end;
+		local spellId = nil;
 
-		--	Disable this spell if there is a better active spell:
-		if spellInfo.ReplacedBy and enabled then
-			--	There is a better spell - and it is enabled:
-			if classInfo.spells[spellInfo.ReplacedBy].Learned then
-				enabled = nil;
-				learned = nil;
+		local name, _, iconId, _, _, _, maxSpellId = GetSpellInfo(spellInfo.MaxSpellId);
+		if name then
+			local _, _, _, _, _, _, spellId = GetSpellInfo(spellName);
+			if spellId ~= nil then
+				enabled = true;
+				learned = true;
 			end;
-		end;
 
-		--	Disable lower tier spell if this spell if active:
-		if spellInfo.Replacing and enabled then
-			classInfo.spells[spellInfo.Replacing].Enabled = nil;
-			classInfo.spells[spellInfo.Replacing].Learned = nil;
-		end;
-
-		--	Handle Succubus / Incubus configuration:
-		if spellInfo.Succubus then
-			if Buffalo.config.value.UseIncubus then
-				bitMask = 0x000000;
-				enabled = nil;
-			else
-				bitMask = 0x002000;
-			end;			
-		elseif spellInfo.Incubus then
-			if Buffalo.config.value.UseIncubus then
-				bitMask = 0x002000;
-			else
-				bitMask = 0x000000;
-				enabled = nil;
+			--	Disable this spell if there is a better active spell:
+			if spellInfo.ReplacedBy and enabled then
+				--	There is a better spell - and it is enabled:
+				if classInfo.spells[spellInfo.ReplacedBy] and classInfo.spells[spellInfo.ReplacedBy].Learned then
+					enabled = nil;
+					learned = nil;
+				end;
 			end;
+
+			--	Disable lower tier spell if this spell if active:
+			if spellInfo.Replacing and enabled then
+				classInfo.spells[spellInfo.Replacing].Enabled = nil;
+				classInfo.spells[spellInfo.Replacing].Learned = nil;
+			end;
+
+			--	Handle Succubus / Incubus configuration:
+			if spellInfo.Succubus then
+				if Buffalo.config.value.UseIncubus then
+					bitMask = 0x000000;
+					enabled = nil;
+				else
+					bitMask = 0x002000;
+				end;			
+			elseif spellInfo.Incubus then
+				if Buffalo.config.value.UseIncubus then
+					bitMask = 0x002000;
+				else
+					bitMask = 0x000000;
+					enabled = nil;
+				end;
+			end;
+
 		end;
 
 		spellInfo.Enabled = enabled;
 		spellInfo.Learned = learned;
-		spellInfo.IconID = iconId;
+		spellInfo.IconID = iconId or 0;
 		spellInfo.SpellID = spellId;
 	end;
 

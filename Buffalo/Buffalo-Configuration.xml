@@ -75,7 +75,7 @@
 		</NormalTexture>
 	</Button>
 	
-	<!-- Configration frame: main entry -->
+	<!-- Configuration frame: main entry -->
 	<Frame name="BuffaloConfigFrame" parent="UIParent" toplevel="true" inherits="BackdropTemplate" hidden="true" frameStrata="MEDIUM">
 		<KeyValues>
 			<KeyValue key="backdropInfo" value="BACKDROP_DIALOG_32_32" type="global"/>

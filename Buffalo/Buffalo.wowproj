@@ -45,6 +45,9 @@
       <SubType>Code</SubType>
       <DependentUpon>Buffalo.xml</DependentUpon>
     </Content>
+    <Content Include="Buffalo_TBC.toc">
+      <SubType>TableOfContents</SubType>
+    </Content>
     <Content Include="Constants.lua">
       <SubType>Code</SubType>
     </Content>

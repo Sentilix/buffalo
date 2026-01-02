@@ -945,8 +945,8 @@ function Buffalo:scanRaid()
 			end
 
 			--	Add tracking icons ("Find Herbs", "Find Minerals" ...).
-			--	Methods differs between classic and tbc:
-			if A.addonExpansionLevel == 1 then
+			--	Methods differs between classic (1.x / 2.5) and tbc/wotlk (2.4/3.4):
+			if A.addonExpansionLevel < 3 then
 				--	Classic:
 				--	Possible problem: Documentation does not state wether the returned name is localized or not.
 				--	All examples shows English names, so going for that until I know better ...
@@ -957,18 +957,18 @@ function Buffalo:scanRaid()
 						buffMask = bit.bor(buffMask, buffInfo.Bitmask);
 					end;
 				end;
-			elseif A.addonExpansionLevel > 1 then
-				--	TBC / WOTLK:
-				for n=1, GetNumTrackingTypes() do
-					local buffName, spellID, active = GetTrackingInfo(n);
-					if active then
-						buffInfo = Buffalo.spells.active[buffName];
-						if buffInfo and buffInfo.Enabled then
-							--echo(string.format("<TBC> Adding TrackingIcon buff:%s, mask:%s", buffName, buffInfo["BITMASK"]));
-							buffMask = bit.bor(buffMask, buffInfo.Bitmask);
-						end;
-					end;
-				end;
+			--elseif A.addonExpansionLevel > 1 then
+			--	--	TBC classic (2.5.4) / WOTLK:
+			--	for n=1, GetNumTrackingTypes() do
+			--		local buffName, spellID, active = GetTrackingInfo(n);
+			--		if active then
+			--			buffInfo = Buffalo.spells.active[buffName];
+			--			if buffInfo and buffInfo.Enabled then
+			--				--echo(string.format("<TBC> Adding TrackingIcon buff:%s, mask:%s", buffName, buffInfo["BITMASK"]));
+			--				buffMask = bit.bor(buffMask, buffInfo.Bitmask);
+			--			end;
+			--		end;
+			--	end;
 			end;
 
 			--	Warlock pets:

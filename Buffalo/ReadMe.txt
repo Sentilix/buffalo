@@ -96,6 +96,12 @@ Warlock		Imp							39
 
 Version history
 ---------------
+Version 0.8.0-beta1:
+* Added support for TBC Anniversary, including Molten Armor, Fel Armor, Fel Guard and Inferno.
+Known issues:
+* Icons in buff configuration appears with a yellow arrow.
+
+
 Version 0.7.2:
 * Added Opacity setting for the Buff button.
 * Bumped Classic client version to 1.15.8
