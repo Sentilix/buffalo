@@ -2,23 +2,21 @@
 	<Script file="Buffalo-ClassConfig.lua" />
 
 	<!-- Frame template for one class button -->
-	<Button name="BuffaloClassButtonTemplate" inherits="ActionButtonTemplate" frameStrata="HIGH" hidden="false" virtual="true">
+	<Button name="BuffaloClassButtonTemplate" inherits="SecureActionButtonTemplate" frameStrata="HIGH" hidden="false" virtual="true">
 		<Size>
 			<AbsDimension x="32" y="32" />
 		</Size>
 		<NormalTexture file="Interface\PaperDoll\UI-Backpack-EmptySlot" />
 		<Scripts>
 			<OnLoad>
-				--self:RegisterForClicks("LeftButtonDown", "RightButtonDown");
 			</OnLoad>
 			<OnClick>
-				--	TODO: What should we do when clicking a class? Enable all buffs?
 			</OnClick>
 		</Scripts>
 	</Button>
 
 	<!-- Frame template for one class buff button -->
-	<Button name="BuffaloBuffButtonTemplate" inherits="ActionButtonTemplate" frameStrata="HIGH" hidden="false" virtual="true">
+	<Button name="BuffaloBuffButtonTemplate" inherits="SecureActionButtonTemplate" frameStrata="HIGH" hidden="false" virtual="true">
 		<Size>
 			<AbsDimension x="24" y="24" />
 		</Size>
