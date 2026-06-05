@@ -96,6 +96,11 @@ Warlock		Imp							39
 
 Version history
 ---------------
+Version 0.8.1:
+* TBC: Fixed yellow triangle on buffs in the configuration screen.
+* TBC: Fixed auras not being detecting correct.
+
+
 Version 0.8.0-beta1:
 * Added support for TBC Anniversary, including Molten Armor, Fel Armor, Fel Guard and Inferno.
 Known issues:
