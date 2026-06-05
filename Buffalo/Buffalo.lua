@@ -748,7 +748,7 @@ function Buffalo:mainInitialization(reloaded)
 
 	--	Expansion-specific settings.
 	Buffalo.vars.PlayerIsBuffClass = false;
-	if A.addonExpansionLevel == 1 or A.addonExpansionLevel == 2 or A.addonExpansionLevel == 3 then
+	if A.addonExpansionLevel == 1 or A.addonExpansionLevel == 2 or A.addonExpansionLevel == 3 then	
 		--	Check if the current class can cast buffs.
 		--	Note: herbing/mining is excluded via the 0x00ff mask:
 		for buffName, buffInfo in next, Buffalo.spells.active do
@@ -946,7 +946,7 @@ function Buffalo:scanRaid()
 
 			--	Add tracking icons ("Find Herbs", "Find Minerals" ...).
 			--	Methods differs between classic (1.x / 2.5) and tbc/wotlk (2.4/3.4):
-			if A.addonExpansionLevel < 3 then
+			if A.addonExpansionLevel < 2 then
 				--	Classic:
 				--	Possible problem: Documentation does not state wether the returned name is localized or not.
 				--	All examples shows English names, so going for that until I know better ...
@@ -957,18 +957,18 @@ function Buffalo:scanRaid()
 						buffMask = bit.bor(buffMask, buffInfo.Bitmask);
 					end;
 				end;
-			--elseif A.addonExpansionLevel > 1 then
-			--	--	TBC classic (2.5.4) / WOTLK:
-			--	for n=1, GetNumTrackingTypes() do
-			--		local buffName, spellID, active = GetTrackingInfo(n);
-			--		if active then
-			--			buffInfo = Buffalo.spells.active[buffName];
-			--			if buffInfo and buffInfo.Enabled then
-			--				--echo(string.format("<TBC> Adding TrackingIcon buff:%s, mask:%s", buffName, buffInfo["BITMASK"]));
-			--				buffMask = bit.bor(buffMask, buffInfo.Bitmask);
-			--			end;
-			--		end;
-			--	end;
+			elseif A.addonExpansionLevel > 1 then
+				--	TBC classic (2.5.4) / WOTLK:
+				for n = 1, C_Minimap.GetNumTrackingTypes() do
+					local trackingInfo = C_Minimap.GetTrackingInfo(n);
+					if trackingInfo.active then
+						buffInfo = Buffalo.spells.active[trackingInfo.name];
+						if buffInfo and buffInfo.Enabled then
+							--echo(string.format("<TBC> Adding TrackingIcon buff:%s, mask:%s", buffName, buffInfo["BITMASK"]));
+							buffMask = bit.bor(buffMask, buffInfo.Bitmask);
+						end;
+					end;
+				end;
 			end;
 
 			--	Warlock pets:
@@ -1382,7 +1382,7 @@ function Buffalo:initializeBuffSettingsUI(firstTimeInitialization)
 		for _, raidmode in next, Buffalo.raidmodes.setup do
 			local buttonName = string.format("raidmode_%s", raidmode["RAIDMODE"]);
 			local fButton = CreateFrame("Button", buttonName, BuffaloConfigFrame, "BuffaloBuffButtonTemplate");
-			fButton:SetPoint("TOPLEFT", posX, posY);
+			fButton:SetPoint("TOPLEFT", posX, posY);						
 			fButton:SetNormalTexture(raidmode["ICON"]);
 			fButton:SetPushedTexture(raidmode["ICON"]);
 			if raidmode["RAIDMODE"] == Buffalo.vars.CurrentRaidMode then
@@ -1433,7 +1433,7 @@ function Buffalo:initializeBuffSettingsUI(firstTimeInitialization)
 		buttonName = string.format("buffalo_personal_buff_%d_0", rowNumber);
 		local entry = _G[buttonName];
 		if not entry then
-			entry = CreateFrame("Button", buttonName, BuffaloConfigFrameSelf, "BuffaloGroupButtonTemplate");
+			entry = CreateFrame("Button", buttonName, BuffaloConfigFrameSelf, "BuffaloGroupButtonTemplate");		
 			entry:SetNormalTexture(Buffalo.spells.personal[rowNumber].IconID);
 			entry:SetPushedTexture(Buffalo.spells.personal[rowNumber].IconID);
 		end;
