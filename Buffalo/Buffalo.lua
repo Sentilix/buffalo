@@ -961,7 +961,7 @@ function Buffalo:scanRaid()
 				--	TBC classic (2.5.4) / WOTLK:
 				for n = 1, C_Minimap.GetNumTrackingTypes() do
 					local trackingInfo = C_Minimap.GetTrackingInfo(n);
-					if trackingInfo.active then
+					if trackingInfo and trackingInfo.active then
 						buffInfo = Buffalo.spells.active[trackingInfo.name];
 						if buffInfo and buffInfo.Enabled then
 							--echo(string.format("<TBC> Adding TrackingIcon buff:%s, mask:%s", buffName, buffInfo["BITMASK"]));
@@ -2028,6 +2028,10 @@ end;
 --	This will update PERSONAL or RAID buffs, depending on raid mode.
 function Buffalo:updateGroupBuffUI()
 	if not Buffalo.vars.InitializationComplete then
+		return;
+	end;
+
+	if UnitAffectingCombat("player") then
 		return;
 	end;
 

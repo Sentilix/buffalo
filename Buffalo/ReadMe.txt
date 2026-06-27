@@ -96,6 +96,11 @@ Warlock		Imp							39
 
 Version history
 ---------------
+Version 0.8.2:
+* Fixed a LUA error in updateGroupBuffUI.
+* Fixed a LUA error in ScanRaid.
+
+
 Version 0.8.1:
 * TBC: Fixed yellow triangle on buffs in the configuration screen.
 * TBC: Fixed auras not being detecting correct.
