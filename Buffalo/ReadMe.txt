@@ -96,6 +96,9 @@ Warlock		Imp							39
 
 Version history
 ---------------
+Version 0.8.3:
+* Updated c´lient API version to 2.5.6 / 1.15.9
+
 Version 0.8.2:
 * Fixed a LUA error in updateGroupBuffUI.
 * Fixed a LUA error in ScanRaid.
