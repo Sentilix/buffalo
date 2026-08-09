@@ -96,8 +96,13 @@ Warlock		Imp							39
 
 Version history
 ---------------
+Version 0.8.4:
+* Fixed LUA error whenever levelling up.
+
+
 Version 0.8.3:
-* Updated c´lient API version to 2.5.6 / 1.15.9
+* Updated client API version to 2.5.6 / 1.15.9
+
 
 Version 0.8.2:
 * Fixed a LUA error in updateGroupBuffUI.
@@ -312,7 +317,7 @@ version 0.3.0-alpha1
 
 version 0.2.0-alpha2:
 * Added: Mutual exclusive buffs are now handled.
-* Bugfix: Fixed bug when converting to raid, causing LUA errors en massé!
+* Bugfix: Fixed bug when converting to raid, causing LUA errors en massï¿½!
 
 
 version 0.2.0-alpha1:

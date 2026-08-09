@@ -1364,6 +1364,9 @@ end;
 --	Function will be called in case Talents are updated; therefore
 --	we must re-use existing buttons and show/hide as needed.
 function Buffalo:initializeBuffSettingsUI(firstTimeInitialization)
+
+	if InCombatLockdown() then return; end;
+
 	local selfCount = #Buffalo.spells.personal;
 	local activeBuffCount = 0;
 
@@ -1545,6 +1548,8 @@ end;
 --]]
 function Buffalo:initializePersonalGroupBuffs()
 	local posX, posY;
+
+	if InCombatLockdown() then return; end;
 
 	--	RAID buffs:
 	--	Iterate over all groups and render icons.
