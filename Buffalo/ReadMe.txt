@@ -96,6 +96,10 @@ Warlock		Imp							39
 
 Version history
 ---------------
+Version 0.8.5:
+* Fixed yellow triangle icons on top of some configuration icons.
+
+
 Version 0.8.4:
 * Fixed LUA error whenever levelling up.
 

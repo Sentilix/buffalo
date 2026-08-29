@@ -18,7 +18,7 @@
 	</Button>
 
 	<!-- Frame template for one label button -->
-	<Button name="BuffaloMiniButtonTemplate" inherits="ActionButtonTemplate" frameStrata="HIGH" hidden="false" virtual="true">
+	<Button name="BuffaloMiniButtonTemplate" frameStrata="HIGH" hidden="false" virtual="true">
 		<Size>
 			<AbsDimension x="16" y="16" />
 		</Size>
