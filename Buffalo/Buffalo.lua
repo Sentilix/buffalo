@@ -18,6 +18,7 @@ local addonMetadata = {
 local A = DigamAddonLib:new(addonMetadata);
 
 Buffalo.lib = A;
+Buffalo.API = A.API;
 
 Buffalo.SyncUnused								= "(None)";
 Buffalo.Version									= 0;
@@ -35,8 +36,8 @@ Buffalo.vars.RaidBuffFrameHeight				= 0;
 --	Internal variables
 Buffalo.vars.PlayerIsBuffClass					= false;
 Buffalo.vars.PlayerNameAndRealm					= "";
-Buffalo.vars.PlayerClass						= UnitClass("player");
-Buffalo.vars.PlayerFaction						= UnitFactionGroup("player");
+Buffalo.vars.PlayerClass						= Buffalo.API.UnitClass("player");
+Buffalo.vars.PlayerFaction						= Buffalo.API.UnitFactionGroup("player");
 
 Buffalo.vars.InitializationComplete				= false;
 Buffalo.vars.InitializationRetryTimer			= 0;
@@ -60,7 +61,7 @@ Buffalo_Options = { }
 
 
 --	Dropdown menu for Healer (add/replace healer) selection:
-Buffalo.vars.SyncBuffGroupDropdownMenu = CreateFrame("FRAME", "BuffaloSyncFrameBuff", UIParent, "UIDropDownMenuTemplate");
+Buffalo.vars.SyncBuffGroupDropdownMenu = Buffalo.API.CreateFrame("FRAME", "BuffaloSyncFrameBuff", UIParent, "UIDropDownMenuTemplate");
 Buffalo.vars.SyncBuffGroupDropdownMenu:SetPoint("CENTER");
 Buffalo.vars.SyncBuffGroupDropdownMenu:Hide();
 UIDropDownMenu_SetWidth(Buffalo.vars.SyncBuffGroupDropdownMenu, 1);
@@ -214,7 +215,7 @@ end
 ]]
 SLASH_BUFFALO_VERSION1 = "/buffaloversion"
 SlashCmdList["BUFFALO_VERSION"] = function(msg)
-	if IsInRaid() or Buffalo:isInParty() then
+	if A.API.IsInRaid() or Buffalo:isInParty() then
 		A:sendAddonMessage("TX_VERSION##");
 	else
 		A:echo(string.format("%s is using Buffalo version %s", GetUnitName("player", true), A.addonVersion));
@@ -434,14 +435,14 @@ function Buffalo:checkIsNewVersion(versionstring)
 end
 
 function Buffalo:isInParty()
-	if not IsInRaid() then
-		return ( GetNumGroupMembers() > 0 );
+	if not A.API.IsInRaid() then
+		return ( A.API.GetNumGroupMembers() > 0 );
 	end
 	return false
 end
 
 function Buffalo:getMyRealm()
-	local realmname = GetRealmName();
+	local realmname = A.API.GetRealmName();
 	
 	if string.find(realmname, " ") then
 		local _, _, name1, name2 = string.find(realmname, "([a-zA-Z]*) ([a-zA-Z]*)");
@@ -452,7 +453,7 @@ function Buffalo:getMyRealm()
 end;
 
 function Buffalo:getPlayerAndRealm(unitid)
-	local playername, realmname = UnitName(unitid);
+	local playername, realmname = A.API.UnitName(unitid);
 	if not realmname or realmname == "" then
 		realmname = Buffalo:getMyRealm();
 	end;
@@ -474,8 +475,8 @@ end;
 	Configuration functions
 --]]
 function Buffalo:getConfigOption(parameter, defaultValue)
-	local realmname = GetRealmName();
-	local playername = UnitName("player");
+	local realmname = A.API.GetRealmName();
+	local playername = A.API.UnitName("player");
 
 	-- Character level
 	if Buffalo_Options[realmname] then
@@ -493,8 +494,8 @@ function Buffalo:getConfigOption(parameter, defaultValue)
 end
 
 function Buffalo:setConfigOption(parameter, value)
-	local realmname = GetRealmName();
-	local playername = UnitName("player");
+	local realmname = A.API.GetRealmName();
+	local playername = A.API.UnitName("player");
 
 	-- Character level:
 	if not Buffalo_Options[realmname] then
@@ -795,13 +796,13 @@ function Buffalo:scanRaid()
 	end;
 
 	--	If we're in combat, set Combat icon and skip scan.
-	if UnitAffectingCombat("player") then
+	if A.API.UnitAffectingCombat("player") then
 		Buffalo:setButtonTexture(Buffalo.ui.icons.Combat);
 		return;
 	end;
 
 	--	Likewise if player is dead (sigh)
-	if UnitIsDeadOrGhost("player") then
+	if A.API.UnitIsDeadOrGhost("player") then
 		Buffalo:setButtonTexture(Buffalo.ui.icons.PlayerIsDead);
 		return;
 	end;
@@ -815,12 +816,12 @@ function Buffalo:scanRaid()
 		groupType = "party";
 		groupCount = 1;
 		startNum = 1;
-		endNum = GetNumGroupMembers();
-	elseif IsInRaid() then
+		endNum = A.API.GetNumGroupMembers();
+	elseif A.API.IsInRaid() then
 		groupType = "raid";
 		groupCount = 8;
 		startNum = 1;
-		endNum = GetNumGroupMembers();
+		endNum = A.API.GetNumGroupMembers();
 	else
 		groupType = "solo";
 		groupCount = 1;
@@ -830,7 +831,7 @@ function Buffalo:scanRaid()
 
 	--	Part 1:
 	--	This generate a roster{} array based on unitid to find group, buffmask etc:
-	local playername = UnitName("player");
+	local playername = A.API.UnitName("player");
 	local currentUnitid = "player";
 	if groupType == "solo" then
 		unitid = "player"
@@ -853,7 +854,7 @@ function Buffalo:scanRaid()
 
 	else	-- Raid
 		for raidIndex = 1, 40, 1 do
-			local name, rank, subgroup, level, _, filename, zone, online, dead, role, isML = GetRaidRosterInfo(raidIndex);
+			local name, rank, subgroup, level, _, filename, zone, online, dead, role, isML = A.API.GetRaidRosterInfo(raidIndex);
 			if name then
 				unitid = "raid"..raidIndex;
 				roster[unitid] = Buffalo:getUnitRosterEntry(unitid, subgroup, online, dead);
@@ -866,7 +867,7 @@ function Buffalo:scanRaid()
 					end;
 
 					--	Only support Hunter pets for now; Lock pets are a bit more restricted when it comes to buffing!
-					local _, currentClass = UnitClass(unitid);
+					local _, currentClass = A.API.UnitClass(unitid);
 					if currentClass == "HUNTER" then
 						unitid = groupType .. "pet" .. raidIndex;
 						roster[unitid] = Buffalo:getUnitRosterEntry(unitid, subgroup);
@@ -876,7 +877,7 @@ function Buffalo:scanRaid()
 		end;
 	end;
 
-	local currentTime = GetTime();
+	local currentTime = A.API.GetTime();
 
 	local assignedGroups = Buffalo.config.value.AssignedBuffGroups;
 	if Buffalo.vars.CurrentRaidMode ~= Buffalo.raidmodes.Personal then
@@ -904,7 +905,7 @@ function Buffalo:scanRaid()
 			
 		if scanPlayerBuffs then
 			for buffIndex = 1, 40, 1 do
-				local buffName, iconID, _, _, duration, expirationTime = UnitBuff(unitid, buffIndex, "CANCELABLE");
+				local buffName, iconID, _, _, duration, expirationTime = A.API.UnitBuff(unitid, buffIndex, "CANCELABLE");
 				if not buffName then break; end;
 
 				local buffInfo = Buffalo.spells.active[buffName];
@@ -950,7 +951,7 @@ function Buffalo:scanRaid()
 				--	Classic:
 				--	Possible problem: Documentation does not state wether the returned name is localized or not.
 				--	All examples shows English names, so going for that until I know better ...
-				local trackingIcon = GetTrackingTexture();
+				local trackingIcon = A.API.GetTrackingTexture();
 				for buffName, buffInfo in next, Buffalo.spells.active do
 					if buffInfo.Enabled and buffInfo.IconID == trackingIcon then
 						--A.echo(string.format("<CLASSIC> Adding TrackingIcon buff:%s, mask:%s", buffName, buffInfo["BITMASK"]));
@@ -959,8 +960,8 @@ function Buffalo:scanRaid()
 				end;
 			elseif A.addonExpansionLevel > 1 then
 				--	TBC classic (2.5.4) / WOTLK:
-				for n = 1, C_Minimap.GetNumTrackingTypes() do
-					local trackingInfo = C_Minimap.GetTrackingInfo(n);
+				for n = 1, A.API.GetNumTrackingTypes() do
+					local trackingInfo = A.API.GetTrackingInfo(n);
 					if trackingInfo and trackingInfo.active then
 						buffInfo = Buffalo.spells.active[trackingInfo.name];
 						if buffInfo and buffInfo.Enabled then
@@ -972,7 +973,7 @@ function Buffalo:scanRaid()
 			end;
 
 			--	Warlock pets:
-			local petType = UnitCreatureFamily('pet');
+			local petType = A.API.UnitCreatureFamily('pet');
 			if petType == 'Imp' then
 				buffMask = bit.bor(buffMask, 0x000400);
 			elseif petType == 'Voidwalker' then
@@ -1026,7 +1027,7 @@ function Buffalo:scanRaid()
 						--A:echo(string.format("Buff=%s, group=%d, gmask=%d", buffName, groupIndex, groupMask));
 						local waitForCooldown = false;
 						if buffInfo.Cooldown then
-							local start, duration, enabled = GetSpellCooldown(buffName);
+							local start, duration, enabled = A.API.GetSpellCooldown(buffName);
 							waitForCooldown = (start > 3);
 						end;
 						if not waitForCooldown then
@@ -1041,7 +1042,7 @@ function Buffalo:scanRaid()
 									if (bit.band(classMask, buffInfo.Bitmask) > 0)	then
 									
 										--	Check 3: Target must be in range:
-										if (buffInfo.IgnoreRangeCheck) or (IsSpellInRange(buffName, unitid) == 1) then 
+										if (buffInfo.IgnoreRangeCheck) or (A.API.IsSpellInRange(buffName, unitid)) then 
 										
 											--	Check 4: There's a person alive in this group. Do he needs this specific buff?
 											if (bit.band(rosterInfo.BuffMask, buffInfo.Bitmask) == 0) then
@@ -1114,7 +1115,7 @@ function Buffalo:scanRaid()
 
 					local waitForCooldown = false;
 					if buffInfo.Cooldown then
-						local start, duration, enabled = GetSpellCooldown(buffName);
+						local start, duration, enabled = A.API.GetSpellCooldown(buffName);
 						waitForCooldown = (start > 3);
 					end;
 					if not waitForCooldown then
@@ -1220,8 +1221,8 @@ end;
 function Buffalo:getUnitRosterEntry(unitid, group, isOnline, isDead)
 	if string.find(unitid, "pet") then
 		local group = group or 1;
-		local isOnline = isOnline or (0 and UnitIsConnected(unitid) and 1);
-		local isDead   = isDead or (0 and UnitIsDead(unitid) and 1);
+		local isOnline = isOnline or (0 and A.API.UnitIsConnected(unitid) and 1);
+		local isDead   = isDead or (0 and A.API.UnitIsDeadOrGhost(unitid) and 1);
 		local classname = "PET"
 		if isOnline then
 			return { ["Group"]=group, ["IsOnline"]=isOnline, ["IsDead"]=isDead, ["BuffMask"]=0, ["Class"]=classname, ["ClassMask"]=Buffalo.classes[classname].Mask };
@@ -1229,9 +1230,9 @@ function Buffalo:getUnitRosterEntry(unitid, group, isOnline, isDead)
 	elseif unitid == "player" and group == 1 then
 		return { ["Group"]=1, ["IsOnline"]=true, ["IsDead"]=nil, ["BuffMask"]=0, ["Class"]=Buffalo.vars.PlayerClass, ["ClassMask"]=Buffalo.classmasks.ALL };
 	else
-		local isOnline = 0 and UnitIsConnected(unitid) and 1;
-		local isDead   = 0 and UnitIsDead(unitid) and 1;
-		local _, classname = UnitClass(unitid);
+		local isOnline = 0 and A.API.UnitIsConnected(unitid) and 1;
+		local isDead   = 0 and A.API.UnitIsDeadOrGhost(unitid) and 1;
+		local _, classname = A.API.UnitClass(unitid);
 	
 		if classname then
 			local classUpper = string.upper(classname);
@@ -1365,7 +1366,7 @@ end;
 --	we must re-use existing buttons and show/hide as needed.
 function Buffalo:initializeBuffSettingsUI(firstTimeInitialization)
 
-	if InCombatLockdown() then return; end;
+	if A.API.InCombatLockdown() then return; end;
 
 	local selfCount = #Buffalo.spells.personal;
 	local activeBuffCount = 0;
@@ -1384,7 +1385,7 @@ function Buffalo:initializeBuffSettingsUI(firstTimeInitialization)
 		posY = Buffalo.ui.buffConfigDialog.Top - 40;
 		for _, raidmode in next, Buffalo.raidmodes.setup do
 			local buttonName = string.format("raidmode_%s", raidmode["RAIDMODE"]);
-			local fButton = CreateFrame("Button", buttonName, BuffaloConfigFrame, "BuffaloBuffButtonTemplate");
+			local fButton = A.API.CreateFrame("Button", buttonName, BuffaloConfigFrame, "BuffaloBuffButtonTemplate");
 			fButton:SetPoint("TOPLEFT", posX, posY);						
 			fButton:SetNormalTexture(raidmode["ICON"]);
 			fButton:SetPushedTexture(raidmode["ICON"]);
@@ -1436,7 +1437,7 @@ function Buffalo:initializeBuffSettingsUI(firstTimeInitialization)
 		buttonName = string.format("buffalo_personal_buff_%d_0", rowNumber);
 		local entry = _G[buttonName];
 		if not entry then
-			entry = CreateFrame("Button", buttonName, BuffaloConfigFrameSelf, "BuffaloGroupButtonTemplate");		
+			entry = A.API.CreateFrame("Button", buttonName, BuffaloConfigFrameSelf, "BuffaloGroupButtonTemplate");		
 			entry:SetNormalTexture(Buffalo.spells.personal[rowNumber].IconID);
 			entry:SetPushedTexture(Buffalo.spells.personal[rowNumber].IconID);
 		end;
@@ -1455,7 +1456,7 @@ function Buffalo:initializeBuffSettingsUI(firstTimeInitialization)
 	buttonName = "BuffaloClassConfigFrameUseIncubus";	
 	local checkBox = _G[buttonName];
 	if not checkBox then
-		checkBox = CreateFrame("CheckButton", buttonName, BuffaloConfigFrameSelf, "ChatConfigCheckButtonTemplate");
+		checkBox = A.API.CreateFrame("CheckButton", buttonName, BuffaloConfigFrameSelf, "ChatConfigCheckButtonTemplate");
 		checkBox:SetPoint("TOPLEFT", Buffalo.ui.buffConfigDialog.Left, -56);
 		_G[checkBox:GetName().."Text"]:SetText("Use Incubus");
 		checkBox:SetScript("OnClick", Buffalo_handleCheckbox);
@@ -1466,7 +1467,7 @@ function Buffalo:initializeBuffSettingsUI(firstTimeInitialization)
 	end;
 	checkBox:SetChecked(checkboxValue);
 
-	local _, className = UnitClass("player");
+	local _, className = A.API.UnitClass("player");
 	if className == "WARLOCK" then
 		checkBox:Show();
 	else
@@ -1489,7 +1490,7 @@ function Buffalo:initializeBuffSettingsUI(firstTimeInitialization)
 	if firstTimeInitialization then
 		for className, classInfo in next, Buffalo.sorted.classes do
 			buttonName = string.format("ClassImage%s", className);
-			local entry = CreateFrame("Button", buttonName, BuffaloClassConfigFrameClass, "BuffaloClassButtonTemplate");
+			local entry = A.API.CreateFrame("Button", buttonName, BuffaloClassConfigFrameClass, "BuffaloClassButtonTemplate");
 			entry:SetAlpha(Buffalo.ui.alpha.Enabled);
 			entry:SetPoint("TOPLEFT", posX, posY);
 			entry:SetNormalTexture(classInfo.IconID);
@@ -1518,7 +1519,7 @@ function Buffalo:initializeBuffSettingsUI(firstTimeInitialization)
 			buttonName = string.format("%s_row%s", classInfo.ClassName, rowNumber);
 			local entry = _G[buttonName];
 			if not entry then
-				entry = CreateFrame("Button", buttonName, BuffaloClassConfigFrameClass, "BuffaloBuffButtonTemplate");
+				entry = A.API.CreateFrame("Button", buttonName, BuffaloClassConfigFrameClass, "BuffaloBuffButtonTemplate");
 				entry:SetNormalTexture(Buffalo.spells.group[rowNumber].IconID);
 				entry:SetPushedTexture(Buffalo.spells.group[rowNumber].IconID);
 			end;
@@ -1549,7 +1550,7 @@ end;
 function Buffalo:initializePersonalGroupBuffs()
 	local posX, posY;
 
-	if InCombatLockdown() then return; end;
+	if A.API.InCombatLockdown() then return; end;
 
 	--	RAID buffs:
 	--	Iterate over all groups and render icons.
@@ -1567,7 +1568,7 @@ function Buffalo:initializePersonalGroupBuffs()
 				buttonName = string.format("toggle_row_%d", rowNumber);
 				local rowBtn = _G[buttonName];
 				if not rowBtn then
-					rowBtn = CreateFrame("Button", buttonName, BuffaloConfigFramePersonal, "BuffaloMiniButtonTemplate");
+					rowBtn = A.API.CreateFrame("Button", buttonName, BuffaloConfigFramePersonal, "BuffaloMiniButtonTemplate");
 					rowBtn:SetNormalTexture(spellInfo.IconID);
 					rowBtn:SetPushedTexture(spellInfo.IconID);
 				end;
@@ -1583,7 +1584,7 @@ function Buffalo:initializePersonalGroupBuffs()
 			buttonName = string.format("buffalo_personal_buff_%d_%d", rowNumber, groupNumber);
 			local entry = _G[buttonName];
 			if not entry then
-				entry = CreateFrame("Button", buttonName, BuffaloConfigFramePersonal, "BuffaloGroupButtonTemplate");
+				entry = A.API.CreateFrame("Button", buttonName, BuffaloConfigFramePersonal, "BuffaloGroupButtonTemplate");
 				entry:SetNormalTexture(spellInfo.IconID);
 				entry:SetPushedTexture(spellInfo.IconID);
 			end;
@@ -1629,7 +1630,7 @@ function Buffalo:initializeRaidGroupBuffs()
 		local buttonName = string.format("buffrow_%s", buffIndex);
 		local fButton = _G[buttonName];
 		if not fButton then
-			fButton = CreateFrame("Button", buttonName, BuffaloConfigFrameRaid, "BuffaloBuffButtonTemplate");
+			fButton = A.API.CreateFrame("Button", buttonName, BuffaloConfigFrameRaid, "BuffaloBuffButtonTemplate");
 		end;
 
 		fButton:SetPoint("TOPLEFT", posX, posY);
@@ -1652,7 +1653,7 @@ function Buffalo:initializeRaidGroupBuffs()
 			local bufferName = string.format("buffgroup_%s_%s", buffIndex, groupIndex);
 			local fBuffer = _G[bufferFrame];
 			if not fBuffer then
-				fBuffer = CreateFrame("Button", bufferName, BuffaloConfigFrameRaid, "GroupBuffTemplate");
+				fBuffer = A.API.CreateFrame("Button", bufferName, BuffaloConfigFrameRaid, "GroupBuffTemplate");
 			end;
 			fBuffer:SetPoint("TOPLEFT", posX, posY);
 			_G[bufferName.."Text"]:SetTextColor(Buffalo.ui.colours.Unused[1], Buffalo.ui.colours.Unused[2], Buffalo.ui.colours.Unused[3]);
@@ -1865,7 +1866,7 @@ end;
 
 
 function Buffalo:unitIsPromoted(unitid)
-	return UnitIsGroupAssistant(unitid) or UnitIsGroupLeader(unitid);
+	return A.API.UnitIsGroupAssistant(unitid) or A.API.UnitIsGroupLeader(unitid);
 end;
 
 function Buffalo:onBuffGroupClick(sender)
@@ -1946,13 +1947,13 @@ end;
 function Buffalo:getPlayersInRoster(classMask)
 	local players = { };		-- List of { "NAME", "MASK", "ICONID", "CLASS" }
 
-	if IsInRaid() then
+	if A.API.IsInRaid() then
 		for n = 1, 40, 1 do
 			local unitid = "raid"..n;
-			if not UnitName(unitid) then break; end;
+			if not A.API.UnitName(unitid) then break; end;
 			
 			local fullName = Buffalo:getPlayerAndRealm(unitid);
-			local _, className = UnitClass(unitid);
+			local _, className = A.API.UnitClass(unitid);
 			local classInfo = Buffalo.classes[className];
 
 			if bit.band(classInfo.Mask, classMask) > 0 then
@@ -1966,14 +1967,14 @@ function Buffalo:getPlayersInRoster(classMask)
 		end;
 
 	elseif Buffalo:isInParty() then
-		for n = 1, GetNumGroupMembers(), 1 do
+		for n = 1, A.API.GetNumGroupMembers(), 1 do
 			local unitid = "party"..n;
-			if not UnitName(unitid) then
+			if not A.API.UnitName(unitid) then
 				unitid = "player";
 			end;
 
 			local fullName = Buffalo:getPlayerAndRealm(unitid);
-			local _, className = UnitClass(unitid);		
+			local _, className = A.API.UnitClass(unitid);		
 			local classInfo = Buffalo.classes[className];
 
 			if bit.band(classInfo.Mask, classMask) > 0 then
@@ -1989,7 +1990,7 @@ function Buffalo:getPlayersInRoster(classMask)
 		--	SOLO play, somewhat usefull when testing
 		local unitid = "player";
 		local fullName = Buffalo:getPlayerAndRealm(unitid);
-		local _, className = UnitClass(unitid);
+		local _, className = A.API.UnitClass(unitid);
 		local classInfo = Buffalo.Classes[className];
 
 		if bit.band(classInfo.Mask, classMask) > 0 then
@@ -2032,13 +2033,9 @@ end;
 --	Update Buffing UI (main entry)
 --	This will update PERSONAL or RAID buffs, depending on raid mode.
 function Buffalo:updateGroupBuffUI()
-	if not Buffalo.vars.InitializationComplete then
-		return;
-	end;
+	if not Buffalo.vars.InitializationComplete then return; end;
 
-	if UnitAffectingCombat("player") then
-		return;
-	end;
+	if A.API.InCombatLockdown() then return; end;
 
 	local frame = nil;
 	local height = 0;
@@ -2052,7 +2049,7 @@ function Buffalo:updateGroupBuffUI()
 			["WARLOCK"] = Buffalo.ui.backdrops.WarlockFrame,
 		};
 
-		local _, _, _, _, _, _, spellId = GetSpellInfo("Shadowform");
+		local spellId = A.API.GetSpellIDForSpellIdentifier("Shadowform");
 		if spellId then
 			backdrops["PRIEST"] = Buffalo.ui.backdrops.ShadowPriestFrame;
 		end;
@@ -2116,7 +2113,7 @@ end;
 function Buffalo:updateRaidModeButtons()
 	--	Generate Raid mode buttons:
 	--	They are only visible when in a Raid:
-	local isInRaid = IsInRaid();
+	local isInRaid = A.API.IsInRaid();
 	for _, raidmode in next, Buffalo.raidmodes.setup do
 		local fButton = _G[string.format("raidmode_%s", raidmode["RAIDMODE"])];
 		if isInRaid then
@@ -2236,7 +2233,7 @@ end;
 
 function Buffalo:onConfigurationBuffClick(self, ...)
 	local buttonName = self:GetName();
-	local buttonType = GetMouseButtonClicked();
+	local buttonType = A.API.GetMouseButtonClicked();
 
 	local _, _, row, col = string.find(buttonName, "buffalo_personal_buff_(%d+)_(%d+)");
 
@@ -2295,7 +2292,7 @@ end;
 
 function Buffalo:onToggleRowBuffsClick(self, ...)
 	local buttonName = self:GetName();
-	local buttonType = GetMouseButtonClicked();
+	local buttonType = A.API.GetMouseButtonClicked();
 	local _, _, rowOrCol, number = string.find(buttonName, "toggle_(%a+)_(%d)");
 
 	local enableBuffs = (buttonType == "LeftButton");
@@ -2348,7 +2345,7 @@ end;
 
 function Buffalo:onClassConfigClick(self, ...)
 	local buttonName = self:GetName();
-	local buttonType = GetMouseButtonClicked();
+	local buttonType = A.API.GetMouseButtonClicked();
 
 	local _, _, className, row = string.find(buttonName, "([A-Z]*)_row(%d)");
 
@@ -2601,7 +2598,7 @@ function Buffalo_onEvent(self, event, ...)
 		local caster, _, spellId = ...;
 
 		if caster == "player" then
-			local buffName = GetSpellInfo(spellId);
+			local buffName = A.API.GetSpellName(spellId);
 			if buffName and buffName == Buffalo.vars.LastBuffFired then
 				Buffalo.vars.LastBuffFired = nil;
 				if Buffalo.config.value.AnnounceCompletedBuff and not UnitAffectingCombat("player") then
@@ -2635,7 +2632,7 @@ function Buffalo_onEvent(self, event, ...)
 end
 
 function Buffalo_onLoad()
-	local _, classname = UnitClass("player");
+	local _, classname = A.API.UnitClass("player");
 	Buffalo.vars.PlayerClass = classname;
 	Buffalo.vars.PlayerNameAndRealm = Buffalo:getPlayerAndRealm("player");
 
@@ -2669,7 +2666,7 @@ function Buffalo_onLoad()
 	BuffaloConfigFrameScanFrequency:SetBackdrop(Buffalo.ui.backdrops.Slider);
 	BuffaloConfigFrameButtonOpacity:SetBackdrop(Buffalo.ui.backdrops.Slider);
 
-	C_ChatInfo.RegisterAddonMessagePrefix(A.addonPrefix);
+	A.API.RegisterAddonMessagePrefix(A.addonPrefix);
 end
 
 function Buffalo_onTimer(elapsed)
