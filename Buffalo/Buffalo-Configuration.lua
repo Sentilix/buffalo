@@ -1,3 +1,4 @@
+
 --[[
 --	Buffalo buff addon
 --	------------------
@@ -8,51 +9,102 @@
 
 Buffalo = select(2, ...)
 
+local addonMetadata = {
+	["ADDONNAME"]		= "Buffalo",
+	["SHORTNAME"]		= "BUFFALO",
+	["PREFIX"]			= "BuffaloV1",
+	["NORMALCHATCOLOR"]	= "E0C020",
+	["HOTCHATCOLOR"]	= "F8F8F8",
+};
+local A = DigamAddonLib:new(addonMetadata);
+
+Buffalo.lib = A;
+Buffalo.API = A.API;
+
+Buffalo.SyncUnused								= "(None)";
+Buffalo.Version									= 0;
+
+--	Note: This is NOT persisted. We want players to always be in 
+--	PERSONAL mode unless specified otherwise (aka: in a raid!)
+Buffalo.vars = { };
+Buffalo.vars.CurrentRaidMode					= Buffalo.raidmodes.Personal;
+Buffalo.vars.RaidModeLockedBy					= "";
+Buffalo.vars.RaidModeQueryDone					= false;
+Buffalo.vars.BuffButtonLastTexture				= "";
+Buffalo.vars.PersonalBuffFrameHeight			= 0;
+Buffalo.vars.RaidBuffFrameHeight				= 0;
+
+--	Internal variables
+Buffalo.vars.PlayerIsBuffClass					= false;
+Buffalo.vars.PlayerNameAndRealm					= "";
+Buffalo.vars.PlayerClass						= Buffalo.API.UnitClass("player");
+Buffalo.vars.PlayerFaction						= Buffalo.API.UnitFactionGroup("player");
+
+Buffalo.vars.InitializationComplete				= false;
+Buffalo.vars.InitializationRetryTimer			= 0;
+Buffalo.vars.UpdateMessageShown					= false;
+Buffalo.vars.TimerTick							= 0
+Buffalo.vars.NextScanTime						= 0;
+Buffalo.vars.LastBuffTarget						= "";
+Buffalo.vars.LastBuffStatus						= "";
+Buffalo.vars.LastBuffFired						= nil;
+Buffalo.vars.SyncClass							= nil;
+Buffalo.vars.SyncBuff							= nil;
+Buffalo.vars.SyncGroup							= nil;
+
+Buffalo.vars.OrderedBuffGroups					= { };		-- [buff index] = { PRIORITY, NAME, MASK, ICONID } 
+
+
+-- Configuration:
+--	Loaded options:	{realmname}{playername}{parameter}
+Buffalo_Options = { }
+
+
 Buffalo["spellnames"] = {
 	["shared"] = {
-		["FindHerbs"]					= GetSpellInfo(2383),
-		["FindMinerals"]				= GetSpellInfo(2580),
+		["FindHerbs"]					= Buffalo.API.GetSpellName(2383),
+		["FindMinerals"]				= Buffalo.API.GetSpellName(2580),
 	},
 	["druid"] = {
-		["MarkOfTheWild"]				= GetSpellInfo(9885),
-		["GiftOfTheWild"]				= GetSpellInfo(21850),
-		["Thorns"]						= GetSpellInfo(9910),
-		["OmenOfClarity"]				= GetSpellInfo(16864),
+		["MarkOfTheWild"]				= Buffalo.API.GetSpellName(9885),
+		["GiftOfTheWild"]				= Buffalo.API.GetSpellName(21850),
+		["Thorns"]						= Buffalo.API.GetSpellName(9910),
+		["OmenOfClarity"]				= Buffalo.API.GetSpellName(16864),
 	},
 	["mage"] = {
-		["ArcaneIntellect"]				= GetSpellInfo(10157),
-		["ArcaneBrilliance"]			= GetSpellInfo(23028),
-		["AmplifyMagic"]				= GetSpellInfo(10170),
-		["DampenMagic"]					= GetSpellInfo(10174),
-		["MageArmor"]					= GetSpellInfo(22783),
-		["FrostArmor"]					= GetSpellInfo(7301),
-		["IceArmor"]					= GetSpellInfo(10220),
-		["MoltenArmor"]					= GetSpellInfo(30482),
-		["IceBarrier"]					= GetSpellInfo(13033),
+		["ArcaneIntellect"]				= Buffalo.API.GetSpellName(10157),
+		["ArcaneBrilliance"]			= Buffalo.API.GetSpellName(23028),
+		["AmplifyMagic"]				= Buffalo.API.GetSpellName(10170),
+		["DampenMagic"]					= Buffalo.API.GetSpellName(10174),
+		["MageArmor"]					= Buffalo.API.GetSpellName(22783),
+		["FrostArmor"]					= Buffalo.API.GetSpellName(7301),
+		["IceArmor"]					= Buffalo.API.GetSpellName(10220),
+		["MoltenArmor"]					= Buffalo.API.GetSpellName(30482),
+		["IceBarrier"]					= Buffalo.API.GetSpellName(13033),
 	},
 	["priest"] = {
-		["PowerWordFortitude"]			= GetSpellInfo(10938),
-		["PrayerOfFortitude"]			= GetSpellInfo(21564),
-		["DivineSpirit"]				= GetSpellInfo(27841),
-		["PrayerOfSpirit"]				= GetSpellInfo(27681),
-		["ShadowProtection"]			= GetSpellInfo(10958),
-		["PrayerOfShadowProtection"]	= GetSpellInfo(27683),
-		["InnerFire"]					= GetSpellInfo(10952),
-		["ShadowForm"]					= GetSpellInfo(15473),
+		["PowerWordFortitude"]			= Buffalo.API.GetSpellName(10938),
+		["PrayerOfFortitude"]			= Buffalo.API.GetSpellName(21564),
+		["DivineSpirit"]				= Buffalo.API.GetSpellName(27841),
+		["PrayerOfSpirit"]				= Buffalo.API.GetSpellName(27681),
+		["ShadowProtection"]			= Buffalo.API.GetSpellName(10958),
+		["PrayerOfShadowProtection"]	= Buffalo.API.GetSpellName(27683),
+		["InnerFire"]					= Buffalo.API.GetSpellName(10952),
+		["ShadowForm"]					= Buffalo.API.GetSpellName(15473),
 	},
 	["warlock"] = {
-		["DemonSkin"]					= GetSpellInfo(696),
-		["DemonArmor"]					= GetSpellInfo(11735),
-		["FireShield"]					= GetSpellInfo(11771),
-		["UnendingBreath"]				= GetSpellInfo(5697),
-		["DetectLesserInvisibility"]	= GetSpellInfo(132),
-		["DetectInvisibility"]			= GetSpellInfo(2970),
-		["DetectGreaterInvisibility"]	= GetSpellInfo(11743),
-		["Imp"]							= GetSpellInfo(688),
-		["Voidwalker"]					= GetSpellInfo(697),
-		["Felhunter"]					= GetSpellInfo(691),
-		["Succubus"]					= GetSpellInfo(712),
-		["Incubus"]						= GetSpellInfo(713),
+		["DemonSkin"]					= Buffalo.API.GetSpellName(696),
+		["DemonArmor"]					= Buffalo.API.GetSpellName(11735),
+		["FireShield"]					= Buffalo.API.GetSpellName(11771),
+		["UnendingBreath"]				= Buffalo.API.GetSpellName(5697),
+		["DetectLesserInvisibility"]	= Buffalo.API.GetSpellName(132),
+		["DetectInvisibility"]			= Buffalo.API.GetSpellName(2970),
+		["DetectGreaterInvisibility"]	= Buffalo.API.GetSpellName(11743),
+		["Imp"]							= Buffalo.API.GetSpellName(688),
+		["Voidwalker"]					= Buffalo.API.GetSpellName(697),
+		["Felhunter"]					= Buffalo.API.GetSpellName(691),
+		["Succubus"]					= Buffalo.API.GetSpellName(712),
+		["Incubus"]						= Buffalo.API.GetSpellName(713),
 	},
 };
 
@@ -65,13 +117,13 @@ Buffalo["sorted"] = {
 
 Buffalo["spells"] = {
 	["active"] = { },		--	All spells for the current class.
-	["personal"] = { },		--	Spells for buffing, including selfie spells.
-	["group"] = { },		--	Spells for buffing, raid buffing only.
+	["personal"] = { },		--	Spells for buffing, including selfie spells. Key is the Group number
+	["group"] = { },		--	Spells for buffing, raid buffing only. Key is the Group number
 };
 
 
 --	Generate class tree.
---	Index by localized spell name which is why GetSpellInfo() is called directly:
+--	Index by localized spell name which is why Buffalo.API.GetSpellName() is called directly:
 Buffalo["classes"] = {
 	["DRUID"] = {
 		["SortOrder"]		= 1,
@@ -389,14 +441,14 @@ Buffalo["classes"] = {
 
 --	Added in TBC:
 --	Hack: the library has not loaded yet, we need to figure out the expansion level ourselves:
-local _addonExpansionLevel = tonumber(C_AddOns.GetAddOnMetadata("Buffalo", "X-Expansion-Level"))
+local _addonExpansionLevel = tonumber(Buffalo.API.GetAddOnMetadata("Buffalo", "X-Expansion-Level"))
 
 if (_addonExpansionLevel or 0) == 2 then
 
-	Buffalo.spellnames.mage["MoltenArmor"]		= GetSpellInfo(30482);
-	Buffalo.spellnames.warlock["Felguard"]		= GetSpellInfo(30146);
-	Buffalo.spellnames.warlock["Inferno"]		= GetSpellInfo(34249);
-	Buffalo.spellnames.warlock["FelArmor"]		= GetSpellInfo(28189);
+	Buffalo.spellnames.mage["MoltenArmor"]		= Buffalo.API.GetSpellName(30482);
+	Buffalo.spellnames.warlock["Felguard"]		= Buffalo.API.GetSpellName(30146);
+	Buffalo.spellnames.warlock["Inferno"]		= Buffalo.API.GetSpellName(34249);
+	Buffalo.spellnames.warlock["FelArmor"]		= Buffalo.API.GetSpellName(28189);
 
 
 	Buffalo.classes.MAGE.spells[Buffalo.spellnames.mage.MoltenArmor] = {
@@ -464,9 +516,9 @@ function Buffalo:updateSpellMatrixByClass(classname)
 		local learned = nil;
 		local spellId = nil;
 
-		local name, _, iconId, _, _, _, maxSpellId = GetSpellInfo(spellInfo.MaxSpellId);
+		local name, _, iconId, _, _, _, maxSpellId = Buffalo.API.GetSpellInfo(spellInfo.MaxSpellId);
 		if name then
-			local _, _, _, _, _, _, spellId = GetSpellInfo(spellName);
+			local spellId = Buffalo.API.GetSpellIDForSpellIdentifier(spellName);
 			if spellId ~= nil then
 				enabled = true;
 				learned = true;
@@ -540,6 +592,14 @@ function Buffalo:refreshActiveSpells()
 	end;
 end;
 
+function Buffalo:countActive()
+	local count = 0
+	for key, value in pairs(Buffalo.spells.active) do
+		count = count + 1
+	end
+	return count;
+end
+
 --[[
 	Buffalo.classes represented in a table ordered by SortOrder:
 	Usefull when displaying stuff.
@@ -610,12 +670,12 @@ function Buffalo:updateGroupBuffs(includeSelfBuffs)
 end;
 
 function Buffalo:getSpellID(spellname)
-	local _, _, _, _, _, _, spellID = GetSpellInfo(spellname);
+	local _, _, _, _, _, _, spellID = Buffalo.API.GetSpellName(spellname);
 	return spellID;
 end;
 
 function Buffalo:getSpellName(spellID)
-	return GetSpellInfo(spellID);
+	return Buffalo.API.GetSpellName(spellID);
 end;
 
 function Buffalo:initializeAssignedGroupDefaults()

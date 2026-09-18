@@ -22,7 +22,7 @@
 				</Anchors>
 			</Frame>
 
-			<Slider name="BuffaloConfigFramePrayerThreshold" minValue="1" maxValue="6" defaultValue="4" valueStep="1" inherits="HorizontalSliderTemplate" enableMouse="true">
+			<Slider name="BuffaloConfigFramePrayerThreshold" minValue="1" maxValue="6" defaultValue="4" valueStep="1" inherits="UISliderTemplate, BackdropTemplate" enableMouse="true">
 				<Size x="360" y="20" />
 				<Anchors>
 					<Anchor point="TOPLEFT" x="0" y="-20" relativeTo="$parentOptions"/>
@@ -36,7 +36,7 @@
 				</Scripts>
 			</Slider>
 			<!-- Renew overlap period -->
-			<Slider name="BuffaloConfigFrameRenewOverlap" minValue="0" maxValue="120" defaultValue="10" valueStep="10" inherits="HorizontalSliderTemplate" enableMouse="true">
+			<Slider name="BuffaloConfigFrameRenewOverlap" minValue="0" maxValue="120" defaultValue="10" valueStep="10" inherits="UISliderTemplate, BackdropTemplate" enableMouse="true">
 				<Size x="360" y="20" />
 				<Anchors>
 					<Anchor point="TOPLEFT" x="0" y="-80" relativeTo="$parentOptions"/>
@@ -50,7 +50,7 @@
 				</Scripts>
 			</Slider>
 			<!-- Scan frequency slider -->
-			<Slider name="BuffaloConfigFrameScanFrequency" minValue="1" maxValue="10" defaultValue="3" valueStep="1" inherits="HorizontalSliderTemplate" enableMouse="true">
+			<Slider name="BuffaloConfigFrameScanFrequency" minValue="1" maxValue="10" defaultValue="3" valueStep="1" inherits="UISliderTemplate, BackdropTemplate" enableMouse="true">
 				<Size x="360" y="20" />
 				<Anchors>
 					<Anchor point="TOPLEFT" x="0" y="-140" relativeTo="$parentOptions"/>
@@ -64,7 +64,7 @@
 				</Scripts>
 			</Slider>
 			<!-- Button opacity slider -->
-			<Slider name="BuffaloConfigFrameButtonOpacity" minValue="0" maxValue="100" defaultValue="100" valueStep="1" inherits="HorizontalSliderTemplate" enableMouse="true">
+			<Slider name="BuffaloConfigFrameButtonOpacity" minValue="0" maxValue="100" defaultValue="100" valueStep="1" inherits="UISliderTemplate, BackdropTemplate" enableMouse="true">
 				<Size x="360" y="20" />
 				<Anchors>
 					<Anchor point="TOPLEFT" x="0" y="-200" relativeTo="$parentOptions"/>

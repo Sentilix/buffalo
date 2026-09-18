@@ -4,11 +4,12 @@
 ## Author: Mimma @ <EU-Pyrewood Village>
 ## Interface: 16001
 ## SavedVariables: Buffalo_Options
-## X-Expansion-Level: 15
+## X-Expansion-Level: 60
 ## X-Curse-Project-ID: 623031
 ## X-WoWI-ID: 26305
 
 DigamAddonLib.lua
+DigamAddonLib-Forever.lua
 Constants.lua
 Buffalo-Configuration.xml
 Buffalo-ClassConfig.xml
