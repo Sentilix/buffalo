@@ -8,3 +8,7 @@ Buffalo/.vs/Buffalo/v17/DocumentLayout.json
 *.user
 
 Buffalo/.vscode/
+
+deploy.cmd
+
+*.cmd
