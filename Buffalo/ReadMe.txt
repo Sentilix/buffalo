@@ -1,41 +1,39 @@
 Buffalo - Raid buff addon
 -------------------------
 
-Buffalo adds a new button for your UI, which will light up with an icon when someone in your group or raid needs a new buff from you. The assigned groups can be configured, so you can
-set up which groups you will monitor and what buffs you will do.
+Buffalo adds a new button to your UI, which will light up with an icon when someone in your group or raid needs a buff from you. The monitored groups can be configured, so you can set up which groups you will watch and which buffs you will cast.
 
 You can move the button by pressing Shift while dragging the icon to a desired position.
 
-Buffalo works for Classic and TBC.
+Buffalo works for World of Warcraft Forever, Classic and TBC.
 
 
 Slash Commands
 --------------
 Buffalo does not need much setup, so there are only a few commands available:
 
-* /buffalo config - opens the Group/Buff configuration screen. This can also be done by right-clicking the buff button.
-* /buffalo hide - hides the Buff button
-* /buffalo show - (default) shows the Buff button again (yay!)
-* /buffalo version - shows the current version of Buffalo.
-* /buffalo announce - write a message locally when a buff is missing.
-* /buffalo stopannounce - (default) stop writing missing buffs.
+* /buffalo config - Opens the Group/Buff configuration screen. This can also be done by right-clicking the buff button.
+* /buffalo hide - Hides the buff button./buffalo show - (Default) Shows the buff button again.
+* /buffalo version - Shows the current version of Buffalo.
+* /buffalo announce - Prints a message locally when a buff is missing.
+* /buffalo stopannounce - (Default) Stops printing missing buffs.
+
 
  
 
-Note:
-This is a beta version, and there may be bugs. Should you find one, feel free to report it below, together with relevant information, such as:
-* What class did you play
-* What buff failed
-* What realm type (Classic Era, Tbc, WoTLK ...)
+Note:This is a beta version, and there may be bugs. Should you find one, feel free to report it below, along with relevant information, such as:
+* What class you were playing
+* Which buff failed
+* What realm type (Foreverm Classic Era, TBC, WotLK...)
 * Did you get any errors?
+
 
  
  
 
 Not yet implemented:
 --------------------
-* Paladin buffs are not yet implemented. I hope to make the addon 100% compatible with PallyPower,thus exchanging buffs.
-
+Paladin buffs are not yet implemented. I hope to make the addon 100% compatible with PallyPower, thus exchanging buff data.* 
 
 
 Hey, that addon reminds me of SmartBuff!
@@ -44,7 +42,8 @@ It sure does! I have been using SmartBuff for many years and loved it. But now i
 
 This addon is not a SmartBuff clone!
 
-Buffalo works differently, and has a stronger focus on party/raid buffing, where SmartBuff worked for everyone - including your Warrior for that Find Herbs buff. Buffalo does not support buffing in combat. This is a limitation implemented by Blizzard, which didn't exist back in the SmartBuff days.
+Buffalo works differently and has a stronger focus on party/raid buffing, whereas SmartBuff worked for everyone—including your Warrior for that Find Herbs buff.
+Buffalo does not support buffing in combat. This is a limitation implemented by Blizzard, which did not exist back in the SmartBuff days.
 
 
 
@@ -96,6 +95,16 @@ Warlock		Imp							39
 
 Version history
 ---------------
+Version 1.0.0b1
+* First working version for Forever. There may still be bugs, as I have only tested up to level 9 and only as a Priest!
+* Not yet implemented: Special Forever buffs (I haven't seen any yet!).
+
+IMPORTANT:
+
+There is a bug in the Forever client: It can write configurations correctly to the Saved Variables, but it cannot read the information back!
+Therefore, your addon settings are currently not persisted. This is a general error on Blizzard's end, so we are all waiting for a fix. 
+
+
 Version 0.8.5:
 * Fixed yellow triangle icons on top of some configuration icons.
 
