@@ -486,8 +486,12 @@ if (_addonExpansionLevel or 0) == 2 then
 
 	Buffalo.classes.WARLOCK.spells[Buffalo.spellnames.warlock.DetectLesserInvisibility].ReplacedBy = nil;
 	Buffalo.classes.WARLOCK.spells[Buffalo.spellnames.warlock.DetectLesserInvisibility].MaxSpellId = 132;
-
 end;
+
+--	Forever spells (work in progress as I don't know them yet!!)
+--if (_addonExpansionLevel or 0) == 60 then
+	--	TODO!!
+--end;
 
 
 function Buffalo:updateSpellMatrix()

@@ -1405,9 +1405,6 @@ function Buffalo:initializeBuffSettingsUI(firstTimeInitialization)
 			local pushedTex = entry:GetPushedTexture() or entry:CreateTexture(nil, "BACKGROUND")
 			pushedTex:SetTexture(iconId)
 			entry:SetPushedTexture(pushedTex)
-
---			entry:SetNormalTexture(iconId);
---			entry:SetPushedTexture(iconId);
 		end;
 
 		if Buffalo.spells.personal[rowNumber].Learned then
