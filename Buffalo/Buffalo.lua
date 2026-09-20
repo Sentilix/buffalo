@@ -62,7 +62,7 @@ SlashCmdList["BUFFALO_BUFFALO"] = function(msg)
 	elseif option == "VERSION" then
 		SlashCmdList["BUFFALO_VERSION"]();
 	else
-		lib:echo(string.format("Unknown command: %s", option));
+		Buffalo.lib:echo(string.format("Unknown command: %s", option));
 	end
 end
 
@@ -121,7 +121,7 @@ SlashCmdList["BUFFALO_RESETBUTTON"] = function(msg)
 	Buffalo:setConfigOption(Buffalo.config.key.BuffButtonPosX, 0);
 	Buffalo:setConfigOption(Buffalo.config.key.BuffButtonPosY, 0);
 
-	lib:echo("The Buffalo button has been reset.");
+	Buffalo.lib:echo("The Buffalo button has been reset.");
 end
 
 --[[
@@ -138,7 +138,7 @@ SlashCmdList["BUFFALO_ANNOUNCE"] = function(msg)
 	Buffalo.vars.LastBuffStatus = "";
 	Buffalo:setConfigOption(Buffalo.config.key.AnnounceMissingBuff, Buffalo.config.value.AnnounceMissingBuff);
 	Buffalo:setConfigOption(Buffalo.config.key.AnnounceCompletedBuff, Buffalo.config.value.AnnounceCompletedBuff);
-	lib:echo("Buff announcements are now ON.");
+	Buffalo.lib:echo("Buff announcements are now ON.");
 end
 
 --[[
@@ -153,7 +153,7 @@ SlashCmdList["BUFFALO_STOPANNOUNCE"] = function(msg)
 	Buffalo.config.value.AnnounceCompletedBuff = false;
 	Buffalo:setConfigOption(Buffalo.config.key.AnnounceMissingBuff, Buffalo.config.value.AnnounceMissingBuff);
 	Buffalo:setConfigOption(Buffalo.config.key.AnnounceCompletedBuff, Buffalo.config.value.AnnounceCompletedBuff);
-	lib:echo("Buff announcements are now OFF.");
+	Buffalo.lib:echo("Buff announcements are now OFF.");
 end
 
 --[[
@@ -165,9 +165,9 @@ end
 SLASH_BUFFALO_VERSION1 = "/buffaloversion"
 SlashCmdList["BUFFALO_VERSION"] = function(msg)
 	if self.API.IsInRaid() or Buffalo:isInParty() then
-		lib:sendAddonMessage("TX_VERSION##");
+		Buffalo.lib:sendAddonMessage("TX_VERSION##");
 	else
-		lib:echo(string.format("%s is using Buffalo version %s", GetUnitName("player", true), self.lib.addonVersion));
+		Buffalo.lib:echo(string.format("%s is using Buffalo version %s", GetUnitName("player", true), Buffalo.lib.addonVersion));
 	end
 end
 
@@ -209,17 +209,17 @@ end
 ]]
 SLASH_BUFFALO_HELP1 = "/buffalohelp"
 SlashCmdList["BUFFALO_HELP"] = function(msg)
-	lib:echo(string.format("buffalo version %s options:", self.lib.addonVersion));
-	lib:echo("Syntax:");
-	lib:echo("    /buffalo [command]");
-	lib:echo("Where commands can be:");
-	lib:echo("    Config       (default) Open the configuration dialogue. Same as right-clicking buff button.");
-	lib:echo("    Show         Shows the buff button.");
-	lib:echo("    Hide         Hides the buff button.");
-	lib:echo("    Announce     Announce when a buff is missing.");
-	lib:echo("    stopannounce Stop announcing missing buffs.");
-	lib:echo("    Version      Request version info from all clients.");
-	lib:echo("    Help         This help.");
+	Buffalo.lib:echo(string.format("buffalo version %s options:", Buffalo.lib.addonVersion));
+	Buffalo.lib:echo("Syntax:");
+	Buffalo.lib:echo("    /buffalo [command]");
+	Buffalo.lib:echo("Where commands can be:");
+	Buffalo.lib:echo("    Config       (default) Open the configuration dialogue. Same as right-clicking buff button.");
+	Buffalo.lib:echo("    Show         Shows the buff button.");
+	Buffalo.lib:echo("    Hide         Hides the buff button.");
+	Buffalo.lib:echo("    Announce     Announce when a buff is missing.");
+	Buffalo.lib:echo("    stopannounce Stop announcing missing buffs.");
+	Buffalo.lib:echo("    Version      Request version info from all clients.");
+	Buffalo.lib:echo("    Help         This help.");
 end
 
 
@@ -236,7 +236,7 @@ end
 	Buffalo:<sender (which is actually the receiver!)>:<version number>
 ]]
 function Buffalo:handleTXVersion(message, sender)
-	lib:sendAddonMessage("RX_VERSION#".. self.lib.addonVersion .."#"..sender)
+	Buffalo.lib:sendAddonMessage("RX_VERSION#".. Buffalo.lib.addonVersion .."#"..sender)
 end
 
 --[[
@@ -244,7 +244,7 @@ end
 	The version information is displayed locally.
 ]]
 function Buffalo:handleRXVersion(message, sender)
-	lib:echo(string.format("[%s] is using Buffalo version %s", sender, message))
+	Buffalo.lib:echo(string.format("[%s] is using Buffalo version %s", sender, message))
 end
 
 function Buffalo:handleTXVerCheck(message, sender)
@@ -330,7 +330,7 @@ end
 function Buffalo:onChatMsgAddon(event, ...)
 	local prefix, msg, channel, sender = ...;
 
-	if prefix == self.lib.addonPrefix then
+	if prefix == Buffalo.lib.addonPrefix then
 		Buffalo:handleAddonMessage(msg, sender);
 	end
 end
@@ -376,8 +376,8 @@ function Buffalo:checkIsNewVersion(versionstring)
 		if incomingVersion > Buffalo.Version then
 			if not Buffalo.vars.UpdateMessageShown then
 				Buffalo.vars.UpdateMessageShown = true;
-				lib:echo(string.format("NOTE: A newer version of ".. self.lib.charColorHot .."BUFFALO".. self.lib.chatColorNormal .."! is available (version %s)!", versionstring));
-				lib:echo("You can download latest version from https://www.curseforge.com/ or https://github.com/Sentilix/buffalo.");
+				Buffalo.lib:echo(string.format("NOTE: A newer version of ".. Buffalo.lib.charColorHot .."BUFFALO".. Buffalo.lib.chatColorNormal .."! is available (version %s)!", versionstring));
+				Buffalo.lib:echo("You can download latest version from https://www.curseforge.com/ or https://github.com/Sentilix/buffalo.");
 			end
 		end	
 	end
@@ -606,7 +606,7 @@ function Buffalo:initializeClasses()
 	for className, classInfo in next, Buffalo.classes do
 		if className ~= "shared" then
 			classInfo.Enabled = nil;
-			if not classInfo[expacKey] or classInfo[expacKey] <= self.lib.addonExpansionLevel then
+			if not classInfo[expacKey] or classInfo[expacKey] <= Buffalo.lib.addonExpansionLevel then
 				classInfo.Enabled = true;
 
 				Buffalo.classmasks.Selected = bit.bor(Buffalo.classmasks.Selected, classInfo.Mask);
@@ -701,7 +701,7 @@ function Buffalo:mainInitialization(reloaded)
 
 	--	Expansion-specific settings.
 	Buffalo.vars.PlayerIsBuffClass = false;
-	if self.lib.addonExpansionLevel == 1 or self.lib.addonExpansionLevel == 2 or self.lib.addonExpansionLevel == 3 or self.lib.addonExpansionLevel == 60 then	
+	if Buffalo.lib.addonExpansionLevel == 1 or Buffalo.lib.addonExpansionLevel == 2 or Buffalo.lib.addonExpansionLevel == 3 or Buffalo.lib.addonExpansionLevel == 60 then	
 		--	Check if the current class can cast buffs.
 		--	Note: herbing/mining is excluded via the 0x00ff mask:
 		for buffName, buffInfo in next, Buffalo.spells.active do
@@ -721,7 +721,7 @@ function Buffalo:mainInitialization(reloaded)
 	Buffalo.vars.InitializationComplete = true;
 
 	if Buffalo.config.value.AnnounceMissingBuff and Buffalo.vars.PlayerIsBuffClass then
-		self.lib:echo("Buff data loaded, Buffalo is ready.");
+		Buffalo.lib:echo("Buff data loaded, Buffalo is ready.");
 	end;
 end;
 
@@ -902,7 +902,7 @@ function Buffalo:scanRaid()
 
 			--	Add tracking icons ("Find Herbs", "Find Minerals" ...).
 			--	Methods differs between classic (1.x / 2.5) and tbc/wotlk (2.4/3.4):
-			if self.lib.addonExpansionLevel < 2 then
+			if Buffalo.lib.addonExpansionLevel < 2 then
 				--	Classic:
 				--	Possible problem: Documentation does not state wether the returned name is localized or not.
 				--	All examples shows English names, so going for that until I know better ...
@@ -913,7 +913,7 @@ function Buffalo:scanRaid()
 						buffMask = bit.bor(buffMask, buffInfo.Bitmask);
 					end;
 				end;
-			elseif self.lib.addonExpansionLevel > 1 then
+			elseif Buffalo.lib.addonExpansionLevel > 1 then
 				--	TBC classic (2.5.4) / WOTLK:
 				for n = 1, self.API.GetNumTrackingTypes() do
 					local trackingInfo = self.API.GetTrackingInfo(n);
@@ -1147,15 +1147,15 @@ function Buffalo:scanRaid()
 					local minutes = math.floor(seconds / 60);
 					seconds = seconds - minutes * 60;
 
-					self.lib:echo(string.format("%s's %s%s%s will expire in %02d:%02d.", targetPlayer, Buffalo.ui.colours.ExpiringBuff, buffName, self.lib.chatColorNormal, minutes, seconds));
+					Buffalo.lib:echo(string.format("%s's %s%s%s will expire in %02d:%02d.", targetPlayer, Buffalo.ui.colours.ExpiringBuff, buffName, Buffalo.lib.chatColorNormal, minutes, seconds));
 				else
-					self.lib:echo(string.format("%s is missing %s%s%s.", targetPlayer, Buffalo.ui.colours.MissingBuff, buffName, self.lib.chatColorNormal));
+					Buffalo.lib:echo(string.format("%s is missing %s%s%s.", targetPlayer, Buffalo.ui.colours.MissingBuff, buffName, Buffalo.lib.chatColorNormal));
 				end;
 			end;
 		end;
 
 		if debug then
-			self.lib:echo(string.format("DEBUG: Buffing unit=%s(%s), Buff=%s, Icon=%s", unitid, targetPlayer, buffName, missingBuff.iconid));
+			Buffalo.lib:echo(string.format("DEBUG: Buffing unit=%s(%s), Buff=%s, Icon=%s", unitid, targetPlayer, buffName, missingBuff.iconid));
 		end;
 
 		Buffalo:updateBuffButton(unitid, buffName, missingBuff.iconid);
@@ -1164,7 +1164,7 @@ function Buffalo:scanRaid()
 
 		if Buffalo.config.value.AnnounceMissingBuff then
 			if Buffalo.vars.LastBuffTarget ~= "" then
-				self.lib:echo("No pending buffs.");
+				Buffalo.lib:echo("No pending buffs.");
 				Buffalo.vars.LastBuffTarget = "";
 				Buffalo.vars.LastBuffStatus = "";
 			end;
@@ -1647,14 +1647,14 @@ function Buffalo_onRaidModeClick(sender)
 		--	Scenario 2: We swithc FROM raid mode 1 (currentRM=OPEN):
 		if raidmode == Buffalo.raidmodes.OpenRaid or Buffalo.vars.CurrentRaidMode == Buffalo.raidmodes.OpenRaid then
 			if Buffalo.raidmodes.OpenRaidRequiresPromotion and not unitIsPromoted then
-				lib:echo("You cannot change raid mode unless you are promoted.");
+				Buffalo.lib:echo("You cannot change raid mode unless you are promoted.");
 				return;
 			end;
 		end;
 
 		if raidmode == Buffalo.raidmodes.ClosedRaid or Buffalo.vars.CurrentRaidMode == Buffalo.raidmodes.ClosedRaid then
 			if Buffalo.raidmodes.ClosedRaidRequiresPromotion and not unitIsPromoted then
-				lib:echo("You cannot change raid mode unless you are promoted.");
+				Buffalo.lib:echo("You cannot change raid mode unless you are promoted.");
 				return;
 			end;
 		end;
@@ -1708,14 +1708,14 @@ function Buffalo:handleTXRaidMode(message, sender)
 
 	for _, rmInfo in next, Buffalo.raidmodes.setup do
 		if rmInfo["RAIDMODE"] == raidmode then
-			lib:echo(string.format("[%s] changed raid mode to [%s].", sender, rmInfo["CAPTION"]));
+			Buffalo.lib:echo(string.format("[%s] changed raid mode to [%s].", sender, rmInfo["CAPTION"]));
 			return;
 		end;
 	end;
 
 	--	Oops, someone changed raid mode to a mode this client does not know!
 	--	Can happen if a RaidMode3 is implemented, and the user does not upgrade!!
-	lib:echo(string.format("[%s] changed raid mode.", sender));
+	Buffalo.lib:echo(string.format("[%s] changed raid mode.", sender));
 end;
 
 --	TX_RDUPDATE: Called when another client updates the raid assignments.
@@ -1738,7 +1738,7 @@ end;
 --	TX_QRYRAIDMODE:
 --	If player is promoted, answer current raidmode back.
 function Buffalo:handleTXQueryRaidMode(message, sender)
-	lib:sendAddonMessage(string.format("RX_QRYRAIDMODE#%s/%s#%s", Buffalo.vars.CurrentRaidMode, Buffalo.vars.RaidModeLockedBy, sender));
+	Buffalo.lib:sendAddonMessage(string.format("RX_QRYRAIDMODE#%s/%s#%s", Buffalo.vars.CurrentRaidMode, Buffalo.vars.RaidModeLockedBy, sender));
 end;
 
 --	RX_QRYRAIDMODE:
@@ -1757,7 +1757,7 @@ function Buffalo:handleRXQueryRaidMode(message, sender)
 		--	of them, only the first one. 
 		if not Buffalo.vars.RaidModeQueryDone then
 			Buffalo.vars.RaidModeQueryDone = true;
-			lib:sendAddonMessage(string.format("TX_QRYRAIDASSIGNMENTS##%s", sender));
+			Buffalo.lib:sendAddonMessage(string.format("TX_QRYRAIDASSIGNMENTS##%s", sender));
 		end;
 
 		Buffalo:updateGroupBuffUI();
@@ -1769,7 +1769,7 @@ function Buffalo:requestRaidModeUpdate()
 		Buffalo.vars.RaidModeQueryDone = false;
 		Buffalo:resetRaidAssignments();
 
-		lib:sendAddonMessage(string.format("TX_QRYRAIDMODE##%s", Buffalo.vars.PlayerClass));
+		Buffalo.lib:sendAddonMessage(string.format("TX_QRYRAIDMODE##%s", Buffalo.vars.PlayerClass));
 	end;
 end;
 
@@ -1790,7 +1790,7 @@ function Buffalo:handleTXQueryRaidAssignments(message, sender)
 
 		--	A message per group:
 		--	RX_QRYRAIDASSIGNMENTS#<groupnum>/<buffer 2>/<buffer 2>/<buffer 3>#sender
-		lib:sendAddonMessage(string.format("RX_QRYRAIDASSIGNMENTS#%s#%s", payload, sender));			
+		Buffalo.lib:sendAddonMessage(string.format("RX_QRYRAIDASSIGNMENTS#%s#%s", payload, sender));			
 	end;
 end;
 
@@ -1904,7 +1904,7 @@ function Buffalo:BuffGroupDropdownMenu_OnClick(sender, playerInfo)
 
 	--	Send a message to clients of same class that buff assignments was updated.
 	local payload = string.format("%s/%s/%s", Buffalo.vars.SyncBuff, Buffalo.vars.SyncGroup, syncBuff["PLAYER"] or "");
-	lib:sendAddonMessage(string.format("TX_RDUPDATE#%s#%s", payload, Buffalo.vars.PlayerClass));
+	Buffalo.lib:sendAddonMessage(string.format("TX_RDUPDATE#%s#%s", payload, Buffalo.vars.PlayerClass));
 
 	Buffalo:updateGroupBuffUI();
 end;

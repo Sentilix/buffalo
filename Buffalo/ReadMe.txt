@@ -95,6 +95,10 @@ Warlock		Imp							39
 
 Version history
 ---------------
+Version 1.0.0b2
+* Fixed LUA errors due to wrong use of library.
+
+
 Version 1.0.0b1
 * First working version for Forever. There may still be bugs, as I have only tested up to level 9 and only as a Priest!
 * Not yet implemented: Special Forever buffs (I haven't seen any yet!).
