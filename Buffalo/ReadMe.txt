@@ -95,6 +95,11 @@ Warlock		Imp							39
 
 Version history
 ---------------
+Version 1.0.0b3
+* Fixed LUA errors due to wrong use of library.
+* Fixed LUA error when cloosing window in Combat.
+
+
 Version 1.0.0b2
 * Fixed LUA errors due to wrong use of library.
 
