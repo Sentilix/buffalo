@@ -164,7 +164,7 @@ end
 ]]
 SLASH_BUFFALO_VERSION1 = "/buffaloversion"
 SlashCmdList["BUFFALO_VERSION"] = function(msg)
-	if self.API.IsInRaid() or Buffalo:isInParty() then
+	if Buffalo.API.IsInRaid() or Buffalo:isInParty() then
 		Buffalo.lib:sendAddonMessage("TX_VERSION##");
 	else
 		Buffalo.lib:echo(string.format("%s is using Buffalo version %s", GetUnitName("player", true), Buffalo.lib.addonVersion));
@@ -2335,15 +2335,21 @@ function Buffalo:onClassConfigClick(self, ...)
 end;
 
 function Buffalo:onConfigurationCloseButtonClick()
-	Buffalo:closeConfigurationDialogue();
+	if not self.API.InCombatLockdown() then
+		Buffalo:closeConfigurationDialogue();
+	end;
 end;
 
 function Buffalo:onGeneralConfigCloseButtonClick()
-	Buffalo:closeGeneralConfigDialogue();
+	if not self.API.InCombatLockdown() then
+		Buffalo:closeGeneralConfigDialogue();
+	end;
 end;
 
 function Buffalo:onClassConfigCloseButtonClick()
-	Buffalo:closeClassConfigDialogue();
+	if not self.API.InCombatLockdown() then
+		Buffalo:closeClassConfigDialogue();
+	end;
 end;
 
 function Buffalo_onPrayerThresholdChanged(object)
