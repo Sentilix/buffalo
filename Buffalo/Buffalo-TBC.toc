@@ -1,6 +1,6 @@
 ## Title: Buffalo - One-button buffing (Burning Crusade)
 ## Notes: Smart addon to buff party / raid members
-## Version: 1.0.1
+## Version: 1.0.2
 ## Author: Mimma @ <EU-Pyrewood Village>
 ## Interface: 20506
 ## IconTexture: Interface\Icons\Spell_nature_unyeildingstamina
