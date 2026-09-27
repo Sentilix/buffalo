@@ -98,7 +98,7 @@ Version history
 Version 1.0.1
 * TOC files renamed to match Blizzard's recommendations
 * Fixed a few LUA errors
-* Fixed handling of secret Aura values
+* Fixed handling of secret Aura values, preventing LUA error at launch.
 
 
 Version 1.0.0b3
