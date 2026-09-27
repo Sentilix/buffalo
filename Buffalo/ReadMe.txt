@@ -95,6 +95,10 @@ Warlock		Imp							39
 
 Version history
 ---------------
+Version 1.0.2
+* Fixed wow build detection: herb/mining aura works now.
+
+
 Version 1.0.1
 * TOC files renamed to match Blizzard's recommendations
 * Fixed a few LUA errors
