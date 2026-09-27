@@ -9,6 +9,18 @@ function API.GetAddOnMetadata(addonName, keyName)
     return C_AddOns.GetAddOnMetadata(addonName, keyName);
 end;
 
+function API.GetBuildInfo()
+    return GetBuildInfo();
+end;
+
+function API.GetGuildInfo(unitid)
+    return GetGuildInfo(unitid);
+end;
+
+function API.GetLootMethod()
+    return C_PartyInfo.GetLootMethod();
+end;
+
 function API.GetMouseButtonClicked()
     return GetMouseButtonClicked();
 end;
@@ -20,6 +32,11 @@ end;
 function API.GetNumTrackingTypes()
     return C_Minimap.GetNumTrackingTypes();
 end
+
+--  Era returned values: localizedClass, englishClass, localizedRace, englishRace, sex, name, realmName
+function API.GetPlayerInfoByGUID(guid)
+    return GetPlayerInfoByGUID(guid);
+end;
 
 function API.GetRaidRosterInfo(raidIndex)
     return GetRaidRosterInfo(raidIndex);
@@ -83,6 +100,10 @@ function API.InCombatLockdown()
     return InCombatLockdown();
 end;
 
+function API.IsInInstance()
+    return IsInInstance();
+end;
+
 function API.IsInRaid()
     return IsInRaid();
 end;
@@ -123,6 +144,10 @@ function API.UnitFactionGroup(unitId)
     return UnitFactionGroup(unitId);
 end;
 
+function API.UnitHasIncomingResurrection(unitid)
+    return UnitHasIncomingResurrection(unitid)
+end;
+
 function API.UnitIsConnected(unitId)
     return UnitIsConnected(unitId);
 end;
@@ -143,9 +168,22 @@ function API.UnitIsGroupLeader(unitId)
     return UnitIsGroupLeader(unitId);
 end;
 
-function API.UnitName(unitId)
-    return UnitName(unitId)
+function API.UnitIsVisible(unitid)
+    return UnitIsVisible(unitid);
 end;
+
+function API.UnitName(unitId)
+    return UnitName(unitId);
+end;
+
+function API.UnitRace(unitid)
+    return UnitRace(unitid);
+end;
+
+function API.UnitSex(unitid)
+    return UnitSex(unitid);
+end;
+
 
 
 --
@@ -174,4 +212,55 @@ function API.ShortUnitName(unitId)
 end;
 
 
+--
+--  UNIT_SPELLCAST_* functions:
+--
 
+-- Era return values: unitCaster, unitTarget, castGUID, spellID
+function API.On_UNIT_SPELLCAST_SENT(...)
+    return ...;
+end
+
+--  Era return values: unitCaster, castGUID, spellID, castBarID
+function API.Extract_UNIT_SPELLCAST_START(...)
+    return ...;
+end
+
+--  Era return values: unitCaster, castGUID, spellID, castBarID
+function API.Extract_UNIT_SPELLCAST_STOP(...)
+    return ...;
+end;
+
+--  Era return values: unitCaster, castGUID, spellID, castBarID
+function API.Extract_UNIT_SPELLCAST_SUCCEEDED(...)
+    return ...;
+end;
+
+--  Era return values: unitCaster, castGUID, spellID, castBarID
+function API.Extract_UNIT_SPELLCAST_FAILED(...)
+    return ...;
+end;
+
+--  Era return values: unitTarget
+function API.Extract_INCOMING_RESURRECT_CHANGED(...)
+    return ...;
+end;
+
+
+
+function API.Extract_Unit_Target(castGUID)
+    local name = nil
+    
+    if UnitExists("mouseover") then
+        name = GetUnitName("mouseover")
+    elseif UnitExists("target") then
+        name = GetUnitName("target")
+    end
+    
+    -- Returns the string name or nil if empty/not found
+    if name == "" then
+        name = nil;
+    end
+
+    return name;
+end

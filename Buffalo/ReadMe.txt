@@ -95,6 +95,12 @@ Warlock		Imp							39
 
 Version history
 ---------------
+Version 1.0.1
+* TOC files renamed to match Blizzard's recommendations
+* Fixed a few LUA errors
+* Fixed handling of secret Aura values
+
+
 Version 1.0.0b3
 * Fixed LUA errors due to wrong use of library.
 * Fixed LUA error when cloosing window in Combat.

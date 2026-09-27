@@ -440,10 +440,7 @@ Buffalo["classes"] = {
 }
 
 --	Added in TBC:
---	Hack: the library has not loaded yet, we need to figure out the expansion level ourselves:
-local _addonExpansionLevel = tonumber(Buffalo.API.GetAddOnMetadata("Buffalo", "X-Expansion-Level"))
-
-if (_addonExpansionLevel or 0) == 2 then
+if Buffalo.lib.addonExpansionLevel == 2 then
 
 	Buffalo.spellnames.mage["MoltenArmor"]		= Buffalo.API.GetSpellName(30482);
 	Buffalo.spellnames.warlock["Felguard"]		= Buffalo.API.GetSpellName(30146);
@@ -488,10 +485,30 @@ if (_addonExpansionLevel or 0) == 2 then
 	Buffalo.classes.WARLOCK.spells[Buffalo.spellnames.warlock.DetectLesserInvisibility].MaxSpellId = 132;
 end;
 
---	Forever spells (work in progress as I don't know them yet!!)
---if (_addonExpansionLevel or 0) == 60 then
-	--	TODO!!
---end;
+--	Added in Forever:
+--	Thede are still not 100% confirmed:
+if Buffalo.lib.addonExpansionLevel == 60 then
+	Buffalo.spellnames.mage["MoltenArmor"]   = Buffalo.API.GetSpellName(429307);
+	Buffalo.spellnames.warlock["Inferno"]    = Buffalo.API.GetSpellName(5740)
+
+	Buffalo.classes.MAGE.spells[Buffalo.spellnames.mage.MoltenArmor] = {
+		["Bitmask"]		= 0x000800,
+		["Classmask"]	= Buffalo.classmasks.Mage,
+		["MaxSpellId"]	= 429307,
+		["Priority"]	= 11,
+		["Family"]		= "Armor",
+	}
+
+	Buffalo.classes.WARLOCK.spells[Buffalo.spellnames.warlock.Inferno] = {
+		["Bitmask"]		= 0x008000,
+		["Classmask"]	= Buffalo.classmasks.Warlock,
+		["MaxSpellId"]	= 5740,
+		["Priority"]	= 34,
+		["Family"]		= "Demon",
+	}
+end;
+
+
 
 
 function Buffalo:updateSpellMatrix()

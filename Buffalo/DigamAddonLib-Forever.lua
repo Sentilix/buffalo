@@ -14,6 +14,18 @@ function API.GetAddOnMetadata(addonName, keyName)
     return C_AddOns.GetAddOnMetadata(addonName, keyName);
 end;
 
+function API.GetBuildInfo()
+    return GetBuildInfo();
+end;
+
+function API.GetGuildInfo(unitid)
+    return GetGuildInfo(unitid);
+end;
+
+function API.GetLootMethod()
+    return C_PartyInfo.GetLootMethod();
+end
+
 function API.GetMouseButtonClicked()
     return GetMouseButtonClicked();
 end;
@@ -25,6 +37,11 @@ end;
 function API.GetNumTrackingTypes()
     return C_Minimap.GetNumTrackingTypes();
 end
+
+--  Forever returned values: localizedClass, englishClass, localizedRace, englishRace, sex, name, realmName
+function API.GetPlayerInfoByGUID(guid)
+    return GetPlayerInfoByGUID(guid);
+end;
 
 function API.GetRaidRosterInfo(raidIndex)
     return GetRaidRosterInfo(raidIndex);
@@ -110,6 +127,17 @@ function API.InCombatLockdown()
     return InCombatLockdown();
 end;
 
+function API.IsInInstance()
+    local inInstance, instanceType = IsInInstance()
+    
+    -- Hvis Forever returnerer den boolske værdi 'true', konverterer vi det til tallet 1
+    if inInstance == true then
+        inInstance = 1
+    end
+    
+    return inInstance, instanceType
+end
+
 function API.IsInRaid()
     return IsInRaid();
 end;
@@ -147,9 +175,9 @@ function API.UnitBuff(unitId, index, filter)
         end
     end
 
-    -- Directly request data by its sequential index within the filtered range
-    local aura = C_UnitAuras.GetAuraDataByIndex(unitId, index, foreverFilter)
-    if not aura then
+    -- Wrap the API call in a pcall to catch "secret while tainted" errors gracefully
+    local success, aura = pcall(C_UnitAuras.GetAuraDataByIndex, unitId, index, foreverFilter)
+    if not success or not aura then
         return nil
     end
     
@@ -180,6 +208,10 @@ function API.UnitFactionGroup(unitId)
     return UnitFactionGroup(unitId);
 end;
 
+function API.UnitHasIncomingResurrection(unitid)
+    return UnitHasIncomingResurrection(unitid)
+end;
+
 function API.UnitIsConnected(unitId)
     return UnitIsConnected(unitId);
 end;
@@ -196,11 +228,93 @@ function API.UnitIsGroupAssistant(unitId)
     return UnitIsGroupAssistant(unitId);
 end;
 
--- 6. UnitIsGroupLeader also catch partyleader
 function API.UnitIsGroupLeader(unitId)
     return UnitIsGroupLeader(unitId);
+end;
+
+function API.UnitIsVisible(unitId)
+    return UnitIsVisible(unitId);
 end;
 
 function API.UnitName(unitId)
     return UnitName(unitId)
 end;
+
+function API.UnitRace(unitid)
+    local localizedRaceName, englishRaceName, raceID = UnitRace(unitid)
+    
+    if not localizedRaceName then
+        localizedRaceName, englishRaceName = "Unknown", "Unknown"
+    end
+    
+    return localizedRaceName, englishRaceName, raceID
+end
+
+function API.UnitSex(unitid)
+    local sex = UnitSex(unitid)
+    return sex or 1
+end
+
+
+--[[
+Convert output from UNIT_SPELLCAST_START event in Forever to
+the format it ws in Era.
+--]]
+
+--  Forever return values: unitCaster, unitTarget, castGUID, spellID, castBarID
+function API.On_UNIT_SPELLCAST_SENT(...)
+    local unitCaster, _,spellID, lineID = ...
+    return unitCaster, nil,spellID, lineID;
+end;
+
+--  Forever return values: unitCaster, castGUID, spellID, castBarID
+function API.Extract_UNIT_SPELLCAST_START(...)
+    return ...;
+end
+
+--  Forever return values: unitCaster, castGUID, spellID, castBarID
+function API.Extract_UNIT_SPELLCAST_STOP(...)
+    return ...;
+end
+
+--  Forever return values: unitCaster, castGUID, spellID, castBarID
+function API.Extract_UNIT_SPELLCAST_SUCCEEDED(...)
+    return ...;
+end
+
+--  Forever return values: unitCaster, castGUID, spellID, reason
+--  Note the extra Reason field.
+function API.Extract_UNIT_SPELLCAST_FAILED(...)
+    return ...;
+end
+
+--  Forever payload: unitTarget, isIncoming
+--  Era return values: unitTarget
+function API.Extract_INCOMING_RESURRECT_CHANGED(...)
+    return ...;
+end
+
+
+--
+--  Forever Only:
+--
+
+function API.Extract_Unit_Target(castGUID)
+    local name = nil
+    
+    if UnitExists("mouseover") then
+        name = GetUnitName("mouseover")
+    elseif UnitExists("target") then
+        name = GetUnitName("target")
+    end
+    
+    -- Returns the string name or nil if empty/not found
+    if name == "" then
+        name = nil;
+    end
+
+    return name;
+end
+
+
+
