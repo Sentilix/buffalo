@@ -8,6 +8,11 @@
 
 Buffalo = select(2, ...)
 
+--	CastCache: used to retrieve targetName of a cast.
+--	Entgry is evicted after 1 second!
+--	Key is castGUID
+--	Values are { targetName, spellName }
+local CastCache = { }
 
 --	Dropdown menu for Healer (add/replace healer) selection:
 Buffalo.vars.SyncBuffGroupDropdownMenu = Buffalo.API.CreateFrame("FRAME", "BuffaloSyncFrameBuff", UIParent, "UIDropDownMenuTemplate");
@@ -62,7 +67,7 @@ SlashCmdList["BUFFALO_BUFFALO"] = function(msg)
 	elseif option == "VERSION" then
 		SlashCmdList["BUFFALO_VERSION"]();
 	else
-		Buffalo.lib:echo(string.format("Unknown command: %s", option));
+		Buffalo.lib:Echo(string.format("Unknown command: %s", option));
 	end
 end
 
@@ -121,7 +126,7 @@ SlashCmdList["BUFFALO_RESETBUTTON"] = function(msg)
 	Buffalo:setConfigOption(Buffalo.config.key.BuffButtonPosX, 0);
 	Buffalo:setConfigOption(Buffalo.config.key.BuffButtonPosY, 0);
 
-	Buffalo.lib:echo("The Buffalo button has been reset.");
+	Buffalo.lib:Echo("The Buffalo button has been reset.");
 end
 
 --[[
@@ -138,7 +143,7 @@ SlashCmdList["BUFFALO_ANNOUNCE"] = function(msg)
 	Buffalo.vars.LastBuffStatus = "";
 	Buffalo:setConfigOption(Buffalo.config.key.AnnounceMissingBuff, Buffalo.config.value.AnnounceMissingBuff);
 	Buffalo:setConfigOption(Buffalo.config.key.AnnounceCompletedBuff, Buffalo.config.value.AnnounceCompletedBuff);
-	Buffalo.lib:echo("Buff announcements are now ON.");
+	Buffalo.lib:Echo("Buff announcements are now ON.");
 end
 
 --[[
@@ -153,7 +158,7 @@ SlashCmdList["BUFFALO_STOPANNOUNCE"] = function(msg)
 	Buffalo.config.value.AnnounceCompletedBuff = false;
 	Buffalo:setConfigOption(Buffalo.config.key.AnnounceMissingBuff, Buffalo.config.value.AnnounceMissingBuff);
 	Buffalo:setConfigOption(Buffalo.config.key.AnnounceCompletedBuff, Buffalo.config.value.AnnounceCompletedBuff);
-	Buffalo.lib:echo("Buff announcements are now OFF.");
+	Buffalo.lib:Echo("Buff announcements are now OFF.");
 end
 
 --[[
@@ -165,9 +170,9 @@ end
 SLASH_BUFFALO_VERSION1 = "/buffaloversion"
 SlashCmdList["BUFFALO_VERSION"] = function(msg)
 	if Buffalo.API.IsInRaid() or Buffalo:isInParty() then
-		Buffalo.lib:sendAddonMessage("TX_VERSION##");
+		Buffalo.lib:SendAddonMessage("TX_VERSION##");
 	else
-		Buffalo.lib:echo(string.format("%s is using Buffalo version %s", GetUnitName("player", true), Buffalo.lib.addonVersion));
+		Buffalo.lib:Echo(string.format("%s is using Buffalo version %s", GetUnitName("player", true), Buffalo.lib.addonVersion));
 	end
 end
 
@@ -209,17 +214,17 @@ end
 ]]
 SLASH_BUFFALO_HELP1 = "/buffalohelp"
 SlashCmdList["BUFFALO_HELP"] = function(msg)
-	Buffalo.lib:echo(string.format("buffalo version %s options:", Buffalo.lib.addonVersion));
-	Buffalo.lib:echo("Syntax:");
-	Buffalo.lib:echo("    /buffalo [command]");
-	Buffalo.lib:echo("Where commands can be:");
-	Buffalo.lib:echo("    Config       (default) Open the configuration dialogue. Same as right-clicking buff button.");
-	Buffalo.lib:echo("    Show         Shows the buff button.");
-	Buffalo.lib:echo("    Hide         Hides the buff button.");
-	Buffalo.lib:echo("    Announce     Announce when a buff is missing.");
-	Buffalo.lib:echo("    stopannounce Stop announcing missing buffs.");
-	Buffalo.lib:echo("    Version      Request version info from all clients.");
-	Buffalo.lib:echo("    Help         This help.");
+	Buffalo.lib:Echo(string.format("buffalo version %s options:", Buffalo.lib.addonVersion));
+	Buffalo.lib:Echo("Syntax:");
+	Buffalo.lib:Echo("    /buffalo [command]");
+	Buffalo.lib:Echo("Where commands can be:");
+	Buffalo.lib:Echo("    Config       (default) Open the configuration dialogue. Same as right-clicking buff button.");
+	Buffalo.lib:Echo("    Show         Shows the buff button.");
+	Buffalo.lib:Echo("    Hide         Hides the buff button.");
+	Buffalo.lib:Echo("    Announce     Announce when a buff is missing.");
+	Buffalo.lib:Echo("    stopannounce Stop announcing missing buffs.");
+	Buffalo.lib:Echo("    Version      Request version info from all clients.");
+	Buffalo.lib:Echo("    Help         This help.");
 end
 
 
@@ -236,7 +241,7 @@ end
 	Buffalo:<sender (which is actually the receiver!)>:<version number>
 ]]
 function Buffalo:handleTXVersion(message, sender)
-	Buffalo.lib:sendAddonMessage("RX_VERSION#".. Buffalo.lib.addonVersion .."#"..sender)
+	Buffalo.lib:SendAddonMessage("RX_VERSION#".. Buffalo.lib.addonVersion .."#"..sender)
 end
 
 --[[
@@ -244,7 +249,7 @@ end
 	The version information is displayed locally.
 ]]
 function Buffalo:handleRXVersion(message, sender)
-	Buffalo.lib:echo(string.format("[%s] is using Buffalo version %s", sender, message))
+	Buffalo.lib:Echo(string.format("[%s] is using Buffalo version %s", sender, message))
 end
 
 function Buffalo:handleTXVerCheck(message, sender)
@@ -376,8 +381,8 @@ function Buffalo:checkIsNewVersion(versionstring)
 		if incomingVersion > Buffalo.Version then
 			if not Buffalo.vars.UpdateMessageShown then
 				Buffalo.vars.UpdateMessageShown = true;
-				Buffalo.lib:echo(string.format("NOTE: A newer version of ".. Buffalo.lib.charColorHot .."BUFFALO".. Buffalo.lib.chatColorNormal .."! is available (version %s)!", versionstring));
-				Buffalo.lib:echo("You can download latest version from https://www.curseforge.com/ or https://github.com/Sentilix/buffalo.");
+				Buffalo.lib:Echo(string.format("NOTE: A newer version of ".. Buffalo.lib.charColorHot .."BUFFALO".. Buffalo.lib.chatColorNormal .."! is available (version %s)!", versionstring));
+				Buffalo.lib:Echo("You can download latest version from https://www.curseforge.com/ or https://github.com/Sentilix/buffalo.");
 			end
 		end	
 	end
@@ -496,7 +501,7 @@ function Buffalo:initializeConfigSettings()
 	Buffalo:setConfigOption(Buffalo.config.key.ButtonOpacity, Buffalo.config.value.ButtonOpacity);
 
 	Buffalo.config.value.RenewOverlap = Buffalo:getConfigOption(Buffalo.config.key.RenewOverlap, Buffalo.config.default.RenewOverlap);
-	if Buffalo.config.value.RenewOverlap < 0 or Buffalo.config.value.RenewOverlap > 120 then
+	if Buffalo.config.value.RenewOverlap < 0 or Buffalo.config.value.RenewOverlap > 600 then
 		Buffalo.config.value.RenewOverlap = Buffalo.config.default.RenewOverlap;
 	end;
 	Buffalo:setConfigOption(Buffalo.config.key.RenewOverlap, Buffalo.config.value.RenewOverlap);
@@ -663,7 +668,7 @@ function Buffalo:mainInitialization(reloaded)
 		if Buffalo:countActive() == 0 then
 			--	This can fail if wow havent loaded all objects yet.
 			--	We just wait a couple of seconds and try again:
-			Buffalo.vars.InitializationRetryTimer = Buffalo.vars.TimerTick + 5;
+			Buffalo.vars.InitializationRetryTimer = self.API.GetTime() + 5;
 			return;
 		end;
 	end;
@@ -721,7 +726,7 @@ function Buffalo:mainInitialization(reloaded)
 	Buffalo.vars.InitializationComplete = true;
 
 	if Buffalo.config.value.AnnounceMissingBuff and Buffalo.vars.PlayerIsBuffClass then
-		Buffalo.lib:echo("Buff data loaded, Buffalo is ready.");
+		Buffalo.lib:Echo("Buff data loaded, Buffalo is ready.");
 	end;
 end;
 
@@ -832,8 +837,6 @@ function Buffalo:scanRaid()
 		end;
 	end;
 
-	local currentTime = self.API.GetTime();
-
 	local assignedGroups = Buffalo.config.value.AssignedBuffGroups;
 	if Buffalo.vars.CurrentRaidMode ~= Buffalo.raidmodes.Personal then
 		assignedGroups = Buffalo.config.value.AssignedRaidGroups;
@@ -844,6 +847,9 @@ function Buffalo:scanRaid()
 	--	This iterate over all players in party/raid and set the bitmapped buff mask on each
 	--	applicable (i.e. not dead, not disconnected) player.
 	local binValue;	
+	local printedBuffExpirationUnknown = false;
+	local timeOverlap = Buffalo.config.value.RenewOverlap;
+
 	for unitid, rosterInfo in next, roster do
 		local buffMask = 0;
 
@@ -860,27 +866,28 @@ function Buffalo:scanRaid()
 			
 		if scanPlayerBuffs then
 			for buffIndex = 1, 40, 1 do
-				local buffName, iconID, _, _, duration, expirationTime = self.API.UnitBuff(unitid, buffIndex, "CANCELABLE");
+
+				--	name, icon, count, dispelType, duration, expirationTime, sourceUnit, isStealable, nameplateShowPersonal, spellId = UnitBuff("unitId", index [, "filter"])
+				local buffName, _, _, _, duration, expirationTime = self.API.UnitBuff(unitid, buffIndex, "CANCELABLE");
 				if not buffName then break; end;
 
 				local buffInfo = Buffalo.spells.active[buffName];
 				if buffInfo and buffInfo.Enabled then
-					if expirationTime and (duration or 0) > 0 then
-						local timeOverlap = Buffalo.config.value.RenewOverlap;
+					if expirationTime and (duration or 0) > 0 then				
 						if duration <= 60 and timeOverlap > 10 then 
 							--	For short buffs (<1m): Only allow up to 10 seconds overlap (example: mage armor)
 							timeOverlap = 10; 
-						elseif duration <= 300 and timeOverlap > 30 then 
-							--	For medium buffs (<5m): Only allow up to 30 seconds overlap (example: pala single blessings)
-							timeOverlap = 30; 
-						elseif duration <= 900 and timeOverlap > 60 then 
-							--	For semi-long buffs (<15m): Only allow up to 60 seconds overlap (example: thorns, pala greater blessings)
+						elseif duration <= 300 and timeOverlap > 60 then 
+							--	For medium buffs (<5m): Only allow up to 60 seconds overlap (example: pala single blessings (Era))
 							timeOverlap = 60; 
+						elseif duration <= 900 and timeOverlap > 120 then
+							--	For semi-long buffs (<15m): Allow up to 120 seconds seconds overlap (example: thorns, pala greater blessings (Era))
+							timeOverlap = 120; 
 						end;
 
 						renewTime = expirationTime - timeOverlap;
 
-						if renewTime > currentTime then
+						if renewTime > self.API.GetTime() then
 							buffMask = bit.bor(buffMask, buffInfo.Bitmask);
 						else
 							--	Set expirationTime on roster object so we can check the time later on:
@@ -1010,7 +1017,7 @@ function Buffalo:scanRaid()
 													local expirationTime = roster[unitid][buffName];
 													if expirationTime then
 														--	Set priority so first expiring buffs are selected first.
-														local seconds = math.floor(expirationTime - currentTime);
+														local seconds = math.floor(expirationTime - self.API.GetTime());
 														priority = priority - (50 + seconds);
 													end;
 
@@ -1096,7 +1103,7 @@ function Buffalo:scanRaid()
 									local expirationTime = rosterInfo[buffName];
 									if expirationTime then
 										--	Set priority so first expiring buffs are selected first.
-										local seconds = math.floor(expirationTime - currentTime);
+										local seconds = math.floor(expirationTime - self.API.GetTime());
 										priority = priority - (50 + seconds);
 									end;
 
@@ -1143,19 +1150,19 @@ function Buffalo:scanRaid()
 				Buffalo.vars.LastBuffStatus = targetStatus;
 
 				if expirationTime and expirationTime > 0 then
-					local seconds = math.ceil(expirationTime - currentTime);
+					local seconds = math.ceil(expirationTime - self.API.GetTime());
 					local minutes = math.floor(seconds / 60);
 					seconds = seconds - minutes * 60;
 
-					Buffalo.lib:echo(string.format("%s's %s%s%s will expire in %02d:%02d.", targetPlayer, Buffalo.ui.colours.ExpiringBuff, buffName, Buffalo.lib.chatColorNormal, minutes, seconds));
+					Buffalo.lib:Echo(string.format("%s's %s%s%s will expire in %02d:%02d.", targetPlayer, Buffalo.ui.colours.ExpiringBuff, buffName, Buffalo.lib.chatColorNormal, minutes, seconds));
 				else
-					Buffalo.lib:echo(string.format("%s is missing %s%s%s.", targetPlayer, Buffalo.ui.colours.MissingBuff, buffName, Buffalo.lib.chatColorNormal));
+					Buffalo.lib:Echo(string.format("%s is missing %s%s%s.", targetPlayer, Buffalo.ui.colours.MissingBuff, buffName, Buffalo.lib.chatColorNormal));
 				end;
 			end;
 		end;
 
 		if debug then
-			Buffalo.lib:echo(string.format("DEBUG: Buffing unit=%s(%s), Buff=%s, Icon=%s", unitid, targetPlayer, buffName, missingBuff.iconid));
+			Buffalo.lib:Echo(string.format("DEBUG: Buffing unit=%s(%s), Buff=%s, Icon=%s", unitid, targetPlayer, buffName, missingBuff.iconid));
 		end;
 
 		Buffalo:updateBuffButton(unitid, buffName, missingBuff.iconid);
@@ -1164,7 +1171,7 @@ function Buffalo:scanRaid()
 
 		if Buffalo.config.value.AnnounceMissingBuff then
 			if Buffalo.vars.LastBuffTarget ~= "" then
-				Buffalo.lib:echo("No pending buffs.");
+				Buffalo.lib:Echo("No pending buffs.");
 				Buffalo.vars.LastBuffTarget = "";
 				Buffalo.vars.LastBuffStatus = "";
 			end;
@@ -1300,10 +1307,6 @@ function Buffalo:updateBuffButton(unitid, spellname, textureId)
 		BuffButton:SetAttribute("spell", nil);
 		BuffButton:SetAttribute("unit", nil);
 	end;
-end;
-
-function Buffalo_onBeforeBuffClick(self, ...)
-	Buffalo.vars.LastBuffFired = BuffButton:GetAttribute("spell");
 end;
 
 function Buffalo_onAfterBuffClick(self, ...)
@@ -1647,14 +1650,14 @@ function Buffalo_onRaidModeClick(sender)
 		--	Scenario 2: We swithc FROM raid mode 1 (currentRM=OPEN):
 		if raidmode == Buffalo.raidmodes.OpenRaid or Buffalo.vars.CurrentRaidMode == Buffalo.raidmodes.OpenRaid then
 			if Buffalo.raidmodes.OpenRaidRequiresPromotion and not unitIsPromoted then
-				Buffalo.lib:echo("You cannot change raid mode unless you are promoted.");
+				Buffalo.lib:Echo("You cannot change raid mode unless you are promoted.");
 				return;
 			end;
 		end;
 
 		if raidmode == Buffalo.raidmodes.ClosedRaid or Buffalo.vars.CurrentRaidMode == Buffalo.raidmodes.ClosedRaid then
 			if Buffalo.raidmodes.ClosedRaidRequiresPromotion and not unitIsPromoted then
-				Buffalo.lib:echo("You cannot change raid mode unless you are promoted.");
+				Buffalo.lib:Echo("You cannot change raid mode unless you are promoted.");
 				return;
 			end;
 		end;
@@ -1678,7 +1681,7 @@ function Buffalo:setRaidMode(raidmode, AnnounceRaidModeChange)
 	Buffalo.vars.CurrentRaidMode = tonumber(raidmode);
 
 	if AnnounceRaidModeChange then
-		lib:sendAddonMessage(string.format("TX_RAIDMODE#%s#%s", raidmode, Buffalo.vars.PlayerClass));
+		lib:SendAddonMessage(string.format("TX_RAIDMODE#%s#%s", raidmode, Buffalo.vars.PlayerClass));
 	end;
 
 	Buffalo:updateGroupBuffUI();
@@ -1708,14 +1711,14 @@ function Buffalo:handleTXRaidMode(message, sender)
 
 	for _, rmInfo in next, Buffalo.raidmodes.setup do
 		if rmInfo["RAIDMODE"] == raidmode then
-			Buffalo.lib:echo(string.format("[%s] changed raid mode to [%s].", sender, rmInfo["CAPTION"]));
+			Buffalo.lib:Echo(string.format("[%s] changed raid mode to [%s].", sender, rmInfo["CAPTION"]));
 			return;
 		end;
 	end;
 
 	--	Oops, someone changed raid mode to a mode this client does not know!
 	--	Can happen if a RaidMode3 is implemented, and the user does not upgrade!!
-	Buffalo.lib:echo(string.format("[%s] changed raid mode.", sender));
+	Buffalo.lib:Echo(string.format("[%s] changed raid mode.", sender));
 end;
 
 --	TX_RDUPDATE: Called when another client updates the raid assignments.
@@ -1738,7 +1741,7 @@ end;
 --	TX_QRYRAIDMODE:
 --	If player is promoted, answer current raidmode back.
 function Buffalo:handleTXQueryRaidMode(message, sender)
-	Buffalo.lib:sendAddonMessage(string.format("RX_QRYRAIDMODE#%s/%s#%s", Buffalo.vars.CurrentRaidMode, Buffalo.vars.RaidModeLockedBy, sender));
+	Buffalo.lib:SendAddonMessage(string.format("RX_QRYRAIDMODE#%s/%s#%s", Buffalo.vars.CurrentRaidMode, Buffalo.vars.RaidModeLockedBy, sender));
 end;
 
 --	RX_QRYRAIDMODE:
@@ -1757,7 +1760,7 @@ function Buffalo:handleRXQueryRaidMode(message, sender)
 		--	of them, only the first one. 
 		if not Buffalo.vars.RaidModeQueryDone then
 			Buffalo.vars.RaidModeQueryDone = true;
-			Buffalo.lib:sendAddonMessage(string.format("TX_QRYRAIDASSIGNMENTS##%s", sender));
+			Buffalo.lib:SendAddonMessage(string.format("TX_QRYRAIDASSIGNMENTS##%s", sender));
 		end;
 
 		Buffalo:updateGroupBuffUI();
@@ -1769,7 +1772,7 @@ function Buffalo:requestRaidModeUpdate()
 		Buffalo.vars.RaidModeQueryDone = false;
 		Buffalo:resetRaidAssignments();
 
-		Buffalo.lib:sendAddonMessage(string.format("TX_QRYRAIDMODE##%s", Buffalo.vars.PlayerClass));
+		Buffalo.lib:SendAddonMessage(string.format("TX_QRYRAIDMODE##%s", Buffalo.vars.PlayerClass));
 	end;
 end;
 
@@ -1790,7 +1793,7 @@ function Buffalo:handleTXQueryRaidAssignments(message, sender)
 
 		--	A message per group:
 		--	RX_QRYRAIDASSIGNMENTS#<groupnum>/<buffer 2>/<buffer 2>/<buffer 3>#sender
-		Buffalo.lib:sendAddonMessage(string.format("RX_QRYRAIDASSIGNMENTS#%s#%s", payload, sender));			
+		Buffalo.lib:SendAddonMessage(string.format("RX_QRYRAIDASSIGNMENTS#%s#%s", payload, sender));			
 	end;
 end;
 
@@ -1904,7 +1907,7 @@ function Buffalo:BuffGroupDropdownMenu_OnClick(sender, playerInfo)
 
 	--	Send a message to clients of same class that buff assignments was updated.
 	local payload = string.format("%s/%s/%s", Buffalo.vars.SyncBuff, Buffalo.vars.SyncGroup, syncBuff["PLAYER"] or "");
-	Buffalo.lib:sendAddonMessage(string.format("TX_RDUPDATE#%s#%s", payload, Buffalo.vars.PlayerClass));
+	Buffalo.lib:SendAddonMessage(string.format("TX_RDUPDATE#%s#%s", payload, Buffalo.vars.PlayerClass));
 
 	Buffalo:updateGroupBuffUI();
 end;
@@ -2368,7 +2371,7 @@ end;
 function Buffalo_onRenewOverlapChanged(object)
 	local value = math.floor(object:GetValue());
 
-	value = (math.floor(value / 5)) * 5;
+	value = (math.floor(value / 10)) * 10;
 
 	object:SetValueStep(5);
 	object:SetValue(value);
@@ -2423,10 +2426,10 @@ function Buffalo_handleCheckbox(checkbox)
 	if checkboxname == "BuffaloConfigFrameOptionAnnounceMissing" then
 		if BuffaloConfigFrameOptionAnnounceMissing:GetChecked() then
 			Buffalo.config.value.AnnounceMissingBuff = true;
-			Buffalo.lib:echo("Missing Buff announcements are now ON.");
+			Buffalo.lib:Echo("Missing Buff announcements are now ON.");
 		else
 			Buffalo.config.value.AnnounceMissingBuff = false;
-			Buffalo.lib:echo("Missing Buff announcements are now OFF.");
+			Buffalo.lib:Echo("Missing Buff announcements are now OFF.");
 		end;
 		Buffalo:setConfigOption(Buffalo.config.key.AnnounceMissingBuff, Buffalo.config.value.AnnounceMissingBuff);
 	end;
@@ -2434,10 +2437,10 @@ function Buffalo_handleCheckbox(checkbox)
 	if checkboxname == "BuffaloConfigFrameOptionAnnounceComplete" then
 		if BuffaloConfigFrameOptionAnnounceComplete:GetChecked() then
 			Buffalo.config.value.AnnounceCompletedBuff = true;
-			Buffalo.lib:echo("Completed Buff announcements are now ON.");
+			Buffalo.lib:Echo("Completed Buff announcements are now ON.");
 		else
 			Buffalo.config.value.AnnounceCompletedBuff = false;
-			Buffalo.lib:echo("Completed Buff announcements are now OFF.");
+			Buffalo.lib:Echo("Completed Buff announcements are now OFF.");
 		end;
 		Buffalo:setConfigOption(Buffalo.config.key.AnnounceCompletedBuff, Buffalo.config.value.AnnounceCompletedBuff);
 	end;
@@ -2445,10 +2448,10 @@ function Buffalo_handleCheckbox(checkbox)
 	if checkboxname == "BuffaloClassConfigFrameUseIncubus" then
 		if BuffaloClassConfigFrameUseIncubus:GetChecked() then
 			Buffalo.config.value.UseIncubus = true;
-			Buffalo.lib:echo("Incubus selected as favourite demon.");
+			Buffalo.lib:Echo("Incubus selected as favourite demon.");
 		else
 			Buffalo.config.value.UseIncubus = false;
-			Buffalo.lib:echo("Succubus selected as favourite demon.");
+			Buffalo.lib:Echo("Succubus selected as favourite demon.");
 		end;
 		Buffalo:setConfigOption(Buffalo.config.key.UseIncubus, Buffalo.config.value.UseIncubus);
 	end;
@@ -2493,15 +2496,6 @@ end;
 
 
 --[[
-	Timers
---]]
-function Buffalo:getTimerTick()
-	return Buffalo.vars.TimerTick;
-end
-
-
-
---[[
 	Debugging functions
 	Added in: 0.3.0
 --]]
@@ -2533,7 +2527,6 @@ end;
 	Event Handlers
 --]]
 function Buffalo_onEvent(self, event, ...)
-	Buffalo.vars.TimerTick = Buffalo:getTimerTick();
 
 	if (event == "ADDON_LOADED") then
 		local addonname = ...;
@@ -2552,30 +2545,33 @@ function Buffalo_onEvent(self, event, ...)
 	elseif (event == "GROUP_ROSTER_UPDATE") then
 		Buffalo:onGroupRosterUpdate(event, ...)
 
-	elseif(event == "UNIT_SPELLCAST_STOP") then
-		local caster = ...;
-		if caster == "player" then
-			Buffalo.vars.LastBuffFired = nil;
-		end;
+	elseif(event == "UNIT_SPELLCAST_SENT") then
+		--	[16:20:17] UNIT_SPELLCAST_SENT player Taylor Heal Cast-3-6782-0-1660-1244-0005C503A2 1244		
+		local caster, targetName, castGUID, spellId = ...;
 
-	elseif(event == "UNIT_SPELLCAST_FAILED") then
-		local caster = ...;
-		if caster == "player" then
-			Buffalo.vars.LastBuffFired = nil;
-		end;
+		targetName = targetName or Buffalo.lib:GetFullName();
 
+		if caster == "player" and targetName ~= "Unknown" then
+			local spellName = Buffalo.API.GetSpellName(spellId);
+			if spellName then
+				local buffInfo = Buffalo.spells.active[spellName];
+				if buffInfo then
+					--	Key is castGUID
+					--	Values are { targetName, spellName }
+					CastCache[castGUID] = { spellName = spellName, targetName = targetName };
+				end;
+			end;
+		end;
+				
 	elseif(event == "UNIT_SPELLCAST_SUCCEEDED") then
-		local caster, _, spellId = ...;
+		--	[16:36:09] UNIT_SPELLCAST_SUCCEEDED player Cast-3-6782-0-1660-1244-0004C5075A 1244 nil
+		local caster, castGUID, spellId = ...;
 
 		if caster == "player" then
-			local buffName = Buffalo.API.GetSpellName(spellId);
-			if buffName and buffName == Buffalo.vars.LastBuffFired then
-				Buffalo.vars.LastBuffFired = nil;
-				if Buffalo.config.value.AnnounceCompletedBuff and not Buffalo.API.UnitAffectingCombat("player") then
-					local unitid = BuffButton:GetAttribute("unit");
-					if unitid then
-						Buffalo.lib:echo(string.format("%s was buffed with %s.", Buffalo:getPlayerAndRealm(unitid) or "nil", buffName));
-					end;
+			if Buffalo.config.value.AnnounceCompletedBuff then
+				local castInfo = CastCache[castGUID];
+				if castInfo and not Buffalo.API.InCombatLockdown() then
+					Buffalo.lib:Echo(string.format("%s was buffed with %s.", castInfo.targetName, castInfo.spellName));
 				end;
 			end;
 		end;
@@ -2611,21 +2607,20 @@ function Buffalo_onLoad()
 		--	Warriors etc are not supported (no spells to buff), so we make sure Initialization is not performed!
 		BuffButton:Hide();
 		Buffalo.vars.InitializationRetryTimer = 86400;
-		Buffalo.lib:echo('Addon will go to sleep (Unsupported class)');
+		Buffalo.lib:Echo('Addon will go to sleep (Unsupported class)');
 		return;
 	end;
 
-	Buffalo.Version = Buffalo.lib:calculateVersion();
+	Buffalo.Version = Buffalo.lib:CalculateVersion();
 
-	Buffalo.lib:echo(string.format("Type %s/buffalo%s to configure the addon.", Buffalo.lib.chatColorHot, Buffalo.lib.chatColorNormal));
+	Buffalo.lib:Echo(string.format("Type %s/buffalo%s to configure the addon.", Buffalo.lib.chatColorHot, Buffalo.lib.chatColorNormal));
 
 	_G["BuffaloVersionString"]:SetText(string.format("Buffalo version %s by %s", Buffalo.lib.addonVersion, Buffalo.lib.addonAuthor));
 
     BuffaloEventFrame:RegisterEvent("ADDON_LOADED");
     BuffaloEventFrame:RegisterEvent("CHAT_MSG_ADDON");
     BuffaloEventFrame:RegisterEvent("GROUP_ROSTER_UPDATE");
-    BuffaloEventFrame:RegisterEvent("UNIT_SPELLCAST_STOP");
-    BuffaloEventFrame:RegisterEvent("UNIT_SPELLCAST_FAILED");
+    BuffaloEventFrame:RegisterEvent("UNIT_SPELLCAST_SENT");
     BuffaloEventFrame:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED");
     BuffaloEventFrame:RegisterEvent("PLAYER_TALENT_UPDATE");
 
@@ -2641,14 +2636,13 @@ function Buffalo_onLoad()
 end
 
 function Buffalo_onTimer(elapsed)
-	Buffalo.vars.TimerTick = Buffalo.vars.TimerTick + elapsed
-
-	if Buffalo.vars.TimerTick > (Buffalo.vars.NextScanTime + Buffalo.config.value.ScanFrequency) then
+	local currentTime = Buffalo.API.GetTime();
+	if currentTime > Buffalo.vars.NextScanTime then
 		Buffalo:scanRaid();
-		Buffalo.vars.NextScanTime = Buffalo.vars.TimerTick;
+		Buffalo.vars.NextScanTime = currentTime + Buffalo.config.value.ScanFrequency;
 	end;
 
-	if not Buffalo.vars.InitializationComplete and Buffalo.vars.TimerTick > Buffalo.vars.InitializationRetryTimer then
+	if not Buffalo.vars.InitializationComplete and currentTime > Buffalo.vars.InitializationRetryTimer then
 		Buffalo:mainInitialization(true);
 	end;
 

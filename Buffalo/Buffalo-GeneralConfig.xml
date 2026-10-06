@@ -36,7 +36,7 @@
 				</Scripts>
 			</Slider>
 			<!-- Renew overlap period -->
-			<Slider name="BuffaloConfigFrameRenewOverlap" minValue="0" maxValue="120" defaultValue="10" valueStep="10" inherits="UISliderTemplate, BackdropTemplate" enableMouse="true">
+			<Slider name="BuffaloConfigFrameRenewOverlap" minValue="0" maxValue="600" defaultValue="10" valueStep="10" inherits="UISliderTemplate, BackdropTemplate" enableMouse="true">
 				<Size x="360" y="20" />
 				<Anchors>
 					<Anchor point="TOPLEFT" x="0" y="-80" relativeTo="$parentOptions"/>
@@ -178,7 +178,7 @@
 					</Anchors>
 					<Color r="0.8" g="0.8" b="0.8" a="1.0"/>
 				</FontString>
-				<FontString name="$parentRenewOverlapCaptionHigh" inherits="GameFontNormal" text="2 minutes">
+				<FontString name="$parentRenewOverlapCaptionHigh" inherits="GameFontNormal" text="10 minutes">
 					<Anchors>
 						<Anchor point="RIGHT" x="0" y="-20" relativeTo="BuffaloConfigFrameRenewOverlap"/>
 					</Anchors>

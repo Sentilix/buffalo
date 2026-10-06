@@ -16,7 +16,7 @@ local addonMetadata = {
 	["NORMALCHATCOLOR"]	= "E0C020",
 	["HOTCHATCOLOR"]	= "F8F8F8",
 };
-local A = DigamAddonLib:new(addonMetadata);
+local A = DigamAddonLib:New(addonMetadata);
 
 Buffalo.lib = A;
 Buffalo.API = A.API;
@@ -47,7 +47,6 @@ Buffalo.vars.TimerTick							= 0
 Buffalo.vars.NextScanTime						= 0;
 Buffalo.vars.LastBuffTarget						= "";
 Buffalo.vars.LastBuffStatus						= "";
-Buffalo.vars.LastBuffFired						= nil;
 Buffalo.vars.SyncClass							= nil;
 Buffalo.vars.SyncBuff							= nil;
 Buffalo.vars.SyncGroup							= nil;
@@ -66,36 +65,36 @@ Buffalo["spellnames"] = {
 		["FindMinerals"]				= Buffalo.API.GetSpellName(2580),
 	},
 	["druid"] = {
-		["MarkOfTheWild"]				= Buffalo.API.GetSpellName(9885),
-		["GiftOfTheWild"]				= Buffalo.API.GetSpellName(21850),
-		["Thorns"]						= Buffalo.API.GetSpellName(9910),
+		["MarkOfTheWild"]				= Buffalo.API.GetSpellName(1126),
+		["GiftOfTheWild"]				= Buffalo.API.GetSpellName(21849),
+		["Thorns"]						= Buffalo.API.GetSpellName(467),
 		["OmenOfClarity"]				= Buffalo.API.GetSpellName(16864),
 	},
 	["mage"] = {
-		["ArcaneIntellect"]				= Buffalo.API.GetSpellName(10157),
+		["ArcaneIntellect"]				= Buffalo.API.GetSpellName(1459),
 		["ArcaneBrilliance"]			= Buffalo.API.GetSpellName(23028),
-		["AmplifyMagic"]				= Buffalo.API.GetSpellName(10170),
-		["DampenMagic"]					= Buffalo.API.GetSpellName(10174),
-		["MageArmor"]					= Buffalo.API.GetSpellName(22783),
-		["FrostArmor"]					= Buffalo.API.GetSpellName(7301),
-		["IceArmor"]					= Buffalo.API.GetSpellName(10220),
-		["MoltenArmor"]					= Buffalo.API.GetSpellName(30482),
-		["IceBarrier"]					= Buffalo.API.GetSpellName(13033),
+		["AmplifyMagic"]				= Buffalo.API.GetSpellName(1008),
+		["DampenMagic"]					= Buffalo.API.GetSpellName(604),
+		["MageArmor"]					= Buffalo.API.GetSpellName(22782),
+		["FrostArmor"]					= Buffalo.API.GetSpellName(168),
+		["IceArmor"]					= Buffalo.API.GetSpellName(7302),
+		["MoltenArmor"]					= Buffalo.API.GetSpellName(30482),	-- TBC/Anniversary
+		["IceBarrier"]					= Buffalo.API.GetSpellName(11426),
 	},
 	["priest"] = {
-		["PowerWordFortitude"]			= Buffalo.API.GetSpellName(10938),
-		["PrayerOfFortitude"]			= Buffalo.API.GetSpellName(21564),
-		["DivineSpirit"]				= Buffalo.API.GetSpellName(27841),
+		["PowerWordFortitude"]			= Buffalo.API.GetSpellName(1243),
+		["PrayerOfFortitude"]			= Buffalo.API.GetSpellName(21562),
+		["DivineSpirit"]				= Buffalo.API.GetSpellName(14752),
 		["PrayerOfSpirit"]				= Buffalo.API.GetSpellName(27681),
-		["ShadowProtection"]			= Buffalo.API.GetSpellName(10958),
+		["ShadowProtection"]			= Buffalo.API.GetSpellName(976),
 		["PrayerOfShadowProtection"]	= Buffalo.API.GetSpellName(27683),
-		["InnerFire"]					= Buffalo.API.GetSpellName(10952),
+		["InnerFire"]					= Buffalo.API.GetSpellName(588),
 		["ShadowForm"]					= Buffalo.API.GetSpellName(15473),
 	},
 	["warlock"] = {
-		["DemonSkin"]					= Buffalo.API.GetSpellName(696),
-		["DemonArmor"]					= Buffalo.API.GetSpellName(11735),
-		["FireShield"]					= Buffalo.API.GetSpellName(11771),
+		["DemonSkin"]					= Buffalo.API.GetSpellName(687),
+		["DemonArmor"]					= Buffalo.API.GetSpellName(706),
+		["FireShield"]					= Buffalo.API.GetSpellName(2947),
 		["UnendingBreath"]				= Buffalo.API.GetSpellName(5697),
 		["DetectLesserInvisibility"]	= Buffalo.API.GetSpellName(132),
 		["DetectInvisibility"]			= Buffalo.API.GetSpellName(2970),
@@ -133,14 +132,12 @@ Buffalo["classes"] = {
 			[Buffalo.spellnames.druid.MarkOfTheWild] = {
 				["Bitmask"]		= 0x000001,
 				["Classmask"]	= Buffalo.classmasks.ALL,
-				["MaxSpellId"]	= 9885,
 				["Priority"]	= 52,
 				["Parent"]		= Buffalo.spellnames.druid.GiftOfTheWild
 			},
 			[Buffalo.spellnames.druid.GiftOfTheWild] = {
 				["Bitmask"]		= 0x000001,
 				["Classmask"]	= Buffalo.classmasks.ALL,
-				["MaxSpellId"]	= 21850,
 				["Priority"]	= 52,
 				["Group"]		= true,
 				["Single"]		= Buffalo.spellnames.druid.MarkOfTheWild
@@ -148,13 +145,11 @@ Buffalo["classes"] = {
 			[Buffalo.spellnames.druid.Thorns] = {
 				["Bitmask"]		= 0x000002,
 				["Classmask"]	= Buffalo.classmasks.Warrior + Buffalo.classmasks.Druid,
-				["MaxSpellId"]	= 9910,
 				["Priority"]	= 51,
 			},
 			[Buffalo.spellnames.druid.OmenOfClarity] = {
 				["Bitmask"]		= 0x000100,
 				["Classmask"]	= Buffalo.classmasks.Druid,
-				["MaxSpellId"]	= 16864,
 				["Priority"]	= 53,
 			},
 		},
@@ -172,14 +167,12 @@ Buffalo["classes"] = {
 			[Buffalo.spellnames.mage.ArcaneIntellect] = {
 				["Bitmask"]		= 0x000001,
 				["Classmask"]	= Buffalo.classmasks.MANAUSERS,
-				["MaxSpellId"]	= 10157,
 				["Priority"]	= 53,
 				["Parent"]		= Buffalo.spellnames.mage.ArcaneBrilliance
 			},
 			[Buffalo.spellnames.mage.ArcaneBrilliance] = {
 				["Bitmask"]		= 0x000001,
 				["Classmask"]	= Buffalo.classmasks.MANAUSERS,
-				["MaxSpellId"]	= 23028,
 				["Priority"]	= 53,
 				["Group"]		= true,
 				["Single"]		= Buffalo.spellnames.mage.ArcaneIntellect
@@ -187,28 +180,24 @@ Buffalo["classes"] = {
 			[Buffalo.spellnames.mage.AmplifyMagic] = {
 				["Bitmask"]		= 0x000002,
 				["Classmask"]	= Buffalo.classmasks.ALL,
-				["MaxSpellId"]	= 10170,
 				["Priority"]	= 52,
 				["Family"]		= "AmplifyDampen"
 			},
 			[Buffalo.spellnames.mage.DampenMagic] = {
 				["Bitmask"]		= 0x000004,
 				["Classmask"]	= Buffalo.classmasks.ALL,
-				["MaxSpellId"]	= 10174,
 				["Priority"]	= 51,
 				["Family"]		= "AmplifyDampen"
 			},
 			[Buffalo.spellnames.mage.MageArmor] = {
 				["Bitmask"]		= 0x000100,
 				["Classmask"]	= Buffalo.classmasks.Mage,
-				["MaxSpellId"]	= 22783,
 				["Priority"]	= 13,
 				["Family"]		= "Armor"
 			},
 			[Buffalo.spellnames.mage.FrostArmor] = {
 				["Bitmask"]		= 0x000200,
 				["Classmask"]	= Buffalo.classmasks.Mage,
-				["MaxSpellId"]	= 7301,		--	12544,
 				["Priority"]	= 12,
 				["ReplacedBy"]	= Buffalo.spellnames.mage.IceArmor,
 				["Family"]		= "Armor"
@@ -216,7 +205,6 @@ Buffalo["classes"] = {
 			[Buffalo.spellnames.mage.IceArmor] = {
 				["Bitmask"]		= 0x000200,
 				["Classmask"]	= Buffalo.classmasks.Mage,
-				["MaxSpellId"]	= 10220,
 				["Priority"]	= 12,
 				["Replacing"]	= Buffalo.spellnames.mage.FrostArmor,
 				["Family"]		= "Armor"				
@@ -225,7 +213,6 @@ Buffalo["classes"] = {
 				["Bitmask"]		= 0x000400,
 				["Cooldown"]	= 30,
 				["Classmask"]	= Buffalo.classmasks.Mage,
-				["MaxSpellId"]	= 13033,
 				["Priority"]	= 10,
 			},
 			--	TBC: 0x000800	Buffalo.spellnames.mage.MoltenArmor
@@ -246,14 +233,12 @@ Buffalo["classes"] = {
 			[Buffalo.spellnames.priest.PowerWordFortitude] = {
 				["Bitmask"]		= 0x000001, 
 				["Classmask"]	= Buffalo.classmasks.ALL,
-				["MaxSpellId"]	= 10938,
 				["Priority"]	= 53, 
 				["Parent"]		= Buffalo.spellnames.priest.PrayerOfFortitude 
 			},
 			[Buffalo.spellnames.priest.PrayerOfFortitude] = {
 				["Bitmask"]		= 0x000001, 
 				["Classmask"]	= Buffalo.classmasks.ALL,
-				["MaxSpellId"]	= 21564,
 				["Priority"]	= 53, 
 				["Group"]		= true,
 				["Single"]		= Buffalo.spellnames.priest.PowerWordFortitude
@@ -261,14 +246,12 @@ Buffalo["classes"] = {
 			[Buffalo.spellnames.priest.DivineSpirit] = {
 				["Bitmask"]		= 0x000002, 
 				["Classmask"]	= Buffalo.classmasks.MANAUSERS,
-				["MaxSpellId"]	= 27841,
 				["Priority"]	= 52, 
 				["Parent"]		= Buffalo.spellnames.priest.PrayerOfSpirit
 			},
 			[Buffalo.spellnames.priest.PrayerOfSpirit] = {
 				["Bitmask"]		= 0x000002, 
 				["Classmask"]	= Buffalo.classmasks.MANAUSERS,
-				["MaxSpellId"]	= 27681,
 				["Priority"]	= 52,
 				["Group"]		= true,
 				["Single"]		= Buffalo.spellnames.priest.DivineSpirit
@@ -276,14 +259,12 @@ Buffalo["classes"] = {
 			[Buffalo.spellnames.priest.ShadowProtection] = {
 				["Bitmask"]		= 0x000004,
 				["Classmask"]	= Buffalo.classmasks.ALL,
-				["MaxSpellId"]	= 10958,
 				["Priority"]	= 51,
 				["Parent"]		= Buffalo.spellnames.priest.PrayerOfShadowProtection 
 			},
 			[Buffalo.spellnames.priest.PrayerOfShadowProtection] = {
 				["Bitmask"]		= 0x000004, 
 				["Classmask"]	= Buffalo.classmasks.ALL,
-				["MaxSpellId"]	= 27683,
 				["Priority"]	= 51, 
 				["Group"]		= true,
 				["Single"]		= Buffalo.spellnames.priest.ShadowProtection
@@ -291,13 +272,11 @@ Buffalo["classes"] = {
 			[Buffalo.spellnames.priest.ShadowForm] = {
 				["Bitmask"]		= 0x000200, 
 				["Classmask"]	= Buffalo.classmasks.Priest,
-				["MaxSpellId"]	= 15473,
 				["Priority"]	= 11, 
 			},
 			[Buffalo.spellnames.priest.InnerFire] = {
 				["Bitmask"]		= 0x000100, 
 				["Classmask"]	= Buffalo.classmasks.Priest,
-				["MaxSpellId"]	= 10952,
 				["Priority"]	= 12, 
 			};
 		},
@@ -322,14 +301,12 @@ Buffalo["classes"] = {
 			[Buffalo.spellnames.warlock.DetectLesserInvisibility] = { 
 				["Bitmask"]		= 0x000001,
 				["Classmask"]	= Buffalo.classmasks.ALL,
-				["MaxSpellId"]	= 132,
 				["Priority"]	= 21,
 				["ReplacedBy"]	= Buffalo.spellnames.warlock.DetectInvisibility,
 			},
 			[Buffalo.spellnames.warlock.DetectInvisibility or '_DetectInvisibility'] = { 
 				["Bitmask"]		= 0x000001,
 				["Classmask"]	= Buffalo.classmasks.ALL,
-				["MaxSpellId"]	= 2970,
 				["Priority"]	= 21,
 				["Replacing"]	= Buffalo.spellnames.warlock.DetectLesserInvisibility,
 				["ReplacedBy"]	= Buffalo.spellnames.warlock.DetectGreaterInvisibility,
@@ -337,35 +314,30 @@ Buffalo["classes"] = {
 			[Buffalo.spellnames.warlock.DetectGreaterInvisibility or '_DetectGreaterInvisibility'] = { 
 				["Bitmask"]		= 0x000001,
 				["Classmask"]	= Buffalo.classmasks.ALL,
-				["MaxSpellId"]	= 11743,
 				["Priority"]	= 21,
 				["Replacing"]	= Buffalo.spellnames.warlock.DetectInvisibility,
 			},
 			[Buffalo.spellnames.warlock.UnendingBreath] = { 
 				["Bitmask"]		= 0x000002,
 				["Classmask"]	= Buffalo.classmasks.ALL,
-				["MaxSpellId"]	= 5697,
 				["Priority"]	= 22,
 				["IgnoreRangeCheck"] = true,
 			},
 			[Buffalo.spellnames.warlock.FireShield] = { 
 				["Bitmask"]		= 0x000004,
 				["Classmask"]	= Buffalo.classmasks.ALL,
-				["MaxSpellId"]	= 11771,
 				["Priority"]	= 23,
 				["IgnoreRangeCheck"] = true,
 			},
 			[Buffalo.spellnames.warlock.DemonSkin]	= {
 				["Bitmask"]		= 0x000100,
 				["Classmask"]	= Buffalo.classmasks.Warlock,
-				["MaxSpellId"]	= 696,
 				["Priority"]	= 11,
 				["ReplacedBy"]	= Buffalo.spellnames.warlock.DemonArmor,
 			},
 			[Buffalo.spellnames.warlock.DemonArmor]	= { 
 				["Bitmask"]		= 0x000100,
 				["Classmask"]	= Buffalo.classmasks.Warlock,
-				["MaxSpellId"]	= 11735,
 				["Priority"]	= 11,
 				["Replacing"]	= Buffalo.spellnames.warlock.DemonSkin,
 			},
@@ -373,28 +345,24 @@ Buffalo["classes"] = {
 			[Buffalo.spellnames.warlock.Imp] = { 
 				["Bitmask"]		= 0x000400,
 				["Classmask"]	= Buffalo.classmasks.Warlock,
-				["MaxSpellId"]	= 688,
 				["Priority"]	= 39,
 				["Family"]		= "Demon",
 			},
 			[Buffalo.spellnames.warlock.Voidwalker] = { 
 				["Bitmask"]		= 0x000800,
 				["Classmask"]	= Buffalo.classmasks.Warlock,
-				["MaxSpellId"]	= 697,
 				["Priority"]	= 38,
 				["Family"]		= "Demon",
 			},
 			[Buffalo.spellnames.warlock.Felhunter] = { 
 				["Bitmask"]		= 0x001000,
 				["Classmask"]	= Buffalo.classmasks.Warlock,
-				["MaxSpellId"]	= 691,
 				["Priority"]	= 37,
 				["Family"]		= "Demon",
 			},
 			[Buffalo.spellnames.warlock.Succubus] = { 
 				["Bitmask"]		= 0x002000,
 				["Classmask"]	= Buffalo.classmasks.Warlock,
-				["MaxSpellId"]	= 712,
 				["Priority"]	= 36,
 				["Family"]		= "Demon",
 				["Succubus"]	= true,
@@ -402,7 +370,6 @@ Buffalo["classes"] = {
 			[Buffalo.spellnames.warlock.Incubus] = { 
 				["Bitmask"]		= 0x002000,
 				["Classmask"]	= Buffalo.classmasks.Warlock,
-				["MaxSpellId"]	= 713,
 				["Priority"]	= 36,
 				["Family"]		= "Demon",
 				["Incubus"]		= true,
@@ -426,13 +393,11 @@ Buffalo["classes"] = {
 			[Buffalo.spellnames.shared.FindHerbs]	= {
 				["Bitmask"]		= 0x04000,
 				["Classmask"]	= Buffalo.classmasks.ALL,
-				["MaxSpellId"]	= 2383,
 				["Priority"]	= 10,
 			},
 			[Buffalo.spellnames.shared.FindMinerals] = {
 				["Bitmask"]		= 0x08000,
 				["Classmask"]	= Buffalo.classmasks.ALL,
-				["MaxSpellId"]	= 2580,
 				["Priority"]	= 10,
 			},	
 		},
@@ -451,7 +416,6 @@ if Buffalo.lib.addonExpansionLevel == 2 then
 	Buffalo.classes.MAGE.spells[Buffalo.spellnames.mage.MoltenArmor] = {
 		["Bitmask"]		= 0x000800,
 		["Classmask"]	= Buffalo.classmasks.Mage,
-		["MaxSpellId"]	= 30482,
 		["Priority"]	= 11,
 		["Family"]		= "Armor",
 	}
@@ -459,14 +423,12 @@ if Buffalo.lib.addonExpansionLevel == 2 then
 	Buffalo.classes.WARLOCK.spells[Buffalo.spellnames.warlock.Felguard] = {
 		["Bitmask"]		= 0x004000,
 		["Classmask"]	= Buffalo.classmasks.Warlock,
-		["MaxSpellId"]	= 30146,
 		["Priority"]	= 35,
 		["Family"]		= "Demon",
 	}
 	Buffalo.classes.WARLOCK.spells[Buffalo.spellnames.warlock.Inferno] = {
 		["Bitmask"]		= 0x008000,
 		["Classmask"]	= Buffalo.classmasks.Warlock,
-		["MaxSpellId"]	= 34249,
 		["Priority"]	= 34,
 		["Family"]		= "Demon",
 	}
@@ -476,13 +438,11 @@ if Buffalo.lib.addonExpansionLevel == 2 then
 	Buffalo.classes.WARLOCK.spells[Buffalo.spellnames.warlock.FelArmor] = {
 		["Bitmask"]		= 0x000100,
 		["Classmask"]	= Buffalo.classmasks.Warlock,
-		["MaxSpellId"]	= 28189,
 		["Priority"]	= 11,
 		["Replacing"]	= Buffalo.spellnames.warlock.DemonSkin,
 	}
 
 	Buffalo.classes.WARLOCK.spells[Buffalo.spellnames.warlock.DetectLesserInvisibility].ReplacedBy = nil;
-	Buffalo.classes.WARLOCK.spells[Buffalo.spellnames.warlock.DetectLesserInvisibility].MaxSpellId = 132;
 end;
 
 --	Added in Forever:
@@ -494,7 +454,6 @@ if Buffalo.lib.addonExpansionLevel == 60 then
 	Buffalo.classes.MAGE.spells[Buffalo.spellnames.mage.MoltenArmor] = {
 		["Bitmask"]		= 0x000800,
 		["Classmask"]	= Buffalo.classmasks.Mage,
-		["MaxSpellId"]	= 429307,
 		["Priority"]	= 11,
 		["Family"]		= "Armor",
 	}
@@ -502,7 +461,6 @@ if Buffalo.lib.addonExpansionLevel == 60 then
 	Buffalo.classes.WARLOCK.spells[Buffalo.spellnames.warlock.Inferno] = {
 		["Bitmask"]		= 0x008000,
 		["Classmask"]	= Buffalo.classmasks.Warlock,
-		["MaxSpellId"]	= 5740,
 		["Priority"]	= 34,
 		["Family"]		= "Demon",
 	}
@@ -524,6 +482,56 @@ function Buffalo:updateSpellMatrixByClass(classname)
 		return;
 	end;
 
+	for spellName, spellInfo in pairs(classInfo.spells) do
+		spellInfo.Enabled = false;
+		spellInfo.Learned = false;
+		spellInfo.IconID = 0;
+		spellInfo.SpellID = 0;
+
+		local name, _, iconId, _, _, _, spellId = Buffalo.API.GetSpellInfo(spellName);
+		if name then
+			spellInfo.Enabled = true;
+			spellInfo.Learned = true;
+			spellInfo.IconID = iconId or 0;
+			spellInfo.SpellID = spellId;
+	
+			--	Disable this spell if there is a better active spell:
+			if spellInfo.ReplacedBy then
+				--	There is a better spell - and it is enabled:
+				if classInfo.spells[spellInfo.ReplacedBy] and classInfo.spells[spellInfo.ReplacedBy].Learned then
+					spellInfo.Enabled = false;
+					spellInfo.Learned = false;
+				end;
+			end;
+
+			--	Disable lower tier spell if this spell if active:
+			if spellInfo.Replacing then
+				classInfo.spells[spellInfo.Replacing].Enabled = false;
+				classInfo.spells[spellInfo.Replacing].Learned = false;
+			end;
+
+			--	Handle Succubus / Incubus configuration:
+			if spellInfo.Succubus then
+				if Buffalo.config.value.UseIncubus then
+					bitMask = 0x000000;
+					spellInfo.Enabled = false;
+					spellInfo.Learned = false;
+				else
+					bitMask = 0x002000;
+				end;			
+			elseif spellInfo.Incubus then
+				if Buffalo.config.value.UseIncubus then
+					bitMask = 0x002000;
+				else
+					bitMask = 0x000000;
+					spellInfo.Enabled = false;
+					spellInfo.Learned = false;
+				end;
+			end;
+		end
+	end;
+
+--[[
 	--	Loop 1: Make sure to disable all spells.
 	--	This ensures dependencies will be handled correct regardless of what order they appear.
 	for spellName, spellInfo in pairs(classInfo.spells) do
@@ -537,7 +545,7 @@ function Buffalo:updateSpellMatrixByClass(classname)
 		local learned = nil;
 		local spellId = nil;
 
-		local name, _, iconId, _, _, _, maxSpellId = Buffalo.API.GetSpellInfo(spellInfo.MaxSpellId);
+		local name, _, iconId, _, _, _, maxSpellId = Buffalo.API.GetSpellInfo(spellInfo.spellIsEnabled);
 		if name then
 			local spellId = Buffalo.API.GetSpellIDForSpellIdentifier(spellName);
 			if spellId ~= nil then
@@ -584,7 +592,7 @@ function Buffalo:updateSpellMatrixByClass(classname)
 		spellInfo.IconID = iconId or 0;
 		spellInfo.SpellID = spellId;
 	end;
-
+--]]
 --	Buffalo.lib:printAll(classInfo);
 --	print(string.format('*** Initializing, player=%s', Buffalo.vars.PlayerClass));
 end;
