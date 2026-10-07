@@ -2549,7 +2549,19 @@ function Buffalo_onEvent(self, event, ...)
 		--	[16:20:17] UNIT_SPELLCAST_SENT player Taylor Heal Cast-3-6782-0-1660-1244-0005C503A2 1244		
 		local caster, targetName, castGUID, spellId = ...;
 
-		targetName = targetName or Buffalo.lib:GetFullName();
+		if Buffalo.API.InCombatLockdown() then return; end;
+
+		local safeTargetName = "Unknown"
+		local success = pcall(function()
+			if targetName and targetName ~= "" then
+				safeTargetName = targetName
+			else
+				safeTargetName = Buffalo.lib:GetFullName() or "Unknown"
+			end
+		end)
+
+		-- Use the safe string for the remaining logic
+		targetName = safeTargetName
 
 		if caster == "player" and targetName ~= "Unknown" then
 			local spellName = Buffalo.API.GetSpellName(spellId);
