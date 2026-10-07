@@ -287,7 +287,7 @@ function Buffalo:handleAddonMessage(msg, sender)
 	local _, _, cmd, message, recipient = string.find(msg, "([^#]*)#([^#]*)#([^#]*)");	
 
 	--	Ignore messages sent from myself, unless it is a Version check (*sigh*)
-	if sender == Buffalo.vars.PlayerNameAndRealm then
+	if sender == Buffalo.lib.localPlayerName then
 		if cmd ~= "TX_VERSION" and cmd ~= "RX_VERSION" then
 			return;
 		end;
@@ -297,14 +297,14 @@ function Buffalo:handleAddonMessage(msg, sender)
 	--	Receipient can be blank, which means it is for everyone.
 	if recipient ~= "" then
 		--	Buffalo-specific: Recipient can also be a classname.
-		if recipient == Buffalo.vars.PlayerClass then
+		if recipient == Buffalo.lib.localPlayerClass then
 			--	This is for me (a class-specific message);
 		else
 			--	Check if this is for me - if not, skip!
 			-- Recipient comes with realmname, so we need to compare with realmname too:
 			recipient = Buffalo:getPlayerAndRealmFromName(recipient);
 
-			if recipient ~= Buffalo.vars.PlayerNameAndRealm then
+			if recipient ~= Buffalo.lib.localPlayerName then
 				return
 			end
 		end;
@@ -846,8 +846,6 @@ function Buffalo:scanRaid()
 	--	Part 2:
 	--	This iterate over all players in party/raid and set the bitmapped buff mask on each
 	--	applicable (i.e. not dead, not disconnected) player.
-	local binValue;	
-	local printedBuffExpirationUnknown = false;
 	local timeOverlap = Buffalo.config.value.RenewOverlap;
 
 	for unitid, rosterInfo in next, roster do
@@ -1137,7 +1135,7 @@ function Buffalo:scanRaid()
 
 		local buffName = missingBuff.name;
 		if Buffalo.config.value.AnnounceMissingBuff then
-			local targetPlayer = Buffalo:getPlayerAndRealm(unitid);
+			local targetPlayer = Buffalo.lib:GetFullName(unitid);
 			local targetStatus = "MISSING";
 			local expirationTime = missingBuff.expTime;
 
@@ -1190,7 +1188,7 @@ function Buffalo:getUnitRosterEntry(unitid, group, isOnline, isDead)
 			return { ["Group"]=group, ["IsOnline"]=isOnline, ["IsDead"]=isDead, ["BuffMask"]=0, ["Class"]=classname, ["ClassMask"]=Buffalo.classes[classname].Mask };
 		end;
 	elseif unitid == "player" and group == 1 then
-		return { ["Group"]=1, ["IsOnline"]=true, ["IsDead"]=nil, ["BuffMask"]=0, ["Class"]=Buffalo.vars.PlayerClass, ["ClassMask"]=Buffalo.classmasks.ALL };
+		return { ["Group"]=1, ["IsOnline"]=true, ["IsDead"]=nil, ["BuffMask"]=0, ["Class"]=Buffalo.lib.localPlayerClass, ["ClassMask"]=Buffalo.classmasks.ALL };
 	else
 		local isOnline = 0 and self.API.UnitIsConnected(unitid) and 1;
 		local isDead   = 0 and self.API.UnitIsDeadOrGhost(unitid) and 1;
@@ -1307,6 +1305,10 @@ function Buffalo:updateBuffButton(unitid, spellname, textureId)
 		BuffButton:SetAttribute("spell", nil);
 		BuffButton:SetAttribute("unit", nil);
 	end;
+end;
+
+function Buffalo_onBeforeBuffClick(self, ...)
+	Buffalo.vars.LastBuffFired = BuffButton:GetAttribute("spell");
 end;
 
 function Buffalo_onAfterBuffClick(self, ...)
@@ -1665,7 +1667,7 @@ function Buffalo_onRaidModeClick(sender)
 		if raidmode == Buffalo.raidmodes.Personal then
 			Buffalo.vars.RaidModeLockedBy = "";
 		else
-			Buffalo.vars.RaidModeLockedBy = Buffalo.vars.PlayerNameAndRealm;
+			Buffalo.vars.RaidModeLockedBy = Buffalo.lib.localPlayerName;
 		end;
 
 		Buffalo:setRaidMode(raidmode, true);
@@ -1681,7 +1683,7 @@ function Buffalo:setRaidMode(raidmode, AnnounceRaidModeChange)
 	Buffalo.vars.CurrentRaidMode = tonumber(raidmode);
 
 	if AnnounceRaidModeChange then
-		lib:SendAddonMessage(string.format("TX_RAIDMODE#%s#%s", raidmode, Buffalo.vars.PlayerClass));
+		lib:SendAddonMessage(string.format("TX_RAIDMODE#%s#%s", raidmode, Buffalo.lib.localPlayerClass));
 	end;
 
 	Buffalo:updateGroupBuffUI();
@@ -1697,7 +1699,7 @@ function Buffalo:handleTXRaidMode(message, sender)
 		Buffalo.vars.RaidModeLockedBy = sender;
 	end;
 
-	if sender == Buffalo.vars.PlayerNameAndRealm then
+	if sender == Buffalo.lib.localPlayerName then
 		-- If sender is myself, no need to refresh or update again	
 		return;
 	end;
@@ -1772,7 +1774,7 @@ function Buffalo:requestRaidModeUpdate()
 		Buffalo.vars.RaidModeQueryDone = false;
 		Buffalo:resetRaidAssignments();
 
-		Buffalo.lib:SendAddonMessage(string.format("TX_QRYRAIDMODE##%s", Buffalo.vars.PlayerClass));
+		Buffalo.lib:SendAddonMessage(string.format("TX_QRYRAIDMODE##%s", Buffalo.lib.localPlayerClass));
 	end;
 end;
 
@@ -1843,7 +1845,7 @@ function Buffalo:onBuffGroupClick(sender)
 
 	if not buffIndex or not groupIndex then return; end;
 
-	Buffalo.vars.SyncClass = Buffalo.vars.PlayerClass;	-- Only support current class (raid mode 1+2)
+	Buffalo.vars.SyncClass = Buffalo.lib.localPlayerClass;	-- Only support current class (raid mode 1+2)
 	Buffalo.vars.SyncBuff = tonumber(buffIndex);
 	Buffalo.vars.SyncGroup = tonumber(groupIndex);
 
@@ -1863,7 +1865,7 @@ function Buffalo:updateAssignedRaidGroups()
 	
 		for buffIndex = 1, #Buffalo.vars.OrderedBuffGroups, 1 do
 			local buffInfo = Buffalo.config.value.SynchronizedBuffs[buffIndex][groupIndex];	-- Assignment for a specific row + group
-			if buffInfo["PLAYER"] == Buffalo.vars.PlayerNameAndRealm then
+			if buffInfo["PLAYER"] == Buffalo.lib.localPlayerName then
 				groupMask = bit.bor(groupMask, buffInfo["BITMASK"]);
 			end;
 		end;
@@ -1907,7 +1909,7 @@ function Buffalo:BuffGroupDropdownMenu_OnClick(sender, playerInfo)
 
 	--	Send a message to clients of same class that buff assignments was updated.
 	local payload = string.format("%s/%s/%s", Buffalo.vars.SyncBuff, Buffalo.vars.SyncGroup, syncBuff["PLAYER"] or "");
-	Buffalo.lib:SendAddonMessage(string.format("TX_RDUPDATE#%s#%s", payload, Buffalo.vars.PlayerClass));
+	Buffalo.lib:SendAddonMessage(string.format("TX_RDUPDATE#%s#%s", payload, Buffalo.lib.localPlayerClass));
 
 	Buffalo:updateGroupBuffUI();
 end;
@@ -2022,7 +2024,7 @@ function Buffalo:updateGroupBuffUI()
 			backdrops["PRIEST"] = Buffalo.ui.backdrops.ShadowPriestFrame;
 		end;
 
-		BuffaloConfigFrame:SetBackdrop(backdrops[Buffalo.vars.PlayerClass]);
+		BuffaloConfigFrame:SetBackdrop(backdrops[Buffalo.lib.localPlayerClass]);
 
 		BuffaloConfigFrameRaid:Hide();
 		frame = BuffaloConfigFramePersonal;
@@ -2460,7 +2462,7 @@ function Buffalo_handleCheckbox(checkbox)
 end;
 
 function Buffalo:updateDemon()
-	if Buffalo.vars.PlayerClass ~= "WARLOCK" then
+	if Buffalo.lib.localPlayerClass ~= "WARLOCK" then
 		return; 
 	end;
 
@@ -2535,7 +2537,7 @@ function Buffalo_onEvent(self, event, ...)
 			Buffalo_repositionateButton(BuffButton);
 			Buffalo:hideBuffButton();
 		end
-
+		
 	elseif (event == "PLAYER_TALENT_UPDATE") then
 		Buffalo:onPlayerTalentUpdate(event, ...)
 
@@ -2545,77 +2547,27 @@ function Buffalo_onEvent(self, event, ...)
 	elseif (event == "GROUP_ROSTER_UPDATE") then
 		Buffalo:onGroupRosterUpdate(event, ...)
 
-	elseif(event == "UNIT_SPELLCAST_SENT") then
-		--	[16:20:17] UNIT_SPELLCAST_SENT player Taylor Heal Cast-3-6782-0-1660-1244-0005C503A2 1244		
-		local caster, targetName, castGUID, spellId = ...;
+	elseif (event == "UNIT_SPELLCAST_SUCCEEDED") then
+		local caster, _, spellId = ...;
 
-		if Buffalo.API.InCombatLockdown() then return; end;
-
-		local safeTargetName = "Unknown"
-		local success = pcall(function()
-			if targetName and targetName ~= "" then
-				safeTargetName = targetName
-			else
-				safeTargetName = Buffalo.lib:GetFullName() or "Unknown"
-			end
-		end)
-
-		-- Use the safe string for the remaining logic
-		targetName = safeTargetName
-
-		if caster == "player" and targetName ~= "Unknown" then
-			local spellName = Buffalo.API.GetSpellName(spellId);
-			if spellName then
-				local buffInfo = Buffalo.spells.active[spellName];
-				if buffInfo then
-					--	Key is castGUID
-					--	Values are { targetName, spellName }
-					CastCache[castGUID] = { spellName = spellName, targetName = targetName };
+		if caster == "player" and Buffalo.config.value.AnnounceCompletedBuff then
+			if spellId and spellId == Buffalo.vars.LastBuffFired then
+				if not Buffalo.API.InCombatLockdown() then
+					local unitId = BuffButton:GetAttribute("unit");
+					if unitId then
+						Buffalo.lib:Echo(string.format("%s was buffed with %s.", Buffalo.lib:GetFullName(unitId) or "nil", Buffalo.API.GetSpellName(spellId)));
+					end;
 				end;
+				Buffalo.vars.LastBuffFired = nil;
 			end;
-		end;
-				
-	elseif(event == "UNIT_SPELLCAST_SUCCEEDED") then
-		--	[16:36:09] UNIT_SPELLCAST_SUCCEEDED player Cast-3-6782-0-1660-1244-0004C5075A 1244 nil
-		local caster, castGUID, spellId = ...;
+		end;		
 
-		if caster == "player" then
-			if Buffalo.config.value.AnnounceCompletedBuff then
-				local castInfo = CastCache[castGUID];
-				if castInfo and not Buffalo.API.InCombatLockdown() then
-					Buffalo.lib:Echo(string.format("%s was buffed with %s.", castInfo.targetName, castInfo.spellName));
-				end;
-			end;
-		end;
-
-	else
-		if(debug) then 
-			echo("**DEBUG**: Other event: "..event);
-
-			local arg1, arg2, arg3, arg4 = ...;
-			if arg1 then
-				echo(string.format("**DEBUG**: arg1=%s", arg1));
-			end;
-			if arg2 then				
-				echo(string.format("**DEBUG**: arg2=%s", arg2));
-			end;
-			if arg3 then				
-				echo(string.format("**DEBUG**: arg3=%s", arg3));
-			end;
-			if arg4 then				
-				echo(string.format("**DEBUG**: arg4=%s", arg4));
-			end;
-		end;
 	end
 end
 
 function Buffalo_onLoad()
-	local _, classname = Buffalo.API.UnitClass("player");
 
-	Buffalo.vars.PlayerClass = classname;
-	Buffalo.vars.PlayerNameAndRealm = Buffalo:getPlayerAndRealm("player");
-
-	if not Buffalo.classes[classname] or not Buffalo.classes[classname].spells then
+	if not Buffalo.classes[Buffalo.lib.localPlayerClass] or not Buffalo.classes[Buffalo.lib.localPlayerClass].spells then
 		--	Warriors etc are not supported (no spells to buff), so we make sure Initialization is not performed!
 		BuffButton:Hide();
 		Buffalo.vars.InitializationRetryTimer = 86400;
@@ -2631,8 +2583,7 @@ function Buffalo_onLoad()
 
     BuffaloEventFrame:RegisterEvent("ADDON_LOADED");
     BuffaloEventFrame:RegisterEvent("CHAT_MSG_ADDON");
-    BuffaloEventFrame:RegisterEvent("GROUP_ROSTER_UPDATE");
-    BuffaloEventFrame:RegisterEvent("UNIT_SPELLCAST_SENT");
+    BuffaloEventFrame:RegisterEvent("GROUP_ROSTER_UPDATE");	
     BuffaloEventFrame:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED");
     BuffaloEventFrame:RegisterEvent("PLAYER_TALENT_UPDATE");
 

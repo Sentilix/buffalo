@@ -36,10 +36,6 @@ Buffalo.vars.RaidBuffFrameHeight				= 0;
 
 --	Internal variables
 Buffalo.vars.PlayerIsBuffClass					= false;
-Buffalo.vars.PlayerNameAndRealm					= "";
-Buffalo.vars.PlayerClass						= Buffalo.API.UnitClass("player");
-Buffalo.vars.PlayerFaction						= Buffalo.API.UnitFactionGroup("player");
-
 Buffalo.vars.InitializationComplete				= false;
 Buffalo.vars.InitializationRetryTimer			= 0;
 Buffalo.vars.UpdateMessageShown					= false;
@@ -47,6 +43,7 @@ Buffalo.vars.TimerTick							= 0
 Buffalo.vars.NextScanTime						= 0;
 Buffalo.vars.LastBuffTarget						= "";
 Buffalo.vars.LastBuffStatus						= "";
+Buffalo.vars.LastBuffFired						= nil;
 Buffalo.vars.SyncClass							= nil;
 Buffalo.vars.SyncBuff							= nil;
 Buffalo.vars.SyncGroup							= nil;
@@ -78,7 +75,7 @@ Buffalo["spellnames"] = {
 		["MageArmor"]					= Buffalo.API.GetSpellName(22782),
 		["FrostArmor"]					= Buffalo.API.GetSpellName(168),
 		["IceArmor"]					= Buffalo.API.GetSpellName(7302),
-		["MoltenArmor"]					= Buffalo.API.GetSpellName(30482),	-- TBC/Anniversary
+		--["MoltenArmor"]					= Buffalo.API.GetSpellName(30482),	-- TBC/Anniversary
 		["IceBarrier"]					= Buffalo.API.GetSpellName(11426),
 	},
 	["priest"] = {
@@ -470,7 +467,7 @@ end;
 
 
 function Buffalo:updateSpellMatrix()
-	Buffalo:updateSpellMatrixByClass(Buffalo.vars.PlayerClass);
+	Buffalo:updateSpellMatrixByClass(Buffalo.lib.localPlayerClass);
 	Buffalo:updateSpellMatrixByClass("shared");
 
 	Buffalo:refreshActiveSpells();
@@ -594,7 +591,7 @@ function Buffalo:updateSpellMatrixByClass(classname)
 	end;
 --]]
 --	Buffalo.lib:printAll(classInfo);
---	print(string.format('*** Initializing, player=%s', Buffalo.vars.PlayerClass));
+--	print(string.format('*** Initializing, player=%s', Buffalo.lib.localPlayerClass));
 end;
 
 
@@ -606,7 +603,7 @@ end;
 function Buffalo:refreshActiveSpells()
 	Buffalo.spells.active = { };
 
-	local classInfo = Buffalo.classes[Buffalo.vars.PlayerClass];
+	local classInfo = Buffalo.classes[Buffalo.lib.localPlayerClass];
 	if classInfo then
 		for spellName, spellInfo in pairs(classInfo.spells) do
 			Buffalo.spells.active[spellName] = spellInfo;

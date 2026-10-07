@@ -105,6 +105,7 @@ function DigamAddonLib:New(addonSettings)
 		localPlayerName = self:GetFullName("player"),
 		localPlayerNameNoSpaces = self:StripRealmSpaces(self:GetFullName("player")),
 		localPlayerClass = self:GetUnitClass("player"),
+		localPlayerFaction = self.API.UnitFactionGroup("player");
 		localPlayerRealm = self:GetPlayerRealm("player"),
 		localPlayerGUID = self.API.UnitGUID("player"),
 
