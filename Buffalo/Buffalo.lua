@@ -117,7 +117,7 @@ SlashCmdList["BUFFALO_RESETBUTTON"] = function(msg)
 
 	BuffButton:ClearAllPoints();
 	BuffButton:SetPoint("CENTER", "UIParent", "CENTER", 0, 0);
-	BuffButton:SetSize(Buffalo.config.value.BuffButtonSize, Buffalo.config.value.BuffButtonSize);
+	BuffButton:SetSize(Buffalo.config.value.ButtonSize, Buffalo.config.value.ButtonSize);
 
 	if Buffalo.config.value.BuffButtonVisible then
 		BuffButton:Show();
@@ -475,8 +475,6 @@ function Buffalo:initializeConfigSettings()
 	end
 
 	local x,y = BuffButton:GetPoint();
---	local point, relativeTo, relativePoint, x, y = BuffButton:GetPoint();
-
 	Buffalo:setConfigOption(Buffalo.config.key.BuffButtonPosX, Buffalo:getConfigOption(Buffalo.config.key.BuffButtonPosX, x))
 	Buffalo:setConfigOption(Buffalo.config.key.BuffButtonPosY, Buffalo:getConfigOption(Buffalo.config.key.BuffButtonPosY, y))
 
@@ -494,11 +492,11 @@ function Buffalo:initializeConfigSettings()
 	end;
 	Buffalo:setConfigOption(Buffalo.config.key.ScanFrequency, Buffalo.config.value.ScanFrequency);
 
-	Buffalo.config.value.ButtonOpacity = Buffalo:getConfigOption(Buffalo.config.key.ButtonOpacity, Buffalo.config.default.ButtonOpacity);
-	if Buffalo.config.value.ButtonOpacity == nil or Buffalo.config.value.ButtonOpacity < 0.0 or Buffalo.config.value.ButtonOpacity > 1.0 then
-		Buffalo.config.value.ButtonOpacity = Buffalo.config.default.ButtonOpacity;
+	Buffalo.config.value.ButtonSize = Buffalo:getConfigOption(Buffalo.config.key.ButtonSize, Buffalo.config.default.ButtonSize);
+	if Buffalo.config.value.ButtonSize == nil or Buffalo.config.value.ButtonSize < 16 or Buffalo.config.value.ButtonSize > 64 then
+		Buffalo.config.value.ButtonSize = Buffalo.config.default.ButtonSize;
 	end;
-	Buffalo:setConfigOption(Buffalo.config.key.ButtonOpacity, Buffalo.config.value.ButtonOpacity);
+	Buffalo:setConfigOption(Buffalo.config.key.ButtonSize, Buffalo.config.value.ButtonSize);
 
 	Buffalo.config.value.RenewOverlap = Buffalo:getConfigOption(Buffalo.config.key.RenewOverlap, Buffalo.config.default.RenewOverlap);
 	if Buffalo.config.value.RenewOverlap < 0 or Buffalo.config.value.RenewOverlap > 600 then
@@ -1262,7 +1260,7 @@ function Buffalo_repositionateButton(self)
 
 	Buffalo:setConfigOption(Buffalo.config.key.BuffButtonPosX, x);
 	Buffalo:setConfigOption(Buffalo.config.key.BuffButtonPosY, y);
-	BuffButton:SetSize(Buffalo.config.value.BuffButtonSize, Buffalo.config.value.BuffButtonSize);
+	BuffButton:SetSize(Buffalo.config.value.ButtonSize, Buffalo.config.value.ButtonSize);
 
 	if Buffalo.vars.PlayerIsBuffClass then
 		BuffButton:Show();
@@ -1286,7 +1284,7 @@ function Buffalo:setButtonTexture(textureName, isEnabled)
 	if Buffalo.vars.BuffButtonLastTexture ~= textureName then
 		Buffalo.vars.BuffButtonLastTexture = textureName;
 
-		BuffButton:SetAlpha(alphaValue * Buffalo.config.value.ButtonOpacity);
+		BuffButton:SetAlpha(alphaValue * Buffalo.config.default.ButtonOpacity);
 		BuffButton:SetNormalTexture(textureName);		
 	end;
 end;
@@ -2166,8 +2164,8 @@ function Buffalo:refreshGeneralSettingsUI()
 	BuffaloConfigFrameScanFrequency:SetValue(Buffalo.config.value.ScanFrequency * 10);
 	BuffaloSliderScanFrequencyText:SetText(string.format("%s/10 sec.", Buffalo.config.value.ScanFrequency * 10));
 
-	BuffaloConfigFrameButtonOpacity:SetValue(Buffalo.config.value.ButtonOpacity * 100);
-	BuffaloSliderButtonOpacityText:SetText(string.format("%s percent", Buffalo.config.value.ButtonOpacity * 100));
+	BuffaloConfigFrameButtonSize:SetValue(Buffalo.config.value.ButtonSize);
+	BuffaloSliderButtonSizeText:SetText(string.format("%sx%s pixels", Buffalo.config.value.ButtonSize, Buffalo.config.value.ButtonSize));
 
 	--	Refresh checkboxes:
 	local checkboxValue = nil;
@@ -2402,21 +2400,19 @@ function Buffalo_onScanFrequencyChanged(object)
 	BuffaloSliderScanFrequencyText:SetText(string.format("%s/10 sec.", Buffalo.config.value.ScanFrequency * 10));
 end;
 
-function Buffalo_onButtonOpacityChanged(object)
+function Buffalo_onButtonSizeChanged(object)
 	local value = math.floor(object:GetValue());
 	object:SetValueStep(1);
 	object:SetValue(value);
 
-	--	Slider works from 1-100, we need values from 0.0 - 1.0:
-	value = value / 100;
-	if value ~= Buffalo.config.value.ButtonOpacity then
-		Buffalo.config.value.ButtonOpacity = value;
-		Buffalo:setConfigOption(Buffalo.config.key.ButtonOpacity, Buffalo.config.value.ButtonOpacity);
-
-		BuffButton:SetAlpha(value);
+	--	Size works from 16x16 to 64x64 pixels:
+	if value ~= Buffalo.config.value.ButtonSize then
+		Buffalo.config.value.ButtonSize = value;
+		Buffalo:setConfigOption(Buffalo.config.key.ButtonSize, Buffalo.config.value.ButtonSize);
+		BuffButton:SetSize(value, value);
 	end;
 	
-	BuffaloSliderButtonOpacityText:SetText(string.format("%s percent", Buffalo.config.value.ButtonOpacity * 100));
+	BuffaloSliderButtonSizeText:SetText(string.format("%sx%s pixels", Buffalo.config.value.ButtonSize,  Buffalo.config.value.ButtonSize));
 end;
 
 function Buffalo_handleCheckbox(checkbox)
@@ -2593,7 +2589,7 @@ function Buffalo_onLoad()
 	BuffaloConfigFramePrayerThreshold:SetBackdrop(Buffalo.ui.backdrops.Slider);
 	BuffaloConfigFrameRenewOverlap:SetBackdrop(Buffalo.ui.backdrops.Slider);
 	BuffaloConfigFrameScanFrequency:SetBackdrop(Buffalo.ui.backdrops.Slider);
-	BuffaloConfigFrameButtonOpacity:SetBackdrop(Buffalo.ui.backdrops.Slider);
+	BuffaloConfigFrameButtonSize:SetBackdrop(Buffalo.ui.backdrops.Slider);
 
 	Buffalo.API.RegisterAddonMessagePrefix(Buffalo.lib.addonPrefix);
 end

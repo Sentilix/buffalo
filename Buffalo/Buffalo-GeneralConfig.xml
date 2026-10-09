@@ -63,16 +63,16 @@
 					</OnValueChanged>
 				</Scripts>
 			</Slider>
-			<!-- Button opacity slider -->
-			<Slider name="BuffaloConfigFrameButtonOpacity" minValue="0" maxValue="100" defaultValue="100" valueStep="1" inherits="UISliderTemplate, BackdropTemplate" enableMouse="true">
+			<!-- Button size slider -->
+			<Slider name="BuffaloConfigFrameButtonSize" minValue="16" maxValue="64" defaultValue="32" valueStep="1" inherits="UISliderTemplate, BackdropTemplate" enableMouse="true">
 				<Size x="360" y="20" />
 				<Anchors>
 					<Anchor point="TOPLEFT" x="0" y="-200" relativeTo="$parentOptions"/>
 				</Anchors>
 				<Scripts>
 					<OnValueChanged>
-						if Buffalo_onButtonOpacityChanged then
-						Buffalo_onButtonOpacityChanged(self);
+						if Buffalo_onButtonSizeChanged then
+						Buffalo_onButtonSizeChanged(self);
 						end;
 					</OnValueChanged>
 				</Scripts>
@@ -204,21 +204,21 @@
 					<Color r="0.8" g="0.8" b="0.8" a="1.0"/>
 				</FontString>
 
-				<FontString name="$parentButtonOpacityCaption" inherits="GameFontNormal" text="Buff button opacity">
+				<FontString name="$parentButtonSizeCaption" inherits="GameFontNormal" text="Buff button size">
 					<Anchors>
-						<Anchor point="LEFT" x="0" y="20" relativeTo="BuffaloConfigFrameButtonOpacity"/>
+						<Anchor point="LEFT" x="0" y="20" relativeTo="BuffaloConfigFrameButtonSize"/>
 					</Anchors>
 					<Color r="0.9" g="0.8" b="0.2" a="1.0"/>
 				</FontString>
-				<FontString name="$parentButtonOpacityCaptionLow" inherits="GameFontNormal" text="Invisible">
+				<FontString name="$parentButtonSizeCaptionLow" inherits="GameFontNormal" text="16x16">
 					<Anchors>
-						<Anchor point="LEFT" x="0" y="-20" relativeTo="BuffaloConfigFrameButtonOpacity"/>
+						<Anchor point="LEFT" x="0" y="-20" relativeTo="BuffaloConfigFrameButtonSize"/>
 					</Anchors>
 					<Color r="0.8" g="0.8" b="0.8" a="1.0"/>
 				</FontString>
-				<FontString name="$parentButtonOpacityCaptionHigh" inherits="GameFontNormal" text="Solid">
+				<FontString name="$parentButtonSizeCaptionHigh" inherits="GameFontNormal" text="64x64">
 					<Anchors>
-						<Anchor point="RIGHT" x="0" y="-20" relativeTo="BuffaloConfigFrameButtonOpacity"/>
+						<Anchor point="RIGHT" x="0" y="-20" relativeTo="BuffaloConfigFrameButtonSize"/>
 					</Anchors>
 					<Color r="0.8" g="0.8" b="0.8" a="1.0"/>
 				</FontString>
@@ -242,9 +242,9 @@
 					</Anchors>
 					<Color r="1" g="1" b="1" a="1.0"/>
 				</FontString>
-				<FontString name="BuffaloSliderButtonOpacityText" inherits="GameFontNormal" text="?">
+				<FontString name="BuffaloSliderButtonSizeText" inherits="GameFontNormal" text="?">
 					<Anchors>
-						<Anchor point="RIGHT" x="80" y="0" relativeTo="BuffaloConfigFrameButtonOpacity"/>
+						<Anchor point="RIGHT" x="80" y="0" relativeTo="BuffaloConfigFrameButtonSize"/>
 					</Anchors>
 					<Color r="1" g="1" b="1" a="1.0"/>
 				</FontString>

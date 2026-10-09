@@ -51,7 +51,7 @@ Buffalo.config.key.AssignedClasses				= "AssignedClasses";
 Buffalo.config.key.BuffButtonPosX				= "BuffButton.X";
 Buffalo.config.key.BuffButtonPosY				= "BuffButton.Y";
 Buffalo.config.key.BuffButtonVisible			= "BuffButton.Visible";
-Buffalo.config.key.ButtonOpacity				= "ButtonOpacity";
+Buffalo.config.key.ButtonSize					= "ButtonSize";
 Buffalo.config.key.GroupBuffThreshold			= "GroupBuffThreshold";
 Buffalo.config.key.RenewOverlap					= "RenewOverlap";
 Buffalo.config.key.ScanFrequency				= "ScanFrequency";
@@ -65,7 +65,8 @@ Buffalo.config.default.AssignedBuffSelf			= 0x0000;	-- Default is no selfbuffs a
 Buffalo.config.default.AssignedBuffGroups		= { };
 Buffalo.config.default.AssignedClasses			= { };		-- Classes with buff assignments: Buffalo.config.value.AssignedClasses[classname] = [bitmask]. Set runtime.
 Buffalo.config.default.BuffButtonVisible		= true;
-Buffalo.config.default.ButtonOpacity			= 1.0;		-- Default opacity: none (100%)
+Buffalo.config.default.ButtonOpacity			= 1.0;		-- Default opacity: none (100%) - v1.1.0: no longer configurable.
+Buffalo.config.default.ButtonSize				= 32;		-- Default size: 32x32 pixels
 Buffalo.config.default.GroupBuffThreshold		= 4;		-- Default is to use greater buffs when 4+ people needs a buff.
 Buffalo.config.default.RenewOverlap				= 30;		-- If buff ends withing <n> seconds Buffalo will attempt to rebuff
 Buffalo.config.default.ScanFrequency			= 0.3;		-- Scan every <n> second (0.1 - 1.0 seconds)
@@ -80,7 +81,7 @@ Buffalo.config.value.AssignedRaidGroups			= { };		-- Same but for Raid buffing.
 Buffalo.config.value.AssignedBuffSelf			= Buffalo.config.default.AssignedBuffSelf;
 Buffalo.config.value.AssignedClasses			= Buffalo.config.default.AssignedClasses;
 Buffalo.config.value.BuffButtonVisible			= Buffalo.config.default.BuffButtonVisible;
-Buffalo.config.value.ButtonOpacity				= Buffalo.config.default.ButtonOpacity;
+Buffalo.config.value.ButtonSize					= Buffalo.config.default.ButtonSize;
 Buffalo.config.value.GroupBuffThreshold			= Buffalo.config.default.GroupBuffThreshold;
 Buffalo.config.value.RenewOverlap				= Buffalo.config.default.RenewOverlap;
 Buffalo.config.value.ScanFrequency				= Buffalo.config.default.ScanFrequency;
@@ -88,7 +89,6 @@ Buffalo.config.value.SynchronizedBuffs			= { };		-- [buff row][group num] = { [B
 Buffalo.config.value.UseIncubus					= Buffalo.config.default.UseIncubus;
 
 --	Other configuration options considered in future releases:
-Buffalo.config.value.BuffButtonSize				= 32;		-- Size of buff button
 Buffalo.config.value.PlayerBuffPriority			= 90;		-- Priority to Self'
 
 --	Miscellaneous:
