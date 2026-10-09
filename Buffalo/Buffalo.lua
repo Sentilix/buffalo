@@ -518,7 +518,7 @@ function Buffalo:initializeConfigSettings()
 
 	--	Init the "assigned buff groups". This is a table, so we need to validate the integrity:
 	local assignedBuffGroups = Buffalo:getConfigOption(Buffalo.config.key.AssignedBuffGroups, nil);
-	if type(assignedBuffGroups) == "table" and table.getn(assignedBuffGroups) == 8 then
+	if type(assignedBuffGroups) == "table" and #assignedBuffGroups == 8 then
 		Buffalo.config.default.AssignedBuffGroups = { }
 		for groupNum = 1, 8, 1 do
 			local groupMask = 0;
@@ -540,7 +540,7 @@ function Buffalo:initializeConfigSettings()
 	local syncedBuffs = Buffalo:getConfigOption(Buffalo.config.key.SynchronizedBuffs, nil);
 
 	if type(syncedBuffs) == "table" then
-		for buffIndex = 1, table.getn(syncedBuffs), 1 do
+		for buffIndex = 1, #syncedBuffs, 1 do
 			if type(syncedBuffs[buffIndex]) ~= "table" then
 				failureDetected = true;
 				break;
@@ -548,7 +548,7 @@ function Buffalo:initializeConfigSettings()
 
 			syncBuffTable[buffIndex] = { };
 			
-			for groupIndex = 1, table.getn(syncedBuffs[buffIndex]), 1 do
+			for groupIndex = 1, #syncedBuffs[buffIndex], 1 do
 				if not syncedBuffs[buffIndex][groupIndex] then
 					failureDetected = true;
 					break;
@@ -571,7 +571,7 @@ function Buffalo:initializeConfigSettings()
 		end;
 	end;
 	Buffalo.config.value.SynchronizedBuffs = { };
-	if not failureDetected and table.getn(syncBuffTable) > 0 then
+	if not failureDetected and #syncBuffTable > 0 then
 		Buffalo.config.value.SynchronizedBuffs = syncBuffTable;
 	end;
 
@@ -685,7 +685,7 @@ function Buffalo:mainInitialization(reloaded)
 
 	--	Note: setting defaults should be part of the config, but at that time
 	--	the Buffalo_InitializeBuffSync() has not yet been called.
-	if table.getn(Buffalo.config.value.SynchronizedBuffs) == 0 then
+	if #Buffalo.config.value.SynchronizedBuffs == 0 then
 		for buffIndex = 1, #Buffalo.vars.OrderedBuffGroups, 1 do
 			Buffalo.config.value.SynchronizedBuffs[buffIndex] = { };
 			for groupIndex = 1, 8, 1 do
@@ -1782,7 +1782,7 @@ function Buffalo:handleTXQueryRaidAssignments(message, sender)
 		local payload = string.format("%s", groupIndex);
 
 		--	Note: We HAVE to set a name in the empty spots, otherwise string split later on fucks up:
-		for buffIndex = 1, table.getn(Buffalo.config.value.SynchronizedBuffs), 1 do
+		for buffIndex = 1, #Buffalo.config.value.SynchronizedBuffs, 1 do
 			local syncBuff = Buffalo.config.value.SynchronizedBuffs[buffIndex][groupIndex];
 			local bufferName = syncBuff["PLAYER"] or "?";
 			if bufferName == "" then
@@ -1803,7 +1803,7 @@ function Buffalo:handleRXQueryRaidAssignments(message, sender)
 	groupIndex = tonumber(groupIndex);
 	local buffTable = Buffalo:splitString(buffers);
 
-	for buffIndex = 1, table.getn(buffTable), 1 do
+	for buffIndex = 1, #buffTable, 1 do
 		local buffer = buffTable[buffIndex];
 		if buffer == "?" then
 			buffer = nil;
@@ -1825,7 +1825,7 @@ function Buffalo:splitString(string, separator)
 end;
 
 function Buffalo:resetRaidAssignments()
-	for buffIndex = 1, table.getn(Buffalo.config.value.SynchronizedBuffs), 1 do
+	for buffIndex = 1, #Buffalo.config.value.SynchronizedBuffs, 1 do
 		for groupIndex = 1, 8, 1 do
 			Buffalo.config.value.SynchronizedBuffs[buffIndex][groupIndex]["PLAYER"] = nil;
 		end;
@@ -2184,7 +2184,7 @@ end;
 function Buffalo:refreshClassSettingsUI()
 	--	Update alpha value on each button so it matches the current settings.
 
-	buffCount = #Buffalo.spells.group;
+	local buffCount = #Buffalo.spells.group;
 	for rowNumber = 1, buffCount, 1 do
 		for _, classInfo in next, Buffalo.sorted.classes do
 			buttonName = string.format("%s_row%s", classInfo.ClassName, rowNumber);
