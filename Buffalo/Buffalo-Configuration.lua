@@ -645,7 +645,7 @@ function Buffalo:getSpellName(spellID)
 end;
 
 function Buffalo:initializeAssignedGroupDefaults()
-	local localClassname, englishClassname = UnitClass("player");
+	local localClassname, englishClassname = Buffalo.API.UnitClass("player");
 	local assignedGroupBuffs = { };
 
 	local groupMask = 0;
