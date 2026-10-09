@@ -8,8 +8,8 @@
 ## X-Curse-Project-ID: 623031
 ## X-WoWI-ID: 26305
 
-DigamAddonLib.lua
-DigamAddonLib-Era.lua
+Libs\LibDigam-1.0\DigamAddonLib.lua
+Libs\LibDigam-1.0\DigamAddonLib-Era.lua
 Constants.lua
 Buffalo-Configuration.xml
 Buffalo-ClassConfig.xml
