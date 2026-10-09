@@ -11,7 +11,7 @@
 
 
 local DIGAM_IsDebugBuild					= false;
-local DIGAM_BuildVersion					= 10.103;
+local DIGAM_BuildVersion					= 10.104;
 
 local DIGAM_COLOR_BEGIN						= "|c80";
 local DIGAM_CHAT_END						= "|r";

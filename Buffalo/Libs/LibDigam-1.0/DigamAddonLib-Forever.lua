@@ -275,15 +275,30 @@ function API.GetSavedInstanceInfo(index)
     return GetSavedInstanceInfo(index)
 end;
 
---  Returns name, itemID, texture, count, quality
+-- Era Return Signature: name, texture, count, quality, canLink, itemID, itemType, itemSubtype
 function API.GetSendMailItem(index)
-    return GetSendMailItem(index);
-end;
+    local name, itemID, texture, count, quality = GetSendMailItem(index)
+    
+    if not name or not itemID then 
+        return nil 
+    end
 
---  Returns itemLink
+    local itemType, itemSubtype
+    if C_Item and C_Item.GetItemInfo then
+        _, _, _, _, _, _, itemType, itemSubtype = C_Item.GetItemInfo(itemID)
+    else
+        -- Fallback safeguard in case local cache overrides apply
+        _, _, _, _, _, _, itemType, itemSubtype = GetItemInfo(itemID)
+    end
+
+    return name, texture, count, quality, nil, itemID, itemType, itemSubtype
+end
+
+
 function API.GetSendMailItemLink(index)
-    return GetSendMailItemLink(index);
-end;
+    return GetSendMailItemLink(index)
+end
+
 
 --  BEGIN Profession emulation
 local function GetActiveProfessionsCache()
