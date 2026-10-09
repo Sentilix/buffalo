@@ -475,7 +475,8 @@ end;
 
 function Buffalo:updateSpellMatrixByClass(classname)
 	local classInfo = Buffalo.classes[classname];
-	if not classInfo then
+
+	if not classInfo or type(classInfo.spells) ~= "table" then
 		return;
 	end;
 
@@ -527,71 +528,6 @@ function Buffalo:updateSpellMatrixByClass(classname)
 			end;
 		end
 	end;
-
---[[
-	--	Loop 1: Make sure to disable all spells.
-	--	This ensures dependencies will be handled correct regardless of what order they appear.
-	for spellName, spellInfo in pairs(classInfo.spells) do
-		spellInfo.Enabled = false;
-		spellInfo.Learned = false;
-	end;
-
-	--	Loop 2: Do the actual spell update one by one:
-	for spellName, spellInfo in pairs(classInfo.spells) do
-		local enabled = nil;
-		local learned = nil;
-		local spellId = nil;
-
-		local name, _, iconId, _, _, _, maxSpellId = Buffalo.API.GetSpellInfo(spellInfo.spellIsEnabled);
-		if name then
-			local spellId = Buffalo.API.GetSpellIDForSpellIdentifier(spellName);
-			if spellId ~= nil then
-				enabled = true;
-				learned = true;
-			end;
-
-			--	Disable this spell if there is a better active spell:
-			if spellInfo.ReplacedBy and enabled then
-				--	There is a better spell - and it is enabled:
-				if classInfo.spells[spellInfo.ReplacedBy] and classInfo.spells[spellInfo.ReplacedBy].Learned then
-					enabled = nil;
-					learned = nil;
-				end;
-			end;
-
-			--	Disable lower tier spell if this spell if active:
-			if spellInfo.Replacing and enabled then
-				classInfo.spells[spellInfo.Replacing].Enabled = nil;
-				classInfo.spells[spellInfo.Replacing].Learned = nil;
-			end;
-
-			--	Handle Succubus / Incubus configuration:
-			if spellInfo.Succubus then
-				if Buffalo.config.value.UseIncubus then
-					bitMask = 0x000000;
-					enabled = nil;
-				else
-					bitMask = 0x002000;
-				end;			
-			elseif spellInfo.Incubus then
-				if Buffalo.config.value.UseIncubus then
-					bitMask = 0x002000;
-				else
-					bitMask = 0x000000;
-					enabled = nil;
-				end;
-			end;
-
-		end;
-
-		spellInfo.Enabled = enabled;
-		spellInfo.Learned = learned;
-		spellInfo.IconID = iconId or 0;
-		spellInfo.SpellID = spellId;
-	end;
---]]
---	Buffalo.lib:printAll(classInfo);
---	print(string.format('*** Initializing, player=%s', Buffalo.lib.localPlayerClass));
 end;
 
 
@@ -604,17 +540,21 @@ function Buffalo:refreshActiveSpells()
 	Buffalo.spells.active = { };
 
 	local classInfo = Buffalo.classes[Buffalo.lib.localPlayerClass];
-	if classInfo then
-		for spellName, spellInfo in pairs(classInfo.spells) do
-			Buffalo.spells.active[spellName] = spellInfo;
-		end;
+	if not classInfo or type(classInfo.spells) ~= "table" then
+		return;
+	end;
+
+	for spellName, spellInfo in pairs(classInfo.spells) do
+		Buffalo.spells.active[spellName] = spellInfo;
 	end;
 
 	classInfo = Buffalo.classes.shared;
-	if classInfo then
-		for spellName, spellInfo in pairs(classInfo.spells) do
-			Buffalo.spells.active[spellName] = spellInfo;
-		end;
+	if not classInfo or type(classInfo.spells) ~= "table" then
+		return;
+	end;
+	
+	for spellName, spellInfo in pairs(classInfo.spells) do
+		Buffalo.spells.active[spellName] = spellInfo;
 	end;
 end;
 
