@@ -169,7 +169,7 @@ end
 ]]
 SLASH_BUFFALO_VERSION1 = "/buffaloversion"
 SlashCmdList["BUFFALO_VERSION"] = function(msg)
-	if Buffalo.API.IsInRaid() or Buffalo:isInParty() then
+	if Buffalo.API.IsInGroup() then
 		Buffalo.lib:SendAddonMessage("TX_VERSION##");
 	else
 		Buffalo.lib:Echo(string.format("%s is using Buffalo version %s", GetUnitName("player", true), Buffalo.lib.addonVersion));
@@ -241,6 +241,8 @@ end
 	Buffalo:<sender (which is actually the receiver!)>:<version number>
 ]]
 function Buffalo:handleTXVersion(message, sender)
+	print("RX_VERSION#", Buffalo.lib.addonVersion ,"#", sender)
+
 	Buffalo.lib:SendAddonMessage("RX_VERSION#".. Buffalo.lib.addonVersion .."#"..sender)
 end
 
@@ -284,6 +286,7 @@ end
 
 --]]
 function Buffalo:handleAddonMessage(msg, sender)
+
 	local _, _, cmd, message, recipient = string.find(msg, "([^#]*)#([^#]*)#([^#]*)");	
 
 	--	Ignore messages sent from myself, unless it is a Version check (*sigh*)
@@ -302,7 +305,8 @@ function Buffalo:handleAddonMessage(msg, sender)
 		else
 			--	Check if this is for me - if not, skip!
 			-- Recipient comes with realmname, so we need to compare with realmname too:
-			recipient = Buffalo:getPlayerAndRealmFromName(recipient);
+			recipient = Buffalo.lib:ApplyRealmName(recipient);
+			--recipient = Buffalo:getPlayerAndRealmFromName(recipient);
 
 			if recipient ~= Buffalo.lib.localPlayerName then
 				return
