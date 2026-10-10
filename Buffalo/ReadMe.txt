@@ -95,6 +95,12 @@ Warlock		Imp							39
 
 Version history
 ---------------
+Version 1.1.0
+* Added: option to resize the Buff icon (replacing the opacity setting)
+* Fixed initalization: sometimes spells was not loaded after Login.
+* Fixed addon communication: some messages was never received!
+
+
 Version 1.0.2
 * Fixed wow build detection: herb/mining aura works now.
 
