@@ -1519,7 +1519,7 @@ function Buffalo:initializePersonalGroupBuffs()
 	local posX, posY;
 
 	if self.API.InCombatLockdown() then return; end;
-
+	
 	--	RAID buffs:
 	--	Iterate over all groups and render icons.
 	--	Note: all icons are dimmed out as if they were disabled.
@@ -2526,13 +2526,10 @@ end;
 --]]
 function Buffalo_onEvent(self, event, ...)
 
-	if (event == "ADDON_LOADED") then
-		local addonname = ...;
-		if addonname == Buffalo.lib.addonName then
-			Buffalo:mainInitialization();
-			Buffalo_repositionateButton(BuffButton);
-			Buffalo:hideBuffButton();
-		end
+	if (event == "PLAYER_LOGIN") then
+		Buffalo:mainInitialization();
+		Buffalo_repositionateButton(BuffButton);
+		Buffalo:hideBuffButton();
 		
 	elseif (event == "PLAYER_TALENT_UPDATE") then
 		Buffalo:onPlayerTalentUpdate(event, ...)
@@ -2577,7 +2574,7 @@ function Buffalo_onLoad()
 
 	_G["BuffaloVersionString"]:SetText(string.format("Buffalo version %s by %s", Buffalo.lib.addonVersion, Buffalo.lib.addonAuthor));
 
-    BuffaloEventFrame:RegisterEvent("ADDON_LOADED");
+    BuffaloEventFrame:RegisterEvent("PLAYER_LOGIN");
     BuffaloEventFrame:RegisterEvent("CHAT_MSG_ADDON");
     BuffaloEventFrame:RegisterEvent("GROUP_ROSTER_UPDATE");	
     BuffaloEventFrame:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED");
