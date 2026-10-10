@@ -241,8 +241,6 @@ end
 	Buffalo:<sender (which is actually the receiver!)>:<version number>
 ]]
 function Buffalo:handleTXVersion(message, sender)
-	print("RX_VERSION#", Buffalo.lib.addonVersion ,"#", sender)
-
 	Buffalo.lib:SendAddonMessage("RX_VERSION#".. Buffalo.lib.addonVersion .."#"..sender)
 end
 
@@ -290,7 +288,7 @@ function Buffalo:handleAddonMessage(msg, sender)
 	local _, _, cmd, message, recipient = string.find(msg, "([^#]*)#([^#]*)#([^#]*)");	
 
 	--	Ignore messages sent from myself, unless it is a Version check (*sigh*)
-	if sender == Buffalo.lib.localPlayerName then
+	if sender == Buffalo.lib.localPlayerNameNoSpaces then
 		if cmd ~= "TX_VERSION" and cmd ~= "RX_VERSION" then
 			return;
 		end;
@@ -306,9 +304,8 @@ function Buffalo:handleAddonMessage(msg, sender)
 			--	Check if this is for me - if not, skip!
 			-- Recipient comes with realmname, so we need to compare with realmname too:
 			recipient = Buffalo.lib:ApplyRealmName(recipient);
-			--recipient = Buffalo:getPlayerAndRealmFromName(recipient);
 
-			if recipient ~= Buffalo.lib.localPlayerName then
+			if recipient ~= Buffalo.lib.localPlayerNameNoSpaces then
 				return
 			end
 		end;
@@ -391,42 +388,6 @@ function Buffalo:checkIsNewVersion(versionstring)
 		end	
 	end
 end
-
-function Buffalo:isInParty()
-	if not self.API.IsInRaid() then
-		return ( self.API.GetNumGroupMembers() > 0 );
-	end
-	return false
-end
-
-function Buffalo:getMyRealm()
-	local realmname = self.API.GetRealmName();
-	
-	if string.find(realmname, " ") then
-		local _, _, name1, name2 = string.find(realmname, "([a-zA-Z]*) ([a-zA-Z]*)");
-		realmname = name1 .. name2; 
-	end;
-
-	return realmname;
-end;
-
-function Buffalo:getPlayerAndRealm(unitid)
-
-	local playername, realmname = self.API.UnitName(unitid);
-	if not realmname or realmname == "" then
-		realmname = Buffalo:getMyRealm();
-	end;
-
-	return playername.."-".. realmname;
-end;
-
-function Buffalo:getPlayerAndRealmFromName(playername)
-	if not string.find(playername, "-") then
-		playername = playername .."-".. Buffalo:getMyRealm();
-	end;
-
-	return playername;
-end;
 
 
 
@@ -774,14 +735,14 @@ function Buffalo:scanRaid()
 	local roster = { };
 	local startNum, endNum, groupType, unitid, groupCount;
 
-	if Buffalo:isInParty() then
-		groupType = "party";
-		groupCount = 1;
-		startNum = 1;
-		endNum = self.API.GetNumGroupMembers();
-	elseif self.API.IsInRaid() then
+	if self.API.IsInRaid() then
 		groupType = "raid";
 		groupCount = 8;
+		startNum = 1;
+		endNum = self.API.GetNumGroupMembers();
+	elseif self.API.IsInGroup() then
+		groupType = "party";
+		groupCount = 1;
 		startNum = 1;
 		endNum = self.API.GetNumGroupMembers();
 	else
@@ -963,7 +924,7 @@ function Buffalo:scanRaid()
 	local unitname;
 	local MissingBuffs = { };				-- Final list of all missing buffs with a Priority set.
 	local missingBuffIndex = 0;				-- Buff counter
-	local castingPlayerAndRealm = Buffalo:getPlayerAndRealm("player");
+	local castingPlayerAndRealm = Buffalo.lib:GetFullName("player");
 
 	--	Raid buffs:
 	for groupIndex = 1, groupCount, 1 do	-- Iterate over all available groups
@@ -1924,7 +1885,7 @@ function Buffalo:getPlayersInRoster(classMask)
 			local unitid = "raid"..n;
 			if not self.API.UnitName(unitid) then break; end;
 			
-			local fullName = Buffalo:getPlayerAndRealm(unitid);
+			local fullName = Buffalo.lib:GetFullName(unitid);
 			local _, className = self.API.UnitClass(unitid);
 			local classInfo = Buffalo.classes[className];
 
@@ -1938,14 +1899,14 @@ function Buffalo:getPlayersInRoster(classMask)
 			end;
 		end;
 
-	elseif Buffalo:isInParty() then
+	elseif self.API.IsInGroup() then
 		for n = 1, self.API.GetNumGroupMembers(), 1 do
 			local unitid = "party"..n;
 			if not self.API.UnitName(unitid) then
 				unitid = "player";
 			end;
 
-			local fullName = Buffalo:getPlayerAndRealm(unitid);
+			local fullName = Buffalo.lib:GetFullName(unitid);
 			local _, className = self.API.UnitClass(unitid);		
 			local classInfo = Buffalo.classes[className];
 
@@ -1961,7 +1922,7 @@ function Buffalo:getPlayersInRoster(classMask)
 	else
 		--	SOLO play, somewhat usefull when testing
 		local unitid = "player";
-		local fullName = Buffalo:getPlayerAndRealm(unitid);
+		local fullName = Buffalo.lib:GetFullName(unitid);
 		local _, className = self.API.UnitClass(unitid);
 		local classInfo = Buffalo.Classes[className];
 
